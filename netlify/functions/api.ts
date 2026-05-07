@@ -20,7 +20,7 @@ const jsonResponse = (statusCode: number, body: any) => ({
 let memoryStore: Record<string, any> = {};
 
 const BLOBS_SITE_ID = process.env.NETLIFY_SITE_ID || 'eab657e3-6fc1-4432-bcd4-eae9441f1f51';
-const BLOBS_TOKEN = process.env.NETLIFY_ACCESS_TOKEN;
+const BLOBS_TOKEN = process.env.BLOBS_TOKEN;
 
 function getBlobStore() {
   if (BLOBS_TOKEN) {
@@ -95,6 +95,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
       return jsonResponse(200, {
         success: true,
         blobsContext: blobsContext ? 'SET' : 'NOT SET',
+        blobsToken: process.env.BLOBS_TOKEN ? 'SET' : 'NOT SET',
         siteId: siteId || 'NOT SET',
         blobsTest,
         usersCount,
