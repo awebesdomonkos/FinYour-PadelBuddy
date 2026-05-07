@@ -22,14 +22,12 @@ let memoryStore: Record<string, any> = {};
 async function getData(key: string, fallback: any = []) {
   try {
     const store = getStore('padelbuddy-data');
-    const value = await store.get(key, { type: 'json', consistency: 'strong' });
-    return value || fallback;
+    const value = await store.get(key, { type: 'json' });
+    console.log(`[Blobs] getData(${key}) => ${value ? 'found' : 'null'}`);
+    return value ?? fallback;
   } catch (error: any) {
-    if (error.name === 'MissingBlobsEnvironmentError') {
-      return memoryStore[key] || fallback;
-    }
-    console.error(`Failed to read blob ${key}:`, error);
-    return fallback;
+    console.error(`[Blobs] getData ERROR (${key}):`, error.name, error.message);
+    return memoryStore[key] ?? fallback;
   }
 }
 
@@ -37,15 +35,10 @@ async function setData(key: string, value: any) {
   try {
     const store = getStore('padelbuddy-data');
     await store.setJSON(key, value);
-    // Also keep in memory as a same-invocation cache
     memoryStore[key] = value;
+    console.log(`[Blobs] setData(${key}) => OK`);
   } catch (error: any) {
-    if (error.name === 'MissingBlobsEnvironmentError') {
-      memoryStore[key] = value;
-      return;
-    }
-    console.error(`Failed to write blob ${key}:`, error);
-    // Fallback to memory instead of throwing, so the API doesn't crash
+    console.error(`[Blobs] setData ERROR (${key}):`, error.name, error.message);
     memoryStore[key] = value;
   }
 }
@@ -73,6 +66,32 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     // Health check
     if (path === "/health" && method === "GET") {
       return jsonResponse(200, { success: true, message: "API is running" });
+    }
+
+    // Debug endpoint - check Blobs status
+    if (path === "/debug" && method === "GET") {
+      const blobsContext = process.env.NETLIFY_BLOBS_CONTEXT;
+      const siteId = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
+      let blobsTest = 'not tested';
+      let usersCount = 0;
+      try {
+        const store = getStore('padelbuddy-data');
+        await store.setJSON('_health', { ts: Date.now() });
+        const val = await store.get('_health', { type: 'json' });
+        blobsTest = val ? 'OK - read/write works' : 'FAIL - write ok but read failed';
+        const users = await getData('users');
+        usersCount = Array.isArray(users) ? users.length : 0;
+      } catch (e: any) {
+        blobsTest = `ERROR: ${e.name} - ${e.message}`;
+      }
+      return jsonResponse(200, {
+        success: true,
+        blobsContext: blobsContext ? 'SET' : 'NOT SET',
+        siteId: siteId || 'NOT SET',
+        blobsTest,
+        usersCount,
+        memoryStoreKeys: Object.keys(memoryStore)
+      });
     }
 
     // CLUBS (Seed if needed)
