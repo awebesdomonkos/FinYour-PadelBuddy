@@ -19,11 +19,20 @@ const jsonResponse = (statusCode: number, body: any) => ({
 // Helper for Blobs with resilient fallback for local development
 let memoryStore: Record<string, any> = {};
 
+const BLOBS_SITE_ID = process.env.NETLIFY_SITE_ID || 'eab657e3-6fc1-4432-bcd4-eae9441f1f51';
+const BLOBS_TOKEN = process.env.NETLIFY_ACCESS_TOKEN;
+
+function getBlobStore() {
+  if (BLOBS_TOKEN) {
+    return getStore({ name: 'padelbuddy-data', siteID: BLOBS_SITE_ID, token: BLOBS_TOKEN });
+  }
+  return getStore('padelbuddy-data');
+}
+
 async function getData(key: string, fallback: any = []) {
   try {
-    const store = getStore('padelbuddy-data');
+    const store = getBlobStore();
     const value = await store.get(key, { type: 'json' });
-    console.log(`[Blobs] getData(${key}) => ${value ? 'found' : 'null'}`);
     return value ?? fallback;
   } catch (error: any) {
     console.error(`[Blobs] getData ERROR (${key}):`, error.name, error.message);
@@ -33,10 +42,9 @@ async function getData(key: string, fallback: any = []) {
 
 async function setData(key: string, value: any) {
   try {
-    const store = getStore('padelbuddy-data');
+    const store = getBlobStore();
     await store.setJSON(key, value);
     memoryStore[key] = value;
-    console.log(`[Blobs] setData(${key}) => OK`);
   } catch (error: any) {
     console.error(`[Blobs] setData ERROR (${key}):`, error.name, error.message);
     memoryStore[key] = value;
@@ -75,7 +83,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
       let blobsTest = 'not tested';
       let usersCount = 0;
       try {
-        const store = getStore('padelbuddy-data');
+        const store = getBlobStore();
         await store.setJSON('_health', { ts: Date.now() });
         const val = await store.get('_health', { type: 'json' });
         blobsTest = val ? 'OK - read/write works' : 'FAIL - write ok but read failed';
