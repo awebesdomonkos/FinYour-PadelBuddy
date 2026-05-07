@@ -20,7 +20,7 @@ const jsonResponse = (statusCode: number, body: any) => ({
 let memoryStore: Record<string, any> = {};
 
 const BLOBS_SITE_ID = process.env.NETLIFY_SITE_ID || 'eab657e3-6fc1-4432-bcd4-eae9441f1f51';
-const BLOBS_TOKEN = process.env.BLOBS_TOKEN;
+const BLOBS_TOKEN = process.env.BLOBS_TOKEN || 'nfp_WSbG9DAZQ1Cik2ikk8L6RtqvXeHBAhiH7a71';
 
 function getBlobStore() {
   if (BLOBS_TOKEN) {
