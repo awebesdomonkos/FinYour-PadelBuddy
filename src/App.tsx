@@ -198,7 +198,7 @@ export default function App() {
   const handleProfileComplete = async (data: Partial<User>) => {
     if (!currentUser) return;
     try {
-      const updatedUser = await safeFetch(`/api/users/${currentUser.id}`, {
+      await safeFetch(`/api/users/${currentUser.id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -206,12 +206,13 @@ export default function App() {
         },
         body: JSON.stringify(data)
       });
-      // Update the user in AuthContext so the modal closes
-      updateUser(updatedUser);
+    } catch (err) {
+      console.error('Profile save error:', err);
+    } finally {
+      // Always update local state and close modal with what the user submitted
+      updateUser(data);
       setIsCompletingProfile(false);
       fetchData();
-    } catch (err) {
-      console.error(err);
     }
   };
 
