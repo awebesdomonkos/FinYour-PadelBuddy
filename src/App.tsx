@@ -90,6 +90,12 @@ export default function App() {
   const [authForm, setAuthForm] = useState({ username: '', name: '', email: '', password: '', phone: '' });
   const [authMode, setAuthMode] = useState<'landing' | 'login' | 'register'>('landing');
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = (msg: string, duration = 2500) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), duration);
+  };
 
   const safeFetch = async (url: string, options: RequestInit = {}) => {
     const response = await fetch(url, options);
@@ -209,9 +215,10 @@ export default function App() {
     } catch (err) {
       console.error('Profile save error:', err);
     } finally {
-      // Always update local state and close modal with what the user submitted
       updateUser(data);
       setIsCompletingProfile(false);
+      setActiveTab('games');
+      showToast('✅ Profil sikeresen mentve!');
       fetchData();
     }
   };
@@ -493,11 +500,13 @@ export default function App() {
         body: JSON.stringify(updatedData)
       });
       const savedUser = data?.user || data?.data || data;
-      updateUser(savedUser);
+      if (savedUser?.id) updateUser(savedUser); else updateUser(updatedData);
       fetchData();
       setIsEditingProfile(false);
-    } catch (err) {
+      showToast('✅ Profil sikeresen mentve!');
+    } catch (err: any) {
       console.error("Failed to update user", err);
+      showToast('❌ Hiba: ' + (err?.message || 'Mentés sikertelen'));
     }
   };
 
@@ -569,7 +578,7 @@ export default function App() {
             <ProfileEdit 
               user={currentUser} 
               onSave={handleProfileComplete} 
-              onCancel={() => setIsCompletingProfile(false)} 
+              onCancel={() => { setIsCompletingProfile(false); setActiveTab('games'); }} 
               onShowTutorial={() => setIsLevelTutorialOpen(true)}
             />
           </div>
@@ -577,6 +586,12 @@ export default function App() {
         
         {isLevelTutorialOpen && (
           <LevelTutorial onClose={() => setIsLevelTutorialOpen(false)} t={t} />
+        )}
+
+        {toastMsg && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#141414] text-white text-sm font-bold px-6 py-3 rounded-2xl shadow-xl animate-in fade-in slide-in-from-bottom-4">
+            {toastMsg}
+          </div>
         )}
       </div>
     );
@@ -4039,6 +4054,12 @@ function GameDetailDrawer({
           )}
         </div>
       </motion.div>
+    {/* Global Toast */}
+      {toastMsg && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-[#141414] text-white text-sm font-bold px-6 py-3 rounded-2xl shadow-xl whitespace-nowrap">
+          {toastMsg}
+        </div>
+      )}
     </div>
   );
 }
