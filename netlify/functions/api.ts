@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "padelbuddy_super_secret_2026_xK9mQ3nP7rL2wZ8vY4tH6jF1cB5dA0eG";
 const SB_URL = "https://hzykbqyeulkxnwynzhkl.supabase.co";
-const SB_KEY = process.env.SUPABASE_KEY || "sb_publishable_po9cipQR7-Z_9DtpjJU5lw_uLcSXYcT";
+const SB_KEY = process.env.SUPABASE_KEY || "";
 
 const jsonResponse = (statusCode: number, body: any) => ({
   statusCode,
@@ -72,8 +72,14 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
       if (!tokenStr) return null;
       try {
         const decoded: any = jwt.verify(tokenStr, JWT_SECRET);
-        const rows = await db('users', `id=eq.${decoded.userId}&select=*`);
-        return rows[0] || null;
+        try {
+          const rows = await db('users', `id=eq.${decoded.userId}&select=*`);
+          if (rows && rows.length > 0) return rows[0];
+        } catch (dbErr) {
+          console.error('[Auth] DB lookup failed, falling back to JWT:', dbErr);
+        }
+        // Fallback: reconstruct minimal user from JWT so auth still works
+        return { id: decoded.userId, email: decoded.email, name: decoded.name || '', data: {} };
       } catch { return null; }
     };
 
