@@ -66,7 +66,27 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
     const itemId = segments[1] || '';
     const subAction = segments[2] || '';
 
-    if (path === "/health") return jsonResponse(200, { success: true, message: "API running with Supabase" });
+    if (path === "/health") return jsonResponse(200, { success: true, message: "API running with Supabase", keySet: !!SB_KEY });
+
+    if (path === "/debug" && method === "GET") {
+      let dbStatus = "untested";
+      let userCount = 0;
+      try {
+        const testRows = await db("users", "select=id&limit=1");
+        userCount = testRows.length;
+        dbStatus = "OK - connected";
+      } catch(e: any) {
+        dbStatus = "ERROR: " + e.message;
+      }
+      return jsonResponse(200, {
+        success: true,
+        supabaseUrl: SB_URL,
+        keyPresent: !!SB_KEY,
+        keyPrefix: SB_KEY ? SB_KEY.substring(0, 15) + "..." : "MISSING",
+        dbStatus,
+        userCount
+      });
+    }
 
     const verifyAuth = async (tokenStr?: string) => {
       if (!tokenStr) return null;

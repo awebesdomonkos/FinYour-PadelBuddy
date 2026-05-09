@@ -553,15 +553,23 @@ export default function App() {
     return (
       <div className="min-h-screen bg-[#F8F8F5] p-4 md:p-8 flex items-center justify-center">
         <div className="max-w-xl mx-auto w-full">
-          <div className="mb-10 text-center sm:text-left">
-            <h1 className="text-4xl font-black uppercase tracking-tighter italic mb-2">{t('auth.completeProfileTitle')}</h1>
-            <p className="text-[#141414]/60 font-medium">{t('auth.completeProfileSub')}</p>
+          <div className="mb-10 text-center sm:text-left flex items-start justify-between">
+            <div>
+              <h1 className="text-4xl font-black uppercase tracking-tighter italic mb-2">{t('auth.completeProfileTitle')}</h1>
+              <p className="text-[#141414]/60 font-medium">{t('auth.completeProfileSub')}</p>
+            </div>
+            <button
+              onClick={() => { logout(); setAuthMode('landing'); }}
+              className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity mt-1 shrink-0"
+            >
+              <LogOut className="w-3 h-3" /> Kilépés
+            </button>
           </div>
           <div className="bg-white p-2 rounded-[2.5rem] shadow-2xl shadow-black/5">
             <ProfileEdit 
               user={currentUser} 
               onSave={handleProfileComplete} 
-              onCancel={() => {}} 
+              onCancel={() => setIsCompletingProfile(false)} 
               onShowTutorial={() => setIsLevelTutorialOpen(true)}
             />
           </div>
