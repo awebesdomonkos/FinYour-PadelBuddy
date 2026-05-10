@@ -1099,8 +1099,8 @@ export default function App() {
                       <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-2">{t('profile.playTimes')}</h3>
                       <div className="flex flex-wrap gap-2">
                         {currentUser?.playTime && currentUser.playTime.length > 0 ? (
-                          currentUser.playTime.map(t => (
-                            <span key={t} className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">{t}</span>
+                          currentUser.playTime.map(pt => (
+                            <span key={pt} className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">{t(`profile.playTimesList.${pt}`)}</span>
                           ))
                         ) : (
                           <p className="text-xs opacity-40 italic">{t('common.noData')}</p>
@@ -2592,12 +2592,7 @@ function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: { user: User, o
             <div className="grid grid-cols-3 gap-2">
               {[
                 { code: 'hu', label: 'Magyar' },
-                { code: 'en', label: 'English' },
-                { code: 'de', label: 'Deutsch' },
-                { code: 'es', label: 'Español' },
-                { code: 'fr', label: 'Français' },
-                { code: 'uk', label: 'Українська' },
-                { code: 'ru', label: 'Русский' }
+                { code: 'en', label: 'English' }
               ].map(langOption => (
                 <button
                   key={langOption.code}
@@ -3715,8 +3710,6 @@ function LevelTutorial({ onClose, t }: { onClose: () => void, t: (key: string) =
                     lvl === SkillLevel.Bronze ? 'bg-orange-100 text-orange-700' :
                     lvl === SkillLevel.Silver ? 'bg-slate-100 text-slate-700' :
                     lvl === SkillLevel.Gold ? 'bg-yellow-100 text-yellow-700' :
-                    lvl === SkillLevel.Platinum ? 'bg-cyan-100 text-cyan-700' :
-                    lvl === SkillLevel.Diamond ? 'bg-blue-100 text-blue-700' :
                     'bg-[#E2FF3B] text-[#141414]'
                   }`}>
                     {t(`profile.levels.${lvl}`)}

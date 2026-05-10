@@ -2,9 +2,6 @@ export enum SkillLevel {
   Bronze = "Bronze",
   Silver = "Silver",
   Gold = "Gold",
-  Platinum = "Platinum",
-  Diamond = "Diamond",
-  Pro = "Pro",
 }
 
 export enum GameType {
@@ -23,7 +20,6 @@ export enum LFGStatus {
   None = "None",
   Now = "Now",
   Today = "Today",
-  ThisWeek = "This Week",
 }
 
 export enum PadelExperience {
@@ -33,7 +29,7 @@ export enum PadelExperience {
   Years2Plus = "2+ years",
 }
 
-export type Language = 'hu' | 'en' | 'de' | 'es' | 'fr' | 'uk' | 'ru';
+export type Language = 'hu' | 'en';
 
 export interface FriendRequest {
   id: string;
@@ -45,9 +41,9 @@ export interface FriendRequest {
 
 export interface User {
   id: string;
-  username: string;
+  email: string;
   name: string;
-  email?: string;
+  username?: string;
   phone?: string;
   skillLevel: SkillLevel;
   location: {
@@ -60,10 +56,12 @@ export interface User {
   favoriteClubs?: string[];
   interests?: string[];
   playTime?: PlayTime[];
-  playStyle?: "Casual" | "Competitive";
+  playStyle?: "Casual" | "Competitive" | "Technical" | "Power";
   lfgStatus?: LFGStatus;
   lastActive?: string;
   favoritePlayerIds?: string[];
+  friendIds?: string[];
+  blockedUserIds?: string[];
   completedGamesCount?: number;
   attendedGamesCount?: number;
   missedGamesCount?: number;
@@ -71,27 +69,24 @@ export interface User {
   experience?: PadelExperience;
   languagePreference?: Language;
   languages?: string[];
-  friendIds: string[];
-  friendRequests?: string[]; // IDs of FriendRequest
-  blockedUserIds: string[];
   socialLinks?: {
     instagram?: string;
     facebook?: string;
-    whatsapp?: string;
     website?: string;
+  };
+  notificationSettings?: {
+    nearGames: boolean;
+    reminders: boolean;
+    groups: boolean;
+    friends: boolean;
+    requests: boolean;
   };
   privacySettings?: {
     publicProfile: boolean;
     showMatchHistory: boolean;
     showSocialLinks: boolean;
   };
-  notificationSettings?: {
-    nearGames: boolean;
-    reminders: boolean;
-    requests: boolean;
-    friends: boolean;
-    groups: boolean;
-  };
+  createdAt?: string;
 }
 
 export interface Club {
@@ -100,48 +95,9 @@ export interface Club {
   address: string;
   city: string;
   location: { lat: number; lng: number };
-  website?: string;
-  phone?: string;
-}
-
-export interface Group {
-  id: string;
-  name: string;
-  description: string;
-  adminIds: string[]; // Changed from adminId to supporting multiple
-  memberIds: string[];
-  city: string;
-  visibility: 'public' | 'private';
-  recommendedLevel?: SkillLevel;
-  chat?: ChatMessage[];
-  createdAt: string;
-}
-
-export interface GroupInvitation {
-  id: string;
-  groupId: string;
-  invitedUserId: string;
-  invitedByUserId: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  createdAt: string;
-}
-
-export interface Notification {
-  id: string;
-  userId: string;
-  type: "game_near" | "player_needed" | "reminder" | "request_status" | "new_request";
-  title: string;
-  message: string;
-  gameId?: string;
-  friendRequestId?: string;
-  timestamp: string;
-  read: boolean;
-}
-
-export interface GameRequest {
-  userId: string;
-  userName: string;
-  status: "pending" | "accepted" | "rejected";
+  courts?: number;
+  amenities?: string[];
+  imageUrl?: string;
 }
 
 export interface ChatMessage {
@@ -152,14 +108,22 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export interface GameRequest {
+  userId: string;
+  userName: string;
+  status: 'pending' | 'approved' | 'rejected';
+  timestamp: string;
+}
+
 export interface Game {
   id: string;
   creatorId: string;
-  creator?: User;
-  datetime: string;
+  title?: string;
   location: string;
-  clubId?: string;
-  requiredPlayers: number;
+  city?: string;
+  date: string;
+  time: string;
+  maxPlayers: number;
   joinedPlayers: string[];
   recommendedLevel?: SkillLevel;
   gameType?: GameType;
@@ -179,4 +143,40 @@ export interface Game {
   groupId?: string;
   visibility: 'public' | 'group-only' | 'invite-only';
   invitedUserIds?: string[];
+  createdAt: string;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  description?: string;
+  city?: string;
+  adminIds: string[];
+  memberIds: string[];
+  invitedUserIds?: string[];
+  recommendedLevel?: SkillLevel;
+  visibility?: 'public' | 'private';
+  chat?: ChatMessage[];
+  createdAt: string;
+  imageUrl?: string;
+}
+
+export interface GroupInvitation {
+  id: string;
+  groupId: string;
+  invitedUserId: string;
+  invitedByUserId: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: string;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: "game_near" | "player_needed" | "reminder" | "request_status" | "new_request";
+  title: string;
+  message: string;
+  gameId?: string;
+  read?: boolean;
+  createdAt: string;
 }
