@@ -126,6 +126,7 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
           ...restData,
           username: userData.username || name.toLowerCase().replace(/\s+/g, '_'),
           skillLevel: userData.skillLevel || 'Bronze',
+          languagePreference: userData.languagePreference || 'hu',
           location: userData.location || { lat: 0, lng: 0, city: '' },
           friendIds: [], blockedUserIds: [], favoritePlayerIds: [],
           notificationSettings: { nearGames: true, reminders: true, groups: true, friends: true, requests: true },

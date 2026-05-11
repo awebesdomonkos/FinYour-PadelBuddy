@@ -2468,7 +2468,7 @@ function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: { user: User, o
               />
             </div>
             <div className="space-y-2">
-            <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">Avatar</label>
+            <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">{t('profile.avatar')}</label>
             <div className="flex items-center gap-6">
               <div className="w-20 h-20 bg-[#141414] rounded-2xl flex items-center justify-center shrink-0 overflow-hidden border-2 border-white shadow-md">
                  {formData.avatarUrl ? (
@@ -2631,7 +2631,7 @@ function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: { user: User, o
           <div className="space-y-1">
             <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">{t('profile.languages')}</label>
             <div className="flex flex-wrap gap-2 mb-2">
-              {['Hungarian', 'English', 'Spanish', 'German', 'French', 'Italian'].map(lang_val => (
+              {['Hungarian', 'English'].map(lang_val => (
                 <button
                   key={lang_val}
                   onClick={() => {

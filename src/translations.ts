@@ -56,14 +56,14 @@ export const translations: Record<Language, any> = {
         Silver: "Középhaladó. Stabil játékstílus, tudatos falhasználat.",
         Gold: "Haladó. Magas technikai és taktikai tudás."
       },
-      levelTutorialTitle: "Képességszintek", levelTutorialSub: "Padel szintmagyarázat",
+      avatar: "Profilkép", levelTutorialTitle: "Képességszintek", levelTutorialSub: "Padel szintmagyarázat",
       experienceLevels: {
         "Less than 6 months": "Kevesebb mint 6 hónap", "6-12 months": "6-12 hónap",
         "1-2 years": "1-2 év", "2+ years": "Több mint 2 év"
       },
       playTimesList: { "Morning": "Reggel", "Day": "Délután", "Evening": "Este" },
       appLanguageList: { "hu": "Magyar", "en": "English" },
-      languageList: { "Hungarian": "Magyar", "English": "Angol" },
+      languageList: { "Hungarian": "Magyar", "English": "Angol", "Spanish": "Spanyol", "German": "Német", "French": "Francia", "Italian": "Olasz" },
       reliabilityStatus: {
         "New Player": "Új játékos", "Regularly Appears": "Rendszeresen megjelenik",
         "Very Reliable": "Nagyon megbízható", "Unreliable": "Kevésbé megbízható"
@@ -171,14 +171,14 @@ export const translations: Record<Language, any> = {
         Silver: "Intermediate. Stable play style, conscious wall use.",
         Gold: "Advanced. High technical and tactical knowledge."
       },
-      levelTutorialTitle: "Skill Levels", levelTutorialSub: "Padel level guide",
+      avatar: "Profile Picture", levelTutorialTitle: "Skill Levels", levelTutorialSub: "Padel level guide",
       experienceLevels: {
         "Less than 6 months": "Less than 6 months", "6-12 months": "6-12 months",
         "1-2 years": "1-2 years", "2+ years": "2+ years"
       },
       playTimesList: { "Morning": "Morning", "Day": "Afternoon", "Evening": "Evening" },
       appLanguageList: { "hu": "Magyar", "en": "English" },
-      languageList: { "Hungarian": "Hungarian", "English": "English" },
+      languageList: { "Hungarian": "Hungarian", "English": "English", "Spanish": "Spanish", "German": "German", "French": "French", "Italian": "Italian" },
       reliabilityStatus: {
         "New Player": "New Player", "Regularly Appears": "Regularly Appears",
         "Very Reliable": "Very Reliable", "Unreliable": "Unreliable"
