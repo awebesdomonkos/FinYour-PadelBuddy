@@ -232,6 +232,7 @@ export default function App() {
   const handleJoinGame = async (gameId: string) => {
     if (!currentUser) return;
     try {
+      // Always call /request - the API auto-joins for public games
       await safeFetch(`/api/games/${gameId}/request`, {
         method: 'POST',
         headers: { 
@@ -240,9 +241,11 @@ export default function App() {
         },
         body: JSON.stringify({ userId: currentUser?.id, userName: currentUser?.name })
       });
-      fetchData(); // Refresh to see "Pending"
-    } catch (err) {
+      fetchData();
+      showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Joined the game!'));
+    } catch (err: any) {
       console.error("Failed to request joining game", err);
+      showToast('❌ ' + (err?.message || (lang === 'hu' ? 'Csatlakozás sikertelen' : 'Failed to join')));
     }
   };
 
@@ -439,7 +442,7 @@ export default function App() {
 
   const handleFriendResponse = async (requestId: string, status: 'accepted' | 'rejected') => {
     try {
-      await safeFetch('/api/friends/respond', {
+      const data = await safeFetch('/api/friends/respond', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -447,9 +450,37 @@ export default function App() {
         },
         body: JSON.stringify({ requestId, status })
       });
+      const updatedUser = data?.user || data?.data || data;
+      if (updatedUser?.id) updateUser(updatedUser);
       fetchData();
-    } catch (err) {
+      if (status === 'accepted') {
+        showToast('✅ ' + (lang === 'hu' ? 'Barát elfogadva!' : 'Friend request accepted!'));
+      } else {
+        showToast(lang === 'hu' ? 'Kérés elutasítva' : 'Request declined');
+      }
+    } catch (err: any) {
       console.error("Failed to respond to friend request", err);
+      showToast('❌ ' + (err?.message || 'Error'));
+    }
+  };
+
+  const handleGameInviteResponse = async (gameId: string, status: 'accepted' | 'rejected', notifId: string) => {
+    try {
+      if (status === 'accepted') {
+        await safeFetch(`/api/games/${gameId}/request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ userId: currentUser?.id, userName: currentUser?.name })
+        });
+        showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Joined the game!'));
+      } else {
+        showToast(lang === 'hu' ? 'Meghívás elutasítva' : 'Invitation declined');
+      }
+      // Mark notification as read
+      setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, read: true } : n));
+      fetchData();
+    } catch (err: any) {
+      showToast('❌ ' + (err?.message || 'Error'));
     }
   };
 
@@ -724,7 +755,7 @@ export default function App() {
                       
                       if (gameFilter === 'lastminute') {
                         const diffHours = (date.getTime() - now.getTime()) / 3600000;
-                        const slotsLeft = (g.requiredPlayers + 1) - g.joinedPlayers.length;
+                        const slotsLeft = Number(g.requiredPlayers || 4) - g.joinedPlayers.length;
                         return diffHours > 0 && diffHours <= 3 && slotsLeft > 0;
                       }
 
@@ -1270,6 +1301,7 @@ export default function App() {
         {isNotificationsOpen && (
           <NotificationsDrawer 
             notifications={notifications}
+            onGameInviteResponse={handleGameInviteResponse}
             t={t}
             onFriendResponse={handleFriendResponse}
             onRead={(id) => {
@@ -1412,7 +1444,7 @@ function GameCard({
   const isPast = date < now;
   const isLastMinute = !isPast && (date.getTime() - now.getTime()) / 3600000 <= 3;
   
-  const slotsLeft = (game.requiredPlayers + 1) - game.joinedPlayers.length;
+  const slotsLeft = Number(game.requiredPlayers || 4) - game.joinedPlayers.length;
   const isFull = slotsLeft <= 0;
 
   return (
@@ -1905,9 +1937,10 @@ function CreateGameForm({
               onChange={e => setFormData({ ...formData, requiredPlayers: e.target.value })}
               className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none appearance-none"
             >
-              <option value="1">1 {t('players.members') || 'Player'}</option>
-              <option value="2">2 {t('players.members') || 'Players'}</option>
-              <option value="3">3 {t('players.members') || 'Players'}</option>
+              <option value="1">{`1 ${t('games.players')}`}</option>
+              <option value="2">{`2 ${t('games.players')}`}</option>
+              <option value="3">{`3 ${t('games.players')}`}</option>
+              <option value="4">{`4 ${t('games.players')}`}</option>
             </select>
           </div>
         </div>
@@ -1918,7 +1951,7 @@ function CreateGameForm({
         <textarea 
           value={formData.note}
           onChange={e => setFormData({ ...formData, note: e.target.value })}
-          placeholder={lang === 'hu' ? 'Pl. Balos játékos kerestetik, meccs után kávézunk!' : 'e.g. Left player needed, coffee after match!'}
+          placeholder={t('games.notePlaceholder')}
           className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 px-6 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none min-h-[100px]"
         />
       </div>
@@ -2035,8 +2068,8 @@ function CreateGameForm({
                     <div>
                       <p className="text-sm font-bold">{f.name}</p>
                       <div className="flex gap-1">
-                        {friendIds.includes(f.id) && <span className="text-[8px] uppercase font-black px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded-md">Friend</span>}
-                        {groupMemberIds.includes(f.id) && <span className="text-[8px] uppercase font-black px-1.5 py-0.5 bg-purple-100 text-purple-600 rounded-md">Group</span>}
+                        {friendIds.includes(f.id) && <span className="text-[8px] uppercase font-black px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded-md">{t('profile.friends')}</span>}
+                        {groupMemberIds.includes(f.id) && <span className="text-[8px] uppercase font-black px-1.5 py-0.5 bg-purple-100 text-purple-600 rounded-md">{t('nav.groups')}</span>}
                       </div>
                     </div>
                   </div>
@@ -2903,7 +2936,7 @@ function ChatDrawer({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {isOwner && pendingRequests.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 px-1">Join Requests</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 px-1">{t('groups.joinRequest')}</h4>
             {pendingRequests.map(req => (
               <div key={req.userId} className="bg-white p-3 rounded-2xl border border-[#141414]/5 flex items-center justify-between shadow-sm">
                 <span className="text-sm font-bold">{req.userName}</span>
@@ -2993,12 +3026,14 @@ function NotificationsDrawer({
   onClose, 
   onRead,
   onFriendResponse,
+  onGameInviteResponse,
   t
 }: { 
   notifications: PadelNotification[], 
   onClose: () => void,
   onRead: (id: string) => void,
   onFriendResponse?: (requestId: string, status: 'accepted' | 'rejected') => void,
+  onGameInviteResponse?: (gameId: string, status: 'accepted' | 'rejected', notifId: string) => void,
   t: (key: string) => string
 }) {
   return (
@@ -3047,12 +3082,12 @@ function NotificationsDrawer({
                 <h4 className="font-bold text-sm mb-1">{n.title}</h4>
                 <p className="text-xs opacity-60 leading-relaxed mb-3">{n.message}</p>
                 
-                {n.type === 'new_request' && n.friendRequestId && !n.read && (
+                {n.type === 'new_request' && (n.friendRequestId || n.requestId) && !n.read && !n.gameId && (
                   <div className="flex gap-2">
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        onFriendResponse?.(n.friendRequestId!, 'accepted');
+                        onFriendResponse?.(n.friendRequestId || n.requestId || '', 'accepted');
                       }}
                       className="flex-1 py-2 bg-[#141414] text-[#E2FF3B] rounded-lg text-[10px] font-black uppercase tracking-widest"
                     >
@@ -3061,8 +3096,24 @@ function NotificationsDrawer({
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        onFriendResponse?.(n.friendRequestId!, 'rejected');
+                        onFriendResponse?.(n.friendRequestId || n.requestId || '', 'rejected');
                       }}
+                      className="flex-1 py-2 bg-[#141414]/5 text-[#141414]/40 rounded-lg text-[10px] font-black uppercase tracking-widest"
+                    >
+                      {t('common.decline')}
+                    </button>
+                  </div>
+                )}
+                {n.type === 'gameInvite' && n.gameId && !n.read && onGameInviteResponse && (
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); onGameInviteResponse(n.gameId!, 'accepted', n.id); }}
+                      className="flex-1 py-2 bg-[#141414] text-[#E2FF3B] rounded-lg text-[10px] font-black uppercase tracking-widest"
+                    >
+                      {t('common.join')}
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); onGameInviteResponse(n.gameId!, 'rejected', n.id); }}
                       className="flex-1 py-2 bg-[#141414]/5 text-[#141414]/40 rounded-lg text-[10px] font-black uppercase tracking-widest"
                     >
                       {t('common.decline')}
@@ -3288,7 +3339,7 @@ function MatchHistory({ games = [] }: { games: Game[] }) {
               </div>
               <h4 className="font-bold text-sm truncate max-w-[150px]">{game.location}</h4>
               <p className="text-[10px] font-bold text-[#E2FF3B] bg-[#141414] inline-block px-1.5 rounded mt-1">
-                {game.result?.score || 'No score recorded'}
+                {game.result?.score || (lang === 'hu' ? 'Nincs eredmény' : 'No score recorded')}
               </p>
             </div>
           </div>
@@ -3858,7 +3909,7 @@ function GameDetailDrawer({
   onOpenChat: () => void
 }) {
   const date = new Date(game.datetime);
-  const slotsLeft = (game.requiredPlayers + 1) - game.joinedPlayers.length;
+  const slotsLeft = Number(game.requiredPlayers || 4) - game.joinedPlayers.length;
   const isJoined = game.joinedPlayers.includes(currentUser?.id || '');
   const isOwner = game.creatorId === currentUser?.id;
   const isFull = slotsLeft <= 0;
@@ -3948,7 +3999,7 @@ function GameDetailDrawer({
             <div className="flex justify-between items-center">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{t('groups.members')}</h4>
               <span className="text-[10px] font-black px-2 py-0.5 bg-[#141414] text-[#E2FF3B] rounded-full">
-                {game.joinedPlayers.length} / {game.requiredPlayers + 1}
+                {game.joinedPlayers.length} / {Number(game.requiredPlayers || 4)}
               </span>
             </div>
             

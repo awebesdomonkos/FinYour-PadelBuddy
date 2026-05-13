@@ -212,8 +212,16 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
       }
       if (itemId === "request" && method === "POST") {
         const { toUserId } = JSON.parse(body || "{}");
-        const created = await db('friend_requests', '', { method: 'POST', body: { id: Math.random().toString(36).substr(2, 9), from_user_id: authUser.id, to_user_id: toUserId, status: 'pending', created_at: new Date().toISOString() } });
+        const reqId = Math.random().toString(36).substr(2, 9);
+        const created = await db('friend_requests', '', { method: 'POST', body: { id: reqId, from_user_id: authUser.id, to_user_id: toUserId, status: 'pending', created_at: new Date().toISOString() } });
         const req = Array.isArray(created) ? created[0] : created;
+        // Notify recipient
+        const notifId = Math.random().toString(36).substr(2, 9);
+        await db('notifications', '', { method: 'POST', body: {
+          id: notifId, user_id: toUserId,
+          data: { type: 'new_request', title: 'Új barátkérés', message: `${authUser.name} barátnak jelölt`, fromUserId: authUser.id, requestId: reqId, read: false },
+          created_at: new Date().toISOString()
+        }}).catch(() => {});
         return jsonResponse(201, { success: true, data: { id: req.id, fromUserId: req.from_user_id, toUserId: req.to_user_id, status: req.status, createdAt: req.created_at } });
       }
       if (itemId === "respond" && method === "POST") {
@@ -234,6 +242,15 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
               db('users', `id=eq.${req.to_user_id}`, { method: 'PATCH', body: { data: { ...d2, friendIds: f2 } } })
             ]);
           }
+          // Notify sender that request was accepted
+          const notifId = Math.random().toString(36).substr(2, 9);
+          const acceptorRows = await db('users', `id=eq.${authUser.id}&select=*`);
+          const acceptorName = acceptorRows[0] ? (rowToUser(acceptorRows[0]).name || authUser.name) : authUser.name;
+          await db('notifications', '', { method: 'POST', body: {
+            id: notifId, user_id: req.from_user_id,
+            data: { type: 'request_status', title: 'Barátkérés elfogadva', message: `${acceptorName} elfogadta a barátkérésedet`, fromUserId: authUser.id, read: false },
+            created_at: new Date().toISOString()
+          }}).catch(() => {});
         }
         const updated = await db('users', `id=eq.${authUser.id}&select=*`);
         return jsonResponse(200, { success: true, data: safeUser(updated[0]), user: safeUser(updated[0]) });
@@ -256,8 +273,30 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
       if (method === "POST" && !itemId) {
         const payload = JSON.parse(body || "{}");
         const id = Math.random().toString(36).substr(2, 9);
-        const gameData = { ...payload, id, creatorId: authUser.id, joinedPlayers: [authUser.id], requests: [], chat: [], status: payload.status || 'scheduled', createdAt: new Date().toISOString() };
+        const gameData = {
+          ...payload,
+          id,
+          creatorId: authUser.id,
+          joinedPlayers: [authUser.id],
+          requests: [],
+          chat: [],
+          requiredPlayers: Number(payload.requiredPlayers) || 4,
+          status: payload.status || 'scheduled',
+          createdAt: new Date().toISOString()
+        };
         const created = await db('games', '', { method: 'POST', body: { id, data: gameData } });
+        // Send notifications to invited users
+        if (payload.invitedUserIds && payload.invitedUserIds.length > 0) {
+          await Promise.all(payload.invitedUserIds.map(async (uid: string) => {
+            const notifId = Math.random().toString(36).substr(2, 9);
+            await db('notifications', '', { method: 'POST', body: {
+              id: notifId,
+              user_id: uid,
+              data: { type: 'gameInvite', title: 'Játékmeghívás', message: `${authUser.name} meghívott egy meccsre: ${payload.location}`, gameId: id, fromUserId: authUser.id, read: false },
+              created_at: new Date().toISOString()
+            }}).catch(() => {});
+          }));
+        }
         return jsonResponse(201, { success: true, data: rowToObj(Array.isArray(created) ? created[0] : created) });
       }
       if (itemId) {
@@ -273,12 +312,62 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
         if (method === "POST" && subAction) {
           const payload = JSON.parse(body || "{}");
           if (subAction === "request") {
-            if (!gameData.requests) gameData.requests = [];
-            if (!gameData.requests.find((r: any) => r.userId === authUser.id)) gameData.requests.push({ userId: authUser.id, userName: authUser.name, status: 'pending', timestamp: new Date().toISOString() });
+            // Check if game is full
+            const maxPlayers = Number(gameData.requiredPlayers) || 4;
+            if (gameData.joinedPlayers.length >= maxPlayers) {
+              return jsonResponse(400, { success: false, message: 'Game is full' });
+            }
+            // Public games: auto-join; others: add to requests
+            if (gameData.visibility === 'public' || !gameData.visibility) {
+              if (!gameData.joinedPlayers.includes(authUser.id)) {
+                gameData.joinedPlayers.push(authUser.id);
+                // Notify creator of new joiner
+                if (gameData.creatorId !== authUser.id) {
+                  const nid = Math.random().toString(36).substr(2,9);
+                  await db('notifications', '', { method: 'POST', body: {
+                    id: nid, user_id: gameData.creatorId,
+                    data: { type: 'new_request', title: 'Új résztvevő', message: `${authUser.name} csatlakozott a meccsedhez: ${gameData.location}`, gameId: itemId, fromUserId: authUser.id, read: false },
+                    created_at: new Date().toISOString()
+                  }}).catch(() => {});
+                }
+              }
+            } else {
+              if (!gameData.requests) gameData.requests = [];
+              if (!gameData.requests.find((r: any) => r.userId === authUser.id)) {
+                gameData.requests.push({ userId: authUser.id, userName: authUser.name, status: 'pending', timestamp: new Date().toISOString() });
+                // Notify game creator
+                const notifId = Math.random().toString(36).substr(2, 9);
+                await db('notifications', '', { method: 'POST', body: {
+                  id: notifId, user_id: gameData.creatorId,
+                  data: { type: 'new_request', title: 'Csatlakozási kérelem', message: `${authUser.name} csatlakozni szeretne a meccsedhez`, gameId: itemId, fromUserId: authUser.id, read: false },
+                  created_at: new Date().toISOString()
+                }}).catch(() => {});
+              }
+            }
           } else if (subAction === "approve") {
             const { userId, approve } = payload;
             const rIdx = (gameData.requests || []).findIndex((r: any) => r.userId === userId);
-            if (rIdx !== -1) { gameData.requests[rIdx].status = approve ? 'approved' : 'rejected'; if (approve && !gameData.joinedPlayers.includes(userId)) gameData.joinedPlayers.push(userId); }
+            if (rIdx !== -1) {
+              gameData.requests[rIdx].status = approve ? 'approved' : 'rejected';
+              if (approve && !gameData.joinedPlayers.includes(userId)) {
+                gameData.joinedPlayers.push(userId);
+                // Notify the approved user
+                const notifId = Math.random().toString(36).substr(2, 9);
+                await db('notifications', '', { method: 'POST', body: {
+                  id: notifId, user_id: userId,
+                  data: { type: 'request_status', title: 'Kérelem elfogadva', message: `Csatlakozhatsz a meccshez: ${gameData.location}`, gameId: itemId, read: false },
+                  created_at: new Date().toISOString()
+                }}).catch(() => {});
+              } else if (!approve) {
+                // Notify rejected user
+                const notifId = Math.random().toString(36).substr(2, 9);
+                await db('notifications', '', { method: 'POST', body: {
+                  id: notifId, user_id: userId,
+                  data: { type: 'request_status', title: 'Kérelem elutasítva', message: `A meccsre való csatlakozási kérelmed elutasításra került: ${gameData.location}`, gameId: itemId, read: false },
+                  created_at: new Date().toISOString()
+                }}).catch(() => {});
+              }
+            }
           } else if (subAction === "join") {
             if (!gameData.joinedPlayers.includes(authUser.id)) gameData.joinedPlayers.push(authUser.id);
           } else if (subAction === "chat") {
