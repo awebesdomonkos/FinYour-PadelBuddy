@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -21,40 +21,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const safeFetch = async (url: string, options: RequestInit = {}) => {
-    const response = await fetch(url, options);
-    const text = await response.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      throw new Error('Server returned invalid JSON response');
-    }
-    if (!response.ok) {
-      if (response.status === 401 && url === '/api/me') {
-        logout();
-      }
-      throw new Error(data?.message || data?.error || 'Request failed');
-    }
-    return data; // Return full object, caller can decide what to use
-  };
+  const logout = useCallback(() => {
+    setToken(null);
+    setCurrentUser(null);
+    localStorage.removeItem('token');
+  }, []);
 
-  const fetchMe = async (authToken: string) => {
+  const safeFetch = useCallback(async (url: string, options: RequestInit = {}) => {
+    try {
+      const response = await fetch(url, options);
+      const text = await response.text();
+      let data: any;
+      try { data = JSON.parse(text); } catch { throw new Error('Server error'); }
+      if (!response.ok) {
+        if (response.status === 401) logout();
+        throw new Error(data?.message || data?.error || 'Request failed');
+      }
+      return data;
+    } catch (err: any) {
+      if (err.message === 'Failed to fetch' || err.message === 'NetworkError') {
+        throw new Error('Hálózati hiba. Ellenőrizd az internetkapcsolatot.');
+      }
+      throw err;
+    }
+  }, [logout]);
+
+  const fetchMe = useCallback(async (authToken: string) => {
     try {
       const data = await safeFetch('/api/me', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
+        headers: { 'Authorization': `Bearer ${authToken}` }
       });
       const user = data?.user || data?.data || data;
-      setCurrentUser(user);
+      if (user?.id) setCurrentUser(user);
+      else logout();
     } catch (err) {
-      console.error("Auth verify error:", err);
+      console.error('Auth verify error:', err);
       logout();
     } finally {
       setLoading(false);
     }
-  };
+  }, [safeFetch, logout]);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -63,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [fetchMe]);
 
   const login = async (email: string, password: string) => {
     setAuthError(null);
@@ -73,6 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.toLowerCase().trim(), password })
       });
+      if (!data.token || !data.user) throw new Error('Invalid server response');
       setToken(data.token);
       setCurrentUser(data.user);
       localStorage.setItem('token', data.token);
@@ -90,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
       });
+      if (!data.token || !data.user) throw new Error('Invalid server response');
       setToken(data.token);
       setCurrentUser(data.user);
       localStorage.setItem('token', data.token);
@@ -99,29 +107,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    setToken(null);
-    setCurrentUser(null);
-    localStorage.removeItem('token');
-  };
-
   const updateUser = (data: Partial<User>) => {
     if (currentUser) {
-      setCurrentUser({ ...currentUser, ...data });
+      setCurrentUser(prev => prev ? { ...prev, ...data } : prev);
     }
   };
 
   return (
     <AuthContext.Provider value={{
-      currentUser,
-      token,
-      loading,
-      login,
-      register,
-      logout,
-      updateUser,
-      authError,
-      setAuthError
+      currentUser, token, loading, login, register, logout, updateUser, authError, setAuthError
     }}>
       {children}
     </AuthContext.Provider>
@@ -130,8 +124,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

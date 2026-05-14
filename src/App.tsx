@@ -54,6 +54,44 @@ import {
   Language
 } from './types.ts';
 
+
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean; error: any}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, info: any) {
+    console.error('App Error:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#F8F8F5] flex items-center justify-center p-8">
+          <div className="max-w-sm w-full text-center space-y-6">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+              <span className="text-3xl">⚠️</span>
+            </div>
+            <div>
+              <h2 className="text-2xl font-black uppercase tracking-tight mb-2">Hiba történt</h2>
+              <p className="text-sm opacity-50">Kérjük frissítsd az oldalt</p>
+            </div>
+            <button
+              onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+              className="w-full py-4 bg-[#141414] text-[#E2FF3B] rounded-2xl font-black uppercase tracking-widest"
+            >
+              Újratöltés
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const { currentUser, token, login, register, logout, updateUser, authError, setAuthError, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'games' | 'players' | 'profile' | 'create' | 'groups' | 'mygames'>('games');
@@ -308,8 +346,12 @@ export default function App() {
 
   const handleSendMessage = async (gameId: string, text: string) => {
     if (!currentUser) return;
+    const optimisticMsg = { id: Math.random().toString(36).substr(2, 9), userId: currentUser.id, userName: currentUser.name, text, timestamp: new Date().toISOString() };
+    // Optimistic update
+    setGames(prev => prev.map(g => g.id === gameId ? { ...g, chat: [...(g.chat || []), optimisticMsg] } : g));
+    if (selectedGame?.id === gameId) setSelectedGame(prev => prev ? { ...prev, chat: [...(prev.chat || []), optimisticMsg] } : prev);
     try {
-      await safeFetch(`/api/games/${gameId}/chat`, {
+      const updatedGame = await safeFetch(`/api/games/${gameId}/chat`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -317,9 +359,13 @@ export default function App() {
         },
         body: JSON.stringify({ userId: currentUser?.id, userName: currentUser?.name, text })
       });
-      fetchData();
+      if (updatedGame?.chat) {
+        setGames(prev => prev.map(g => g.id === gameId ? { ...g, chat: updatedGame.chat } : g));
+        if (selectedGame?.id === gameId) setSelectedGame(prev => prev ? { ...prev, chat: updatedGame.chat } : prev);
+      }
     } catch (err) {
       console.error(err);
+      showToast('❌ ' + (lang === 'hu' ? 'Üzenet küldése sikertelen' : 'Failed to send message'));
     }
   };
 
@@ -366,8 +412,11 @@ export default function App() {
 
   const handleSendGroupMessage = async (text: string) => {
     if (!currentUser || !selectedGroup) return;
+    const optimisticMsg = { id: Math.random().toString(36).substr(2, 9), userId: currentUser.id, userName: currentUser.name, text, timestamp: new Date().toISOString() };
+    // Optimistic update
+    setSelectedGroup(prev => prev ? { ...prev, chat: [...(prev.chat || []), optimisticMsg] } : prev);
     try {
-      const newMessage = await safeFetch(`/api/groups/${selectedGroup.id}/chat`, {
+      const updatedGroup = await safeFetch(`/api/groups/${selectedGroup.id}/chat`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -375,17 +424,13 @@ export default function App() {
         },
         body: JSON.stringify({ userId: currentUser?.id, userName: currentUser?.name, text })
       });
-      // Optimistic update
-      const updatedGroups = groups.map(g => {
-        if (g.id === selectedGroup.id) {
-          return { ...g, chat: [...(g.chat || []), newMessage] };
-        }
-        return g;
-      });
-      setGroups(updatedGroups);
-      setSelectedGroup({ ...selectedGroup, chat: [...(selectedGroup.chat || []), newMessage] });
+      if (updatedGroup?.chat) {
+        setSelectedGroup(prev => prev ? { ...prev, chat: updatedGroup.chat } : prev);
+      }
+      fetchData();
     } catch (err) {
       console.error("Failed to send group message", err);
+      showToast('❌ ' + (lang === 'hu' ? 'Üzenet küldése sikertelen' : 'Failed to send message'));
     }
   };
 
@@ -435,8 +480,10 @@ export default function App() {
         body: JSON.stringify({ fromUserId: currentUser?.id, toUserId })
       });
       fetchData();
-    } catch (err) {
+      showToast('✅ ' + (lang === 'hu' ? 'Barátkérés elküldve!' : 'Friend request sent!'));
+    } catch (err: any) {
       console.error("Failed to send friend request", err);
+      showToast('❌ ' + (err?.message || (lang === 'hu' ? 'Hiba történt' : 'Error')));
     }
   };
 
@@ -867,7 +914,8 @@ export default function App() {
                   .filter(p => !currentUser || !currentUser.blockedUserIds?.includes(p.id))
                   .filter(p => {
                     const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                     p.location.city.toLowerCase().includes(searchQuery.toLowerCase());
+                                     (p.location?.city || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                     (p.username || '').toLowerCase().includes(searchQuery.toLowerCase());
                     if (!matchSearch) return false;
                     
                     if (playerFilter === 'active') {
@@ -1107,7 +1155,7 @@ export default function App() {
                               </div>
                               <div>
                                 <p className="text-sm font-bold">{friend.name}</p>
-                                <p className="text-[10px] opacity-40 font-bold uppercase">{friend.skillLevel} • {friend.location.city}</p>
+                                <p className="text-[10px] opacity-40 font-bold uppercase">{friend.skillLevel} • {friend.location?.city || ''}</p>
                               </div>
                             </div>
                             <button 
@@ -1439,9 +1487,10 @@ function GameCard({
   onShowDetails: () => void,
   t: (key: string) => string
 }) {
-  const date = new Date(game.datetime);
+  const gameDateTime = game.datetime || (game.date && game.time ? `${game.date}T${game.time}` : null);
+  const date = gameDateTime ? new Date(gameDateTime) : new Date();
   const now = new Date();
-  const isPast = date < now;
+  const isPast = gameDateTime ? date < now : false;
   const isLastMinute = !isPast && (date.getTime() - now.getTime()) / 3600000 <= 3;
   
   const slotsLeft = Number(game.requiredPlayers || 4) - game.joinedPlayers.length;
@@ -1716,7 +1765,7 @@ function PlayerCard({
         </div>
         <div className="flex gap-2 items-center mt-1">
           <span className="text-[10px] font-black uppercase tracking-widest bg-[#141414]/5 px-2 py-0.5 rounded italic">{t(`profile.levels.${player.skillLevel}`)}</span>
-          <span className="text-[10px] opacity-40 flex items-center gap-0.5 truncate max-w-[100px]"><MapPin className="w-2 h-2 shrink-0" /> {player.location.city}</span>
+          <span className="text-[10px] opacity-40 flex items-center gap-0.5 truncate max-w-[100px]"><MapPin className="w-2 h-2 shrink-0" /> {player.location?.city || ''}</span>
         </div>
       </div>
       <div className="flex items-center gap-1">
@@ -2543,12 +2592,66 @@ function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: { user: User, o
               <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">{t('profile.location')}</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30" />
-                <input 
-                  type="text" 
+<input 
+                  type="text"
+                  list="hu-cities"
                   value={formData.city}
-                  onChange={e => setFormData({ ...formData, city: e.target.value })}
+                  onChange={e => setFormData({ ...formData, city: e.target.value }  )}
+                  placeholder={t('profile.locationPlaceholder')}
                   className="w-full bg-[#141414]/5 border-none rounded-xl py-3 pl-8 pr-4 text-sm font-bold focus:ring-1 focus:ring-[#E2FF3B] outline-none"
                 />
+                <datalist id="hu-cities">
+                  <option value="Budapest" />
+<option value="Debrecen" />
+<option value="Miskolc" />
+<option value="Pécs" />
+<option value="Győr" />
+<option value="Nyíregyháza" />
+<option value="Kecskemét" />
+<option value="Székesfehérvár" />
+<option value="Szombathely" />
+<option value="Szolnok" />
+<option value="Tatabánya" />
+<option value="Kaposvár" />
+<option value="Érd" />
+<option value="Veszprém" />
+<option value="Zalaegerszeg" />
+<option value="Sopron" />
+<option value="Eger" />
+<option value="Dunakeszi" />
+<option value="Gödöllő" />
+<option value="Ózd" />
+<option value="Nagykanizsa" />
+<option value="Békéscsaba" />
+<option value="Szeged" />
+<option value="Dunaújváros" />
+<option value="Szigetszentmiklós" />
+<option value="Hódmezővásárhely" />
+<option value="Budaörs" />
+<option value="Cegléd" />
+<option value="Baja" />
+<option value="Pápa" />
+<option value="Gyula" />
+<option value="Mosonmagyaróvár" />
+<option value="Esztergom" />
+<option value="Vác" />
+<option value="Ajka" />
+<option value="Szekszárd" />
+<option value="Kiskunfélegyháza" />
+<option value="Orosháza" />
+<option value="Hatvan" />
+<option value="Gyöngyös" />
+<option value="Komárom" />
+<option value="Kazincbarcika" />
+<option value="Eger" />
+<option value="Salgótarján" />
+<option value="Siófok" />
+<option value="Paks" />
+<option value="Várpalota" />
+<option value="Celldömölk" />
+<option value="Tapolca" />
+<option value="Balatonalmádi" />
+                </datalist>
               </div>
             </div>
           </div>
@@ -3331,7 +3434,7 @@ function MatchHistory({ games = [] }: { games: Game[] }) {
             <div>
               <div className="flex items-center gap-2">
                 <p className="text-xs font-black uppercase tracking-widest opacity-40">
-                  {new Date(game.datetime).toLocaleDateString('hu-HU')}
+                  {game.datetime || game.date ? new Date(game.datetime || game.date).toLocaleDateString('hu-HU') : '-'}
                 </p>
                 <span className="text-[10px] px-2 py-0.5 bg-[#141414]/5 rounded-full font-bold opacity-60 capitalize">
                   {game.gameType || 'Friendly'}
@@ -3485,7 +3588,7 @@ function ProfileDrawer({
                  <h2 className="text-2xl sm:text-3xl font-black uppercase leading-none italic">{user.name}</h2>
                  {user.username && <p className="text-[10px] font-black opacity-30 lowercase mt-0.5">@{user.username}</p>}
                  <p className="text-xs font-bold opacity-40 uppercase tracking-widest flex items-center gap-1 mt-2">
-                   <MapPin className="w-3 h-3" /> {user.location.city}
+                   <MapPin className="w-3 h-3" /> {user.location?.city || ''}
                  </p>
                </div>
                <div className="flex gap-2">
@@ -3840,11 +3943,18 @@ function CreateGroupModal({
              <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">{t('groups.location')}</label>
               <input 
-                type="text" 
+                type="text"
+                list="hu-cities-group"
                 value={formData.city}
                 onChange={e => setFormData({ ...formData, city: e.target.value })}
+                placeholder={t('profile.locationPlaceholder')}
                 className="w-full bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-sm font-bold focus:ring-1 focus:ring-[#E2FF3B] outline-none"
               />
+              <datalist id="hu-cities-group">
+                {["Budapest","Debrecen","Miskolc","Pécs","Győr","Nyíregyháza","Kecskemét","Székesfehérvár","Szombathely","Szolnok","Tatabánya","Kaposvár","Érd","Veszprém","Zalaegerszeg","Sopron","Eger","Szeged","Dunakeszi","Nagykanizsa","Békéscsaba","Dunaújváros","Gyula","Mosonmagyaróvár","Esztergom","Vác","Siófok","Paks"].map(c => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">{t('groups.recommendedLevel')}</label>
@@ -3908,7 +4018,8 @@ function GameDetailDrawer({
   onJoin: () => void,
   onOpenChat: () => void
 }) {
-  const date = new Date(game.datetime);
+  const gameDateTime = game.datetime || (game.date && game.time ? `${game.date}T${game.time}` : null);
+  const date = gameDateTime ? new Date(gameDateTime) : new Date();
   const slotsLeft = Number(game.requiredPlayers || 4) - game.joinedPlayers.length;
   const isJoined = game.joinedPlayers.includes(currentUser?.id || '');
   const isOwner = game.creatorId === currentUser?.id;

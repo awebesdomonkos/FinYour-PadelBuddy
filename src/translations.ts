@@ -93,8 +93,9 @@ export const translations: Record<Language, any> = {
       gameTypes: { "Friendly": "Baráti", "Competitive": "Verseny", "Training": "Edzés" },
       filters: { all: "Mind", today: "Ma", tomorrow: "Holnap", weekend: "Hétvége", lastminute: "Last Minute 🔥" },
       recommendedLevel: "Ajánlott szint", players: "játékos", spots: "hely",
-      requestToJoin: "Csatlakozás kérése", cancelRequest: "Kérelem visszavonása",
+      requestToJoin: "Csatlakozás kérése", cancelRequest: "Kérelem visszavonása", leaveGame: "Kilépés a meccsből",
       deleteGame: "Játék törlése", editGame: "Játék szerkesztése",
+      deleteConfirmTitle: "Játék törlése", deleteConfirmMessage: "Biztosan törölni szeretnéd ezt a játékot? Ez a művelet nem vonható vissza.",
       confirmDelete: "Biztosan törölni akarod ezt a meccset?",
       noGamesYet: "Még nincs meccs. Legyél te az első!", myCreated: "Általam szervezett", myJoined: "Csatlakozott meccsek"
     },
@@ -208,8 +209,9 @@ export const translations: Record<Language, any> = {
       gameTypes: { "Friendly": "Friendly", "Competitive": "Competitive", "Training": "Training" },
       filters: { all: "All", today: "Today", tomorrow: "Tomorrow", weekend: "Weekend", lastminute: "Last Minute 🔥" },
       recommendedLevel: "Recommended Level", players: "players", spots: "spots",
-      requestToJoin: "Request to Join", cancelRequest: "Cancel Request",
+      requestToJoin: "Request to Join", cancelRequest: "Cancel Request", leaveGame: "Leave Game",
       deleteGame: "Delete Game", editGame: "Edit Game",
+      deleteConfirmTitle: "Delete Game", deleteConfirmMessage: "Are you sure you want to delete this game? This action cannot be undone.",
       confirmDelete: "Are you sure you want to delete this match?",
       noGamesYet: "No games yet. Be the first to create one!", myCreated: "Created by me", myJoined: "Joined matches"
     },

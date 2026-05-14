@@ -285,6 +285,28 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
           createdAt: new Date().toISOString()
         };
         const created = await db('games', '', { method: 'POST', body: { id, data: gameData } });
+        // Notify users of same skill level about new public game
+        if (gameData.visibility === 'public' || !gameData.visibility) {
+          const allUsersRows = await db('users', 'select=id,data').catch(() => []);
+          const notifPromises = allUsersRows
+            .filter((u: any) => {
+              const uData = u.data || {};
+              return u.id !== authUser.id &&
+                uData.skillLevel === gameData.recommendedLevel &&
+                uData.notificationSettings?.nearGames !== false;
+            })
+            .slice(0, 20) // Max 20 notifications
+            .map(async (u: any) => {
+              const nid = Math.random().toString(36).substr(2, 9);
+              return db('notifications', '', { method: 'POST', body: {
+                id: nid, user_id: u.id,
+                data: { type: 'game_near', title: 'Új meccs a közeledben!', message: `${authUser.name} új ${gameData.recommendedLevel} szintű meccset hirdetett: ${gameData.location}`, gameId: id, fromUserId: authUser.id, read: false },
+                created_at: new Date().toISOString()
+              }}).catch(() => {});
+            });
+          await Promise.all(notifPromises).catch(() => {});
+        }
+
         // Send notifications to invited users
         if (payload.invitedUserIds && payload.invitedUserIds.length > 0) {
           await Promise.all(payload.invitedUserIds.map(async (uid: string) => {
