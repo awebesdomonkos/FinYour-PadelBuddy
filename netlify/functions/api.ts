@@ -434,7 +434,7 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
         if (method === "DELETE") { await db('groups', `id=eq.${itemId}`, { method: 'DELETE' }); return jsonResponse(200, { success: true }); }
         if (method === "POST" && subAction) {
           const payload = JSON.parse(body || "{}");
-          if (subAction === "join") { if (!groupData.memberIds.includes(authUser.id)) groupData.memberIds.push(authUser.id); }
+          if (subAction === "join") { if (!groupData.memberIds) groupData.memberIds = []; if (!groupData.memberIds.includes(authUser.id)) { groupData.memberIds.push(authUser.id); } }
           else if (subAction === "invite") { if (!groupData.invitedUserIds) groupData.invitedUserIds = []; if (!groupData.invitedUserIds.includes(payload.invitedUserId)) groupData.invitedUserIds.push(payload.invitedUserId); }
           else if (subAction === "chat") { if (!groupData.chat) groupData.chat = []; groupData.chat.push({ id: Math.random().toString(36).substr(2, 9), userId: authUser.id, userName: authUser.name, text: payload.text, timestamp: new Date().toISOString() }); }
           const updated = await db('groups', `id=eq.${itemId}`, { method: 'PATCH', body: { data: groupData } });

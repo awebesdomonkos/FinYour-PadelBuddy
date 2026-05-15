@@ -790,7 +790,7 @@ export default function App() {
                       // Visibility controls
                       if (g.visibility === 'group-only' && g.groupId) {
                         const group = (groups || []).find(gr => gr.id === g.groupId);
-                        if (!group?.memberIds.includes(currentUser?.id || '') && g.creatorId !== currentUser?.id) return false;
+                        if (!(group?.memberIds || []).includes(currentUser?.id || '') && g.creatorId !== currentUser?.id) return false;
                       }
                       
                       if (g.visibility === 'invite-only') {
@@ -975,7 +975,7 @@ export default function App() {
               <CreateGameForm 
                 creatorId={currentUser?.id || ''} 
                 token={token || ''}
-                groups={(groups || []).filter(g => currentUser && g.memberIds.includes(currentUser.id))}
+                groups={(groups || []).filter(g => currentUser && (g.memberIds || []).includes(currentUser.id))}
                 allUsers={players || []}
                 t={t}
                 lang={lang}
@@ -1128,7 +1128,7 @@ export default function App() {
                       </div>
                       <div className="text-center p-2 bg-[#141414]/5 rounded-2xl">
                         <p className="text-[8px] font-black uppercase opacity-40">{t('nav.groups')}</p>
-                        <p className="text-xl font-black">{(groups || []).filter(g => currentUser && g.memberIds.includes(currentUser.id)).length}</p>
+                        <p className="text-xl font-black">{(groups || []).filter(g => currentUser && (g.memberIds || []).includes(currentUser.id)).length}</p>
                       </div>
                       <div className="text-center p-2 bg-[#141414]/5 rounded-2xl">
                         <p className="text-[8px] font-black uppercase opacity-40">{t('profile.friends')}</p>
@@ -1173,6 +1173,31 @@ export default function App() {
                         )}
                       </div>
                     </div>
+
+                    {/* My Groups Section */}
+                    {(groups || []).filter(g => currentUser && (g.memberIds || []).includes(currentUser.id)).length > 0 && (
+                      <div className="pt-4 pb-4 border-b border-[#141414]/5">
+                        <h3 className="text-xs font-black uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
+                          <Users className="w-3 h-3" /> {t('nav.groups')}
+                        </h3>
+                        <div className="space-y-2">
+                          {(groups || []).filter(g => currentUser && (g.memberIds || []).includes(currentUser.id)).map(group => (
+                            <div key={group.id} className="flex items-center justify-between p-3 bg-[#141414]/5 rounded-2xl">
+                              <div>
+                                <p className="text-sm font-bold">{group.name}</p>
+                                <p className="text-[10px] opacity-40 font-bold uppercase">{group.city} • {(group.memberIds || []).length} {t('groups.members')}</p>
+                              </div>
+                              <button
+                                onClick={() => { setActiveTab('groups'); }}
+                                className="px-3 py-1.5 bg-[#141414] text-[#E2FF3B] rounded-lg text-[10px] font-black uppercase tracking-widest"
+                              >
+                                {t('games.chatShort')}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="pb-4 border-b border-[#141414]/5">
                       <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-2">{t('profile.playTimes')}</h3>
@@ -3347,7 +3372,7 @@ function GroupsTab({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {groups.map(group => {
-          const isMember = group.memberIds.includes(currentUser.id);
+          const isMember = (group.memberIds || []).includes(currentUser.id);
           return (
             <div key={group.id} className="bg-white p-5 rounded-3xl border border-[#141414]/5 shadow-sm hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-3">
@@ -3372,18 +3397,18 @@ function GroupsTab({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-2">
-                    {group.memberIds.slice(0, 3).map(mid => (
+                    {(group.memberIds || []).slice(0, 3).map(mid => (
                       <div key={mid} className="w-8 h-8 rounded-full border-2 border-white bg-[#141414]/10 overflow-hidden flex items-center justify-center">
                         <UserIcon className="w-4 h-4 opacity-40" />
                       </div>
                     ))}
-                    {group.memberIds.length > 3 && (
+                    {(group.memberIds || []).length > 3 && (
                       <div className="w-8 h-8 rounded-full border-2 border-white bg-[#141414] flex items-center justify-center text-[10px] font-black text-[#E2FF3B]">
                         +{group.memberIds.length - 3}
                       </div>
                     )}
                   </div>
-                  <span className="text-[10px] font-bold opacity-30 uppercase">{group.memberIds.length} {t('groups.members')}</span>
+                  <span className="text-[10px] font-bold opacity-30 uppercase">{(group.memberIds || []).length} {t('groups.members')}</span>
                 </div>
                 {isMember ? (
                   <button 
@@ -3412,7 +3437,7 @@ function GroupsTab({
 
 function MatchHistory({ games = [] }: { games: Game[] }) {
   const { t } = useI18n('hu');
-  const completedGames = (games || []).filter(g => g.isCompleted).sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
+  const completedGames = (games || []).filter(g => g.isCompleted || g.status === 'played').sort((a, b) => { const da = a.datetime || a.date || ''; const db2 = b.datetime || b.date || ''; return new Date(db2).getTime() - new Date(da).getTime(); });
 
   if (completedGames.length === 0) {
     return (

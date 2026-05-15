@@ -173,10 +173,14 @@ export interface GroupInvitation {
 export interface Notification {
   id: string;
   userId: string;
-  type: "game_near" | "player_needed" | "reminder" | "request_status" | "new_request";
+  type: "game_near" | "player_needed" | "reminder" | "request_status" | "new_request" | "gameInvite";
   title: string;
   message: string;
   gameId?: string;
   read?: boolean;
   createdAt: string;
+  requestId?: string;
+  friendRequestId?: string;
+  fromUserId?: string;
+  requestUserId?: string;
 }
