@@ -172,7 +172,10 @@ export default function App() {
       
       const [gamesData, playersData, groupsData, clubsData, notifsData] = results;
 
-      setGames(Array.isArray(gamesData) ? gamesData : []);
+      // Deduplicate games by id
+      const rawGames = Array.isArray(gamesData) ? gamesData : [];
+      const uniqueGames = rawGames.filter((g, idx, arr) => arr.findIndex(x => x.id === g.id) === idx);
+      setGames(uniqueGames);
       setPlayers(Array.isArray(playersData) ? playersData : []);
       setGroups(Array.isArray(groupsData) ? groupsData : []);
       setClubs(Array.isArray(clubsData) ? clubsData : []);
@@ -820,7 +823,7 @@ export default function App() {
                     });
 
                     // Sort by date (nearest first)
-                    filteredGames.sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
+                    filteredGames.sort((a, b) => { const da = a.datetime || a.date || '2099-01-01'; const db2 = b.datetime || b.date || '2099-01-01'; return new Date(da).getTime() - new Date(db2).getTime(); });
 
                     return filteredGames.length > 0 ? (
                       filteredGames.map(game => {
@@ -830,7 +833,7 @@ export default function App() {
                             key={game.id} 
                             game={game} 
                             t={t}
-                            isJoined={game.joinedPlayers.includes(currentUser?.id || '')}
+                            isJoined={(game.joinedPlayers || []).includes(currentUser?.id || '')}
                             requestStatus={myRequest?.status}
                             onJoin={() => handleJoinGame(game.id)}
                             onOpenChat={() => {
@@ -1518,7 +1521,8 @@ function GameCard({
   const isPast = gameDateTime ? date < now : false;
   const isLastMinute = !isPast && (date.getTime() - now.getTime()) / 3600000 <= 3;
   
-  const slotsLeft = Number(game.requiredPlayers || 4) - game.joinedPlayers.length;
+  const joinedPlayers = game.joinedPlayers || [];
+  const slotsLeft = Number(game.requiredPlayers || 4) - joinedPlayers.length;
   const isFull = slotsLeft <= 0;
 
   return (
@@ -3164,6 +3168,51 @@ function NotificationsDrawer({
   onGameInviteResponse?: (gameId: string, status: 'accepted' | 'rejected', notifId: string) => void,
   t: (key: string) => string
 }) {
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const getIcon = (type: string) => {
+    if (type === 'new_request') return '👋';
+    if (type === 'gameInvite') return '🎾';
+    if (type === 'request_status') return '✅';
+    if (type === 'game_near') return '📍';
+    if (type === 'reminder') return '⏰';
+    return '🔔';
+  };
+
+  const formatDate = (ts: string | undefined) => {
+    if (!ts) return '';
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return '';
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffMins < 1) return 'Most';
+    if (diffMins < 60) return `${diffMins} perce`;
+    if (diffHours < 24) return `${diffHours} órája`;
+    if (diffDays < 7) return `${diffDays} napja`;
+    return d.toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' });
+  };
+
+  const handleFriendAccept = (e: React.MouseEvent, n: PadelNotification) => {
+    e.stopPropagation();
+    const reqId = n.requestId || n.friendRequestId || '';
+    if (reqId) {
+      onFriendResponse?.(reqId, 'accepted');
+      onRead(n.id);
+    }
+  };
+
+  const handleFriendDecline = (e: React.MouseEvent, n: PadelNotification) => {
+    e.stopPropagation();
+    const reqId = n.requestId || n.friendRequestId || '';
+    if (reqId) {
+      onFriendResponse?.(reqId, 'rejected');
+      onRead(n.id);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[130] flex justify-end">
       <motion.div 
@@ -3171,87 +3220,116 @@ function NotificationsDrawer({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
       />
       <motion.div 
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
-        className="relative w-full max-w-xs bg-white h-full shadow-2xl flex flex-col p-6"
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        className="relative w-full max-w-sm bg-[#F8F8F5] h-full shadow-2xl flex flex-col"
       >
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-black uppercase tracking-tight">{t('notifications.title')}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-            <X className="w-5 h-5" />
-          </button>
+        {/* Header */}
+        <div className="p-6 pb-4 bg-[#141414] text-white">
+          <div className="flex justify-between items-center mb-1">
+            <h2 className="text-xl font-black uppercase tracking-tight">{t('notifications.title')}</h2>
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest">
+            {unreadCount > 0 ? `${unreadCount} olvasatlan` : 'Minden olvasott'}
+          </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-4">
+        {/* List */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {notifications.length === 0 ? (
-            <div className="text-center py-12 opacity-30">
-              <AlertCircle className="w-12 h-12 mx-auto mb-4" />
+            <div className="text-center py-20 opacity-30">
+              <div className="text-5xl mb-4">🔔</div>
               <p className="text-xs font-black uppercase tracking-widest">{t('notifications.allCaughtUp')}</p>
             </div>
           ) : (
-            notifications.map(n => (
-              <div 
-                key={n.id} 
-                onClick={() => onRead(n.id)}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer ${n.read ? 'bg-white border-[#141414]/5' : 'bg-[#E2FF3B]/5 border-[#E2FF3B]/30 shadow-sm'}`}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
-                    {new Date(n.timestamp).toLocaleDateString()}
-                  </p>
-                  {n.type === 'new_request' && !n.read && (
-                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+            notifications.map(n => {
+              const isFriendReq = n.type === 'new_request' && (n.requestId || n.friendRequestId) && !n.gameId;
+              const isGameInvite = n.type === 'gameInvite' && n.gameId;
+              const hasActions = (isFriendReq || isGameInvite) && !n.read;
+
+              return (
+                <div 
+                  key={n.id}
+                  onClick={() => onRead(n.id)}
+                  className={`rounded-2xl border overflow-hidden transition-all cursor-pointer hover:shadow-md ${
+                    n.read 
+                      ? 'bg-white border-[#141414]/5' 
+                      : 'bg-white border-[#E2FF3B]/50 shadow-sm shadow-[#E2FF3B]/20'
+                  }`}
+                >
+                  <div className="p-4">
+                    <div className="flex gap-3">
+                      {/* Icon */}
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
+                        n.read ? 'bg-[#141414]/5' : 'bg-[#E2FF3B]'
+                      }`}>
+                        {getIcon(n.type)}
+                      </div>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-2 mb-0.5">
+                          <h4 className="font-bold text-sm leading-tight">{n.title}</h4>
+                          {!n.read && <div className="w-2 h-2 bg-[#E2FF3B] rounded-full border border-[#141414]/20 shrink-0 mt-1" />}
+                        </div>
+                        <p className="text-xs text-[#141414]/60 leading-relaxed mb-1">{n.message}</p>
+                        <p className="text-[10px] font-bold text-[#141414]/30 uppercase tracking-widest">
+                          {formatDate(n.createdAt || (n as any).created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  {hasActions && (
+                    <div className="flex border-t border-[#141414]/5">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isFriendReq) handleFriendAccept(e, n);
+                          else if (isGameInvite) { onGameInviteResponse?.(n.gameId!, 'accepted', n.id); onRead(n.id); }
+                        }}
+                        className="flex-1 py-3 text-[11px] font-black uppercase tracking-widest bg-[#141414] text-[#E2FF3B] hover:bg-[#252525] transition-colors"
+                      >
+                        {isFriendReq ? t('common.accept') : t('common.join')}
+                      </button>
+                      <div className="w-px bg-[#141414]/10" />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isFriendReq) handleFriendDecline(e, n);
+                          else if (isGameInvite) { onGameInviteResponse?.(n.gameId!, 'rejected', n.id); onRead(n.id); }
+                        }}
+                        className="flex-1 py-3 text-[11px] font-black uppercase tracking-widest text-[#141414]/40 hover:bg-[#141414]/5 transition-colors"
+                      >
+                        {t('common.decline')}
+                      </button>
+                    </div>
                   )}
                 </div>
-                <h4 className="font-bold text-sm mb-1">{n.title}</h4>
-                <p className="text-xs opacity-60 leading-relaxed mb-3">{n.message}</p>
-                
-                {n.type === 'new_request' && (n.friendRequestId || n.requestId) && !n.read && !n.gameId && (
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onFriendResponse?.(n.friendRequestId || n.requestId || '', 'accepted');
-                      }}
-                      className="flex-1 py-2 bg-[#141414] text-[#E2FF3B] rounded-lg text-[10px] font-black uppercase tracking-widest"
-                    >
-                      {t('common.accept')}
-                    </button>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onFriendResponse?.(n.friendRequestId || n.requestId || '', 'rejected');
-                      }}
-                      className="flex-1 py-2 bg-[#141414]/5 text-[#141414]/40 rounded-lg text-[10px] font-black uppercase tracking-widest"
-                    >
-                      {t('common.decline')}
-                    </button>
-                  </div>
-                )}
-                {n.type === 'gameInvite' && n.gameId && !n.read && onGameInviteResponse && (
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); onGameInviteResponse(n.gameId!, 'accepted', n.id); }}
-                      className="flex-1 py-2 bg-[#141414] text-[#E2FF3B] rounded-lg text-[10px] font-black uppercase tracking-widest"
-                    >
-                      {t('common.join')}
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); onGameInviteResponse(n.gameId!, 'rejected', n.id); }}
-                      className="flex-1 py-2 bg-[#141414]/5 text-[#141414]/40 rounded-lg text-[10px] font-black uppercase tracking-widest"
-                    >
-                      {t('common.decline')}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
+
+        {/* Footer - mark all read */}
+        {unreadCount > 0 && (
+          <div className="p-4 border-t border-[#141414]/5 bg-white">
+            <button
+              onClick={() => notifications.filter(n => !n.read).forEach(n => onRead(n.id))}
+              className="w-full py-3 text-[11px] font-black uppercase tracking-widest text-[#141414]/40 hover:text-[#141414] transition-colors"
+            >
+              Összes megjelölése olvasottként
+            </button>
+          </div>
+        )}
       </motion.div>
     </div>
   );
@@ -4045,12 +4123,14 @@ function GameDetailDrawer({
 }) {
   const gameDateTime = game.datetime || (game.date && game.time ? `${game.date}T${game.time}` : null);
   const date = gameDateTime ? new Date(gameDateTime) : new Date();
-  const slotsLeft = Number(game.requiredPlayers || 4) - game.joinedPlayers.length;
-  const isJoined = game.joinedPlayers.includes(currentUser?.id || '');
+  const joinedPlayers = game.joinedPlayers || [];
+  const slotsLeft = Number(game.requiredPlayers || 4) - joinedPlayers.length;
+  const isJoined = joinedPlayers.includes(currentUser?.id || '');
   const isOwner = game.creatorId === currentUser?.id;
   const isFull = slotsLeft <= 0;
   
-  const joinedUsers = game.joinedPlayers.map(id => (players || []).find(p => p.id === id)).filter(Boolean) as User[];
+  const joinedUsers = joinedPlayers.map(id => (players || []).find(p => p.id === id)).filter(Boolean) as User[];
+  const creatorUser = (players || []).find(p => p.id === game.creatorId);
   const myRequest = game.requests?.find(r => r.userId === currentUser?.id);
 
   return (
@@ -4113,16 +4193,16 @@ function GameDetailDrawer({
             <div className="bg-white p-4 rounded-2xl border border-[#141414]/5 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#141414]/5 flex items-center justify-center overflow-hidden">
-                  {game.creator?.avatarUrl ? (
-                    <img src={game.creator.avatarUrl} alt="" className="w-full h-full object-cover" />
+                  {creatorUser?.avatarUrl ? (
+                    <img src={creatorUser.avatarUrl} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <UserIcon className="w-5 h-5 opacity-40" />
                   )}
                 </div>
                 <div>
-                  <p className="font-bold">{game.creator?.name || 'Player'}</p>
+                  <p className="font-bold">{creatorUser?.name || 'Player'}</p>
                   <p className="text-[10px] font-black uppercase opacity-30">
-                    {game.creator?.reliabilityStatus ? t(`profile.reliabilityStatus.${game.creator.reliabilityStatus}`) : ''}
+                    {creatorUser?.skillLevel ? t(`profile.levels.${creatorUser.skillLevel}`) : ''}
                   </p>
                 </div>
               </div>
@@ -4135,7 +4215,7 @@ function GameDetailDrawer({
             <div className="flex justify-between items-center">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{t('groups.members')}</h4>
               <span className="text-[10px] font-black px-2 py-0.5 bg-[#141414] text-[#E2FF3B] rounded-full">
-                {game.joinedPlayers.length} / {Number(game.requiredPlayers || 4)}
+                {joinedPlayers.length} / {Number(game.requiredPlayers || 4)}
               </span>
             </div>
             
@@ -4166,7 +4246,7 @@ function GameDetailDrawer({
                 </div>
               ))}
               
-              {Array.from({ length: Math.max(0, slotsLeft) }).map((_, i) => (
+              {Array.from({ length: Math.max(0, Math.min(slotsLeft, 10)) }).map((_, i) => (
                 <div key={`empty-${i}`} className="bg-[#141414]/5 border border-dashed border-[#141414]/10 rounded-2xl p-4 flex items-center gap-3 opacity-40">
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
                     <Plus className="w-4 h-4" />

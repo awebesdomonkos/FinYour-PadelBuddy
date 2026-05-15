@@ -448,7 +448,7 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
       const targetId = itemId === 'me' ? authUser?.id : itemId;
       if (!targetId) return jsonResponse(200, { success: true, data: [] });
       const rows = await db('notifications', `user_id=eq.${targetId}&select=*&order=created_at.desc`);
-      return jsonResponse(200, { success: true, data: rows.map((r: any) => ({ ...(r.data || {}), id: r.id, userId: r.user_id })) });
+      return jsonResponse(200, { success: true, data: rows.map((r: any) => ({ ...(r.data || {}), id: r.id, userId: r.user_id, createdAt: r.created_at })) });
     }
 
     // CLUBS
