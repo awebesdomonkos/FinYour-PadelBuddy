@@ -390,6 +390,17 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
                 }}).catch(() => {});
               }
             }
+          } else if (subAction === "leave") {
+            gameData.joinedPlayers = (gameData.joinedPlayers || []).filter((id: string) => id !== authUser.id);
+            // Notify creator that user left
+            if (gameData.creatorId !== authUser.id) {
+              const nid = Math.random().toString(36).substr(2, 9);
+              await db('notifications', '', { method: 'POST', body: {
+                id: nid, user_id: gameData.creatorId,
+                data: { type: 'request_status', title: 'Játékos kilépett', message: `${authUser.name} kilépett a meccsedből: ${gameData.location}`, gameId: itemId, read: false },
+                created_at: new Date().toISOString()
+              }}).catch(() => {});
+            }
           } else if (subAction === "join") {
             if (!gameData.joinedPlayers.includes(authUser.id)) gameData.joinedPlayers.push(authUser.id);
           } else if (subAction === "chat") {
