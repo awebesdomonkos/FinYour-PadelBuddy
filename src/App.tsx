@@ -128,6 +128,7 @@ export default function App() {
   const [authForm, setAuthForm] = useState({ username: '', name: '', email: '', password: '', phone: '' });
   const [authMode, setAuthMode] = useState<'landing' | 'login' | 'register'>('landing');
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(1); // 1, 2, 3
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const showToast = (msg: string, duration = 2500) => {
@@ -664,40 +665,16 @@ export default function App() {
 
   if (isCompletingProfile && currentUser) {
     return (
-      <div className="min-h-screen bg-[#F8F8F5] p-4 md:p-8 flex items-center justify-center">
-        <div className="max-w-xl mx-auto w-full">
-          <div className="mb-10 text-center sm:text-left flex items-start justify-between">
-            <div>
-              <h1 className="text-4xl font-black uppercase tracking-tighter italic mb-2">{t('auth.completeProfileTitle')}</h1>
-              <p className="text-[#141414]/60 font-medium">{t('auth.completeProfileSub')}</p>
-            </div>
-            <button
-              onClick={() => { logout(); setAuthMode('landing'); }}
-              className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity mt-1 shrink-0"
-            >
-              <LogOut className="w-3 h-3" /> Kilépés
-            </button>
-          </div>
-          <div className="bg-white p-2 rounded-[2.5rem] shadow-2xl shadow-black/5">
-            <ProfileEdit 
-              user={currentUser} 
-              onSave={handleProfileComplete} 
-              onCancel={() => { setIsCompletingProfile(false); setActiveTab('games'); }} 
-              onShowTutorial={() => setIsLevelTutorialOpen(true)}
-            />
-          </div>
-        </div>
-        
-        {isLevelTutorialOpen && (
-          <LevelTutorial onClose={() => setIsLevelTutorialOpen(false)} t={t} />
-        )}
-
-        {toastMsg && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#141414] text-white text-sm font-bold px-6 py-3 rounded-2xl shadow-xl animate-in fade-in slide-in-from-bottom-4">
-            {toastMsg}
-          </div>
-        )}
-      </div>
+      <OnboardingWizard
+        user={currentUser}
+        step={onboardingStep}
+        setStep={setOnboardingStep}
+        onComplete={handleProfileComplete}
+        onSkip={() => { setIsCompletingProfile(false); setActiveTab('games'); }}
+        onLogout={() => { logout(); setAuthMode('landing'); }}
+        t={t}
+        toastMsg={toastMsg}
+      />
     );
   }
 
@@ -4464,6 +4441,363 @@ function GameDetailDrawer({
           )}
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ONBOARDING WIZARD
+// ═══════════════════════════════════════════════════════════════
+function OnboardingWizard({
+  user,
+  step,
+  setStep,
+  onComplete,
+  onSkip,
+  onLogout,
+  t,
+  toastMsg
+}: {
+  user: User;
+  step: number;
+  setStep: (s: number) => void;
+  onComplete: (data: Partial<User>) => void;
+  onSkip: () => void;
+  onLogout: () => void;
+  t: (key: string) => string;
+  toastMsg: string | null;
+}) {
+  const [data, setData] = React.useState<Partial<User>>({
+    skillLevel: user.skillLevel || SkillLevel.Bronze,
+    experience: user.experience,
+    location: user.location || { lat: 0, lng: 0, city: '' },
+    playTime: user.playTime || [],
+    playStyle: user.playStyle,
+    bio: user.bio || '',
+    lfgStatus: user.lfgStatus || LFGStatus.None,
+  });
+
+  const CITIES = ["Budapest","Debrecen","Miskolc","Pécs","Győr","Nyíregyháza","Kecskemét","Székesfehérvár","Szombathely","Szolnok","Tatabánya","Kaposvár","Érd","Veszprém","Zalaegerszeg","Sopron","Eger","Szeged","Dunakeszi","Nagykanizsa","Békéscsaba","Dunaújváros","Gyula","Mosonmagyaróvár","Esztergom","Vác","Siófok","Paks","Győr","Ajka"];
+
+  const TOTAL_STEPS = 3;
+  const progress = ((step - 1) / (TOTAL_STEPS - 1)) * 100;
+
+  const canNext = () => {
+    if (step === 1) return !!data.skillLevel;
+    if (step === 2) return !!(data.location?.city);
+    return true;
+  };
+
+  const handleNext = () => {
+    if (step < TOTAL_STEPS) setStep(step + 1);
+    else onComplete(data);
+  };
+
+  const levelInfo: Record<string, { color: string; desc: string; emoji: string }> = {
+    Bronze: { color: 'bg-orange-100 border-orange-300 text-orange-700', desc: 'Kezdő szint – ismerkedsz az alapokkal', emoji: '🥉' },
+    Silver: { color: 'bg-slate-100 border-slate-300 text-slate-700', desc: 'Középhaladó – stabil játékstílus', emoji: '🥈' },
+    Gold:   { color: 'bg-yellow-100 border-yellow-300 text-yellow-700', desc: 'Haladó – magas technikai tudás', emoji: '🥇' },
+  };
+
+  const playTimes: { key: PlayTime; label: string; icon: string }[] = [
+    { key: PlayTime.Morning, label: 'Reggel', icon: '🌅' },
+    { key: PlayTime.Day,     label: 'Délután', icon: '☀️' },
+    { key: PlayTime.Evening, label: 'Este', icon: '🌙' },
+  ];
+
+  const playStyles: { key: string; label: string; icon: string }[] = [
+    { key: 'Casual',      label: 'Alkalmi', icon: '😊' },
+    { key: 'Competitive', label: 'Versenyzői', icon: '🏆' },
+    { key: 'Technical',   label: 'Technikai', icon: '🎯' },
+    { key: 'Power',       label: 'Erőjátékos', icon: '💪' },
+  ];
+
+  const experiences: { key: PadelExperience; label: string }[] = [
+    { key: PadelExperience.Less6Months, label: '< 6 hónap' },
+    { key: PadelExperience.Months6To12, label: '6–12 hónap' },
+    { key: PadelExperience.Years1To2,   label: '1–2 év' },
+    { key: PadelExperience.Years2Plus,  label: '2+ év' },
+  ];
+
+  const togglePlayTime = (pt: PlayTime) => {
+    const cur = data.playTime || [];
+    setData(d => ({
+      ...d,
+      playTime: cur.includes(pt) ? cur.filter(x => x !== pt) : [...cur, pt]
+    }));
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F8F8F5] flex flex-col">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-6 pt-6 pb-2">
+        <button onClick={onLogout} className="text-[10px] font-bold uppercase tracking-widest opacity-30 hover:opacity-60 transition-opacity flex items-center gap-1">
+          <LogOut className="w-3 h-3" /> Kilépés
+        </button>
+        <button onClick={onSkip} className="text-[10px] font-bold uppercase tracking-widest opacity-30 hover:opacity-60 transition-opacity">
+          Kihagyom →
+        </button>
+      </div>
+
+      {/* Progress bar */}
+      <div className="px-6 mb-6">
+        <div className="flex gap-1.5 mb-3">
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <div
+              key={i}
+              className={`h-1 flex-1 rounded-full transition-all duration-500 ${i < step ? 'bg-[#141414]' : 'bg-[#141414]/10'}`}
+            />
+          ))}
+        </div>
+        <p className="text-[10px] font-bold uppercase tracking-widest opacity-30">{step}/{TOTAL_STEPS} lépés</p>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 px-6 overflow-y-auto">
+        <AnimatePresence mode="wait">
+
+          {/* ── STEP 1: Szint + Tapasztalat ── */}
+          {step === 1 && (
+            <motion.div key="step1" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} className="space-y-8">
+              <div>
+                <h1 className="text-3xl font-black uppercase tracking-tighter italic leading-tight mb-1">Mi a padel<br/>szinted? 🎾</h1>
+                <p className="text-sm opacity-50">Ezzel párunk össze a hozzád hasonló játékosokkal</p>
+              </div>
+
+              {/* Skill level cards */}
+              <div className="space-y-3">
+                {Object.values(SkillLevel).map(lvl => {
+                  const info = levelInfo[lvl];
+                  const selected = data.skillLevel === lvl;
+                  return (
+                    <button
+                      key={lvl}
+                      onClick={() => setData(d => ({ ...d, skillLevel: lvl }))}
+                      className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                        selected
+                          ? 'border-[#141414] bg-[#141414] text-white shadow-lg scale-[1.02]'
+                          : `border-transparent ${info.color} hover:scale-[1.01]`
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{info.emoji}</span>
+                        <div>
+                          <p className={`font-black uppercase tracking-wide ${selected ? 'text-[#E2FF3B]' : ''}`}>{t(`profile.levels.${lvl}`)}</p>
+                          <p className={`text-xs mt-0.5 ${selected ? 'text-white/60' : 'opacity-60'}`}>{info.desc}</p>
+                        </div>
+                        {selected && <div className="ml-auto w-5 h-5 rounded-full bg-[#E2FF3B] flex items-center justify-center"><Check className="w-3 h-3 text-[#141414]" /></div>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Experience */}
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-widest opacity-40 mb-3">Mennyi tapasztalatod van?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {experiences.map(exp => (
+                    <button
+                      key={exp.key}
+                      onClick={() => setData(d => ({ ...d, experience: exp.key }))}
+                      className={`py-3 px-4 rounded-xl text-sm font-bold transition-all ${
+                        data.experience === exp.key
+                          ? 'bg-[#141414] text-[#E2FF3B]'
+                          : 'bg-[#141414]/5 text-[#141414]/60 hover:bg-[#141414]/10'
+                      }`}
+                    >
+                      {exp.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── STEP 2: Helyszín + Időpontok ── */}
+          {step === 2 && (
+            <motion.div key="step2" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} className="space-y-8">
+              <div>
+                <h1 className="text-3xl font-black uppercase tracking-tighter italic leading-tight mb-1">Hol és mikor<br/>játszol? 📍</h1>
+                <p className="text-sm opacity-50">Megmutatjuk a közeledben lévő meccseket</p>
+              </div>
+
+              {/* City */}
+              <div className="space-y-2">
+                <p className="text-[11px] font-black uppercase tracking-widest opacity-40">Városod</p>
+                <div className="relative">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                  <input
+                    type="text"
+                    list="onboarding-cities"
+                    value={data.location?.city || ''}
+                    onChange={e => setData(d => ({ ...d, location: { ...(d.location || { lat: 0, lng: 0, city: '' }), city: e.target.value } }))}
+                    placeholder="pl. Budapest"
+                    className="w-full bg-white border-2 border-[#141414]/10 focus:border-[#E2FF3B] rounded-2xl py-4 pl-11 pr-4 text-sm font-bold outline-none transition-colors"
+                  />
+                  <datalist id="onboarding-cities">
+                    {CITIES.map(c => <option key={c} value={c} />)}
+                  </datalist>
+                </div>
+              </div>
+
+              {/* Play times */}
+              <div className="space-y-3">
+                <p className="text-[11px] font-black uppercase tracking-widest opacity-40">Mikor érsz rá játszani?</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {playTimes.map(pt => {
+                    const active = (data.playTime || []).includes(pt.key);
+                    return (
+                      <button
+                        key={pt.key}
+                        onClick={() => togglePlayTime(pt.key)}
+                        className={`py-5 rounded-2xl flex flex-col items-center gap-2 transition-all ${
+                          active
+                            ? 'bg-[#141414] text-[#E2FF3B] shadow-lg scale-[1.04]'
+                            : 'bg-white border border-[#141414]/10 text-[#141414]/60 hover:border-[#141414]/30'
+                        }`}
+                      >
+                        <span className="text-2xl">{pt.icon}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{pt.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Quick city suggestions */}
+              {!data.location?.city && (
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-widest opacity-30 mb-2">Népszerű városok</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['Budapest', 'Debrecen', 'Pécs', 'Győr', 'Miskolc', 'Szeged'].map(city => (
+                      <button
+                        key={city}
+                        onClick={() => setData(d => ({ ...d, location: { ...(d.location || { lat: 0, lng: 0, city: '' }), city } }))}
+                        className="px-3 py-1.5 bg-white border border-[#141414]/10 rounded-xl text-xs font-bold hover:border-[#141414]/30 transition-colors"
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* ── STEP 3: Stílus + Bio ── */}
+          {step === 3 && (
+            <motion.div key="step3" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} className="space-y-8">
+              <div>
+                <h1 className="text-3xl font-black uppercase tracking-tighter italic leading-tight mb-1">Hogyan<br/>játszol? ✨</h1>
+                <p className="text-sm opacity-50">Ezzel vonzod be a hozzád illő játékostársakat</p>
+              </div>
+
+              {/* Play style */}
+              <div className="space-y-3">
+                <p className="text-[11px] font-black uppercase tracking-widest opacity-40">Játékstílusod</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {playStyles.map(ps => {
+                    const active = data.playStyle === ps.key;
+                    return (
+                      <button
+                        key={ps.key}
+                        onClick={() => setData(d => ({ ...d, playStyle: ps.key as any }))}
+                        className={`py-4 rounded-2xl flex flex-col items-center gap-2 transition-all ${
+                          active
+                            ? 'bg-[#141414] text-[#E2FF3B] shadow-lg'
+                            : 'bg-white border border-[#141414]/10 text-[#141414]/60 hover:border-[#141414]/30'
+                        }`}
+                      >
+                        <span className="text-2xl">{ps.icon}</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest">{ps.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* LFG Status */}
+              <div className="space-y-3">
+                <p className="text-[11px] font-black uppercase tracking-widest opacity-40">Keresek játékost...</p>
+                <div className="space-y-2">
+                  {[
+                    { key: LFGStatus.None,  label: 'Nem keresek most', icon: '⏸️' },
+                    { key: LFGStatus.Now,   label: 'Azonnal játszanék!', icon: '🔥' },
+                    { key: LFGStatus.Today, label: 'Ma játszanék', icon: '📅' },
+                  ].map(lfg => {
+                    const active = data.lfgStatus === lfg.key;
+                    return (
+                      <button
+                        key={lfg.key}
+                        onClick={() => setData(d => ({ ...d, lfgStatus: lfg.key }))}
+                        className={`w-full py-3 px-4 rounded-xl flex items-center gap-3 text-left transition-all ${
+                          active
+                            ? 'bg-[#141414] text-white'
+                            : 'bg-white border border-[#141414]/10 hover:border-[#141414]/30'
+                        }`}
+                      >
+                        <span>{lfg.icon}</span>
+                        <span className={`text-sm font-bold ${active ? 'text-[#E2FF3B]' : 'opacity-70'}`}>{lfg.label}</span>
+                        {active && <Check className="w-4 h-4 text-[#E2FF3B] ml-auto" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Bio */}
+              <div className="space-y-2">
+                <p className="text-[11px] font-black uppercase tracking-widest opacity-40">Rövid bemutatkozó <span className="normal-case opacity-60">(opcionális)</span></p>
+                <textarea
+                  value={data.bio || ''}
+                  onChange={e => setData(d => ({ ...d, bio: e.target.value }))}
+                  placeholder="pl. Hétvégi játékos vagyok, szeretem a baráti meccseket Budapest belvárosában 🎾"
+                  rows={3}
+                  className="w-full bg-white border-2 border-[#141414]/10 focus:border-[#E2FF3B] rounded-2xl py-4 px-4 text-sm outline-none resize-none transition-colors"
+                />
+              </div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      </div>
+
+      {/* Bottom CTA */}
+      <div className="p-6 space-y-3">
+        {step === 3 && (
+          <div className="flex items-center gap-3 p-4 bg-[#E2FF3B]/20 rounded-2xl mb-2">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="font-black text-sm">Majdnem kész vagy!</p>
+              <p className="text-xs opacity-50">A profilod bármikor szerkeszthető</p>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={handleNext}
+          disabled={!canNext()}
+          className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all ${
+            canNext()
+              ? 'bg-[#141414] text-[#E2FF3B] hover:scale-[1.02] active:scale-95 shadow-xl shadow-black/10'
+              : 'bg-[#141414]/10 text-[#141414]/30 cursor-not-allowed'
+          }`}
+        >
+          {step < TOTAL_STEPS ? `Következő lépés →` : '🎾 Kezdjük el!'}
+        </button>
+        {step > 1 && (
+          <button onClick={() => setStep(step - 1)} className="w-full py-3 text-[11px] font-black uppercase tracking-widest opacity-30 hover:opacity-60 transition-opacity">
+            ← Vissza
+          </button>
+        )}
+      </div>
+
+      {/* Toast */}
+      {toastMsg && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[#141414] text-white text-sm font-bold px-6 py-3 rounded-2xl shadow-xl whitespace-nowrap">
+          {toastMsg}
+        </div>
+      )}
     </div>
   );
 }
