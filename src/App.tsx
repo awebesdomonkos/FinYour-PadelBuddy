@@ -862,8 +862,26 @@ export default function App() {
                         );
                       })
                     ) : (
-                      <div className="md:col-span-2 lg:col-span-3 py-20 text-center border-2 border-dashed border-[#141414]/10 rounded-3xl">
-                        <p className="text-sm opacity-40">{t('common.noMatchesFound')}</p>
+                      <div className="md:col-span-2 lg:col-span-3 py-16 flex flex-col items-center text-center gap-4 bg-white border border-[#141414]/5 rounded-3xl shadow-sm">
+                        <div className="w-20 h-20 bg-[#F8F8F5] rounded-3xl flex items-center justify-center text-4xl">🎾</div>
+                        <div>
+                          <p className="font-black text-lg uppercase tracking-tight">{t('common.noMatchesFound')}</p>
+                          <p className="text-xs opacity-40 mt-1">{lang === 'hu' ? 'Próbálj más szűrőt, vagy hozz létre egy meccset!' : 'Try different filters or create a match!'}</p>
+                        </div>
+                        <div className="flex gap-2 flex-wrap justify-center">
+                          <button
+                            onClick={() => setGameFilter('all')}
+                            className="px-5 py-2.5 bg-[#141414]/5 text-[#141414] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#141414]/10 transition-colors"
+                          >
+                            {lang === 'hu' ? 'Szűrők törlése' : 'Clear filters'}
+                          </button>
+                          <button
+                            onClick={() => setActiveTab('create')}
+                            className="px-5 py-2.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#252525] transition-colors"
+                          >
+                            + {lang === 'hu' ? 'Meccs létrehozása' : 'Create match'}
+                          </button>
+                        </div>
                       </div>
                     );
                   })()
@@ -942,6 +960,46 @@ export default function App() {
                       onOpenProfile={(p) => setSelectedPlayer(p)}
                     />
                   ))}
+                {(players || [])
+                  .filter(p => !currentUser || p.id !== currentUser.id)
+                  .filter(p => !currentUser || !currentUser.blockedUserIds?.includes(p.id))
+                  .filter(p => {
+                    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      (p.location?.city || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      (p.username || '').toLowerCase().includes(searchQuery.toLowerCase());
+                    if (!matchSearch) return false;
+                    if (playerFilter === 'active') { if (!p.lastActive) return false; return new Date(p.lastActive) > new Date(Date.now() - 3600000); }
+                    if (playerFilter === 'lfg') return p.lfgStatus && p.lfgStatus !== LFGStatus.None;
+                    if (playerFilter === 'friends') return currentUser?.friendIds?.includes(p.id);
+                    return true;
+                  }).length === 0 && (
+                  <div className="col-span-full py-16 flex flex-col items-center text-center gap-4 bg-white border border-[#141414]/5 rounded-3xl shadow-sm">
+                    <div className="w-20 h-20 bg-[#F8F8F5] rounded-3xl flex items-center justify-center text-4xl">
+                      {playerFilter === 'friends' ? '👥' : playerFilter === 'lfg' ? '🔥' : '🔍'}
+                    </div>
+                    <div>
+                      <p className="font-black text-lg uppercase tracking-tight">
+                        {playerFilter === 'friends' ? (lang === 'hu' ? 'Még nincsenek barátaid' : 'No friends yet') :
+                         playerFilter === 'lfg' ? (lang === 'hu' ? 'Senki sem keres most' : 'Nobody is looking now') :
+                         (lang === 'hu' ? 'Nincs találat' : 'No results')}
+                      </p>
+                      <p className="text-xs opacity-40 mt-1">
+                        {playerFilter === 'friends' ? (lang === 'hu' ? 'Küldj barátkérést más játékosoknak!' : 'Send friend requests to other players!') :
+                         (lang === 'hu' ? 'Próbálj más szűrőt' : 'Try different filters')}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 flex-wrap justify-center">
+                      {(searchQuery || playerFilter !== 'all') && (
+                        <button
+                          onClick={() => { setSearchQuery(''); setPlayerFilter('all'); }}
+                          className="px-5 py-2.5 bg-[#141414]/5 text-[#141414] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#141414]/10 transition-colors"
+                        >
+                          {lang === 'hu' ? 'Szűrők törlése' : 'Clear filters'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -1051,15 +1109,26 @@ export default function App() {
                       />
                     ))
                 ) : (
-                  <div className="col-span-full py-20 text-center bg-white rounded-[40px] border border-[#141414]/5 shadow-sm">
-                    <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                    <p className="text-sm font-bold opacity-40 uppercase tracking-widest">{t('common.noData')}</p>
-                    <button 
-                      onClick={() => setActiveTab('games')}
-                      className="mt-4 px-6 py-2 bg-[#141414] text-[#E2FF3B] rounded-xl text-xs font-black uppercase tracking-widest"
-                    >
-                      {t('games.findGame')}
-                    </button>
+                  <div className="col-span-full py-16 flex flex-col items-center text-center gap-5 bg-white rounded-3xl border border-[#141414]/5 shadow-sm">
+                    <div className="w-20 h-20 bg-[#F8F8F5] rounded-3xl flex items-center justify-center text-4xl">📅</div>
+                    <div>
+                      <p className="font-black text-lg uppercase tracking-tight">{lang === 'hu' ? 'Még nincs meccsed' : 'No games yet'}</p>
+                      <p className="text-xs opacity-40 mt-1 max-w-xs mx-auto">{lang === 'hu' ? 'Csatlakozz egy meglévő meccshez, vagy hozz létre sajátot!' : 'Join an existing game or create your own!'}</p>
+                    </div>
+                    <div className="flex gap-3 flex-wrap justify-center">
+                      <button
+                        onClick={() => setActiveTab('games')}
+                        className="px-5 py-3 bg-[#141414]/5 text-[#141414] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#141414]/10 transition-colors flex items-center gap-2"
+                      >
+                        <Search className="w-3.5 h-3.5" /> {t('games.findGame')}
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('create')}
+                        className="px-5 py-3 bg-[#141414] text-[#E2FF3B] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#252525] transition-colors flex items-center gap-2"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> {t('games.createGame')}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1174,7 +1243,16 @@ export default function App() {
                           </div>
                         ))}
                         {(!currentUser?.friendIds || currentUser.friendIds.length === 0) && (
-                          <p className="text-xs opacity-40 italic text-center py-4">{t('profile.noFriends')}</p>
+                          <div className="py-6 flex flex-col items-center gap-3 text-center">
+                            <div className="text-3xl">🤝</div>
+                            <p className="text-xs font-black uppercase tracking-widest opacity-40">{t('profile.noFriends')}</p>
+                            <button
+                              onClick={() => setActiveTab('players')}
+                              className="px-4 py-2 bg-[#141414] text-[#E2FF3B] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#252525] transition-colors"
+                            >
+                              {lang === 'hu' ? 'Játékosok keresése' : 'Find players'}
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -3576,6 +3654,21 @@ function GroupsTab({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {groups.length === 0 && (
+          <div className="col-span-full py-16 flex flex-col items-center text-center gap-4 bg-white border border-[#141414]/5 rounded-3xl shadow-sm">
+            <div className="w-20 h-20 bg-[#F8F8F5] rounded-3xl flex items-center justify-center text-4xl">👥</div>
+            <div>
+              <p className="font-black text-lg uppercase tracking-tight">{t('groups.noGroups')}</p>
+              <p className="text-xs opacity-40 mt-1">{t('groups.subTitle')}</p>
+            </div>
+            <button
+              onClick={onCreateClick}
+              className="px-6 py-3 bg-[#141414] text-[#E2FF3B] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#252525] transition-colors"
+            >
+              + {t('groups.createGroup')}
+            </button>
+          </div>
+        )}
         {groups.map(group => {
           const isMember = (group.memberIds || []).includes(currentUser.id);
           return (
