@@ -128,6 +128,7 @@ export default function App() {
   const [authForm, setAuthForm] = useState({ username: '', name: '', email: '', password: '', phone: '' });
   const [authMode, setAuthMode] = useState<'landing' | 'login' | 'register'>('landing');
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
+  const onboardingDoneRef = React.useRef(false);
   const [onboardingStep, setOnboardingStep] = useState(1); // 1, 2, 3
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -207,7 +208,7 @@ export default function App() {
   useEffect(() => {
     if (currentUser?.id) {
       fetchData();
-      if (!currentUser.bio || !currentUser.location?.city) {
+      if (!onboardingDoneRef.current && (!currentUser.bio || !currentUser.location?.city)) {
         setIsCompletingProfile(true);
       } else {
         setIsCompletingProfile(false);
@@ -265,6 +266,7 @@ export default function App() {
     } catch (err) {
       console.error('Profile save error:', err);
     } finally {
+      onboardingDoneRef.current = true;
       updateUser(data);
       setIsCompletingProfile(false);
       setActiveTab('games');
