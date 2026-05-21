@@ -36,7 +36,8 @@ import {
   History,
   Smartphone,
   Smartphone as Phone,
-  ChevronDown
+  ChevronDown,
+  Share2
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { useI18n } from './hooks/useI18n.ts';
@@ -310,6 +311,21 @@ export default function App() {
       if (fresh) setSelectedGame(fresh);
     }
   }, [games]);
+
+  // Deep link: ?game=xyz opens game detail on load
+  useEffect(() => {
+    if (!currentUser || !games.length) return;
+    const params = new URLSearchParams(window.location.search);
+    const gameId = params.get('game');
+    if (gameId) {
+      const game = games.find(g => g.id === gameId);
+      if (game) {
+        setSelectedGameDetail(game);
+        // Clean URL without reload
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [currentUser, games]);
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -651,6 +667,40 @@ export default function App() {
     }
   };
 
+  const handleShareGame = async (game: Game) => {
+    const gameDateTime = game.datetime || (game.date && game.time ? `${game.date}T${game.time}` : null);
+    const dateStr = gameDateTime
+      ? new Date(gameDateTime).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : '';
+    const joined = (game.joinedPlayers || []).length;
+    const total = Number(game.requiredPlayers || 4);
+    const url = `${window.location.origin}?game=${game.id}`;
+    const level = game.recommendedLevel ? `${game.recommendedLevel} szint | ` : '';
+    const text = `🎾 Padel meccs — ${game.location}
+📅 ${dateStr}
+📊 ${level}${game.gameType || ''}
+👥 ${total - joined} szabad hely
+`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'FindYour PadelBuddy', text, url });
+        return;
+      }
+      // WhatsApp fallback
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(text + url)}`;
+      window.open(waUrl, '_blank');
+    } catch (err) {
+      // Clipboard fallback
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('🔗 ' + (lang === 'hu' ? 'Link másolva!' : 'Link copied!'));
+      } catch {
+        showToast('❌ Megosztás sikertelen');
+      }
+    }
+  };
+
   const handleLeaveGame = async (gameId: string) => {
     if (!currentUser) return;
     try {
@@ -966,6 +1016,7 @@ export default function App() {
                               setIsResultModalOpen(true);
                             }}
                             onShowDetails={() => setSelectedGameDetail(game)}
+                            onShare={() => handleShareGame(game)}
                           />
                         );
                       })
@@ -1694,6 +1745,7 @@ function GameCard({
   onConfirmAttendance,
   onRecordResult,
   onShowDetails,
+  onShare,
   t
 }: { 
   key?: string, 
@@ -1710,6 +1762,7 @@ function GameCard({
   onConfirmAttendance: () => void,
   onRecordResult: () => void,
   onShowDetails: () => void,
+  onShare: () => void,
   t: (key: string) => string
 }) {
   const gameDateTime = game.datetime || (game.date && game.time ? `${game.date}T${game.time}` : null);
@@ -1825,6 +1878,13 @@ function GameCard({
               )}
             </button>
           )}
+          <button
+            onClick={(e) => { e.stopPropagation(); onShare(); }}
+            className="w-10 h-10 rounded-full bg-[#141414]/5 flex items-center justify-center hover:bg-[#E2FF3B] transition-colors"
+            title="Megosztás"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
         </div>
         
         <div className="flex gap-2">
