@@ -66,6 +66,9 @@ export interface User {
   attendedGamesCount?: number;
   missedGamesCount?: number;
   reliabilityStatus?: "Very Reliable" | "Regularly Appears" | "New Player" | "Unreliable";
+  reliabilityScore?: number;
+  goodPlayerScore?: number;
+  totalRatings?: number;
   experience?: PadelExperience;
   languagePreference?: Language;
   languages?: string[];
@@ -143,6 +146,7 @@ export interface Game {
   groupId?: string;
   visibility: 'public' | 'group-only' | 'invite-only';
   invitedUserIds?: string[];
+  ratedBy?: string[];
   createdAt: string;
 }
 
@@ -154,6 +158,7 @@ export interface Group {
   adminIds: string[];
   memberIds: string[];
   invitedUserIds?: string[];
+  ratedBy?: string[];
   recommendedLevel?: SkillLevel;
   visibility?: 'public' | 'private';
   chat?: ChatMessage[];

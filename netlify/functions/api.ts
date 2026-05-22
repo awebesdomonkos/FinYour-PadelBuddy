@@ -390,6 +390,34 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
                 }}).catch(() => {});
               }
             }
+          } else if (subAction === "rate") {
+            const { ratings } = payload;
+            if (!Array.isArray(ratings)) return jsonResponse(400, { success: false, message: 'Invalid ratings' });
+            if (!gameData.ratedBy) gameData.ratedBy = [];
+            if (gameData.ratedBy.includes(authUser.id)) return jsonResponse(400, { success: false, message: 'Already rated' });
+            gameData.ratedBy.push(authUser.id);
+            await Promise.all(ratings.map(async (r: any) => {
+              if (!r.userId || r.userId === authUser.id) return;
+              const uRows = await db('users', `id=eq.${r.userId}&select=*`);
+              if (!uRows[0]) return;
+              const uData = uRows[0].data || {};
+              const reliabilityScore = (uData.reliabilityScore || 0) + (r.reliable ? 1 : 0);
+              const goodPlayerScore = (uData.goodPlayerScore || 0) + (r.goodPlayer ? 1 : 0);
+              const totalRatings = (uData.totalRatings || 0) + 1;
+              const posRatio = totalRatings > 0 ? reliabilityScore / totalRatings : 0;
+              let reliabilityStatus = 'New Player';
+              if (totalRatings >= 5 && posRatio >= 0.85) reliabilityStatus = 'Very Reliable';
+              else if (totalRatings >= 3 && posRatio >= 0.7) reliabilityStatus = 'Regularly Appears';
+              else if (totalRatings >= 1 && posRatio < 0.4) reliabilityStatus = 'Unreliable';
+              await db('users', `id=eq.${r.userId}`, { method: 'PATCH', body: { data: { ...uData, reliabilityScore, goodPlayerScore, totalRatings, reliabilityStatus } } });
+              const nid = Math.random().toString(36).substr(2, 9);
+              const badges = [r.reliable ? '👍' : '', r.goodPlayer ? '🎾' : ''].filter(Boolean).join(' ');
+              await db('notifications', '', { method: 'POST', body: {
+                id: nid, user_id: r.userId,
+                data: { type: 'request_status', title: 'Új értékelés érkezett!', message: `${authUser.name} értékelt téged: ${badges}`, read: false },
+                created_at: new Date().toISOString()
+              }}).catch(() => {});
+            }));
           } else if (subAction === "leave") {
             gameData.joinedPlayers = (gameData.joinedPlayers || []).filter((id: string) => id !== authUser.id);
             // Notify creator that user left
