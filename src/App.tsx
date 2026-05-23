@@ -1074,10 +1074,101 @@ export default function App() {
               exit={{ opacity: 0, y: -10 }}
               className="space-y-6"
             >
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter">{t('nav.players')}</h2>
-                <p className="text-xs sm:text-sm opacity-60">{t('players.subTitle')}</p>
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter">{t('nav.players')}</h2>
+                  <p className="text-xs sm:text-sm opacity-60">{t('players.subTitle')}</p>
+                </div>
               </div>
+
+              {/* ─── LFG Section ─── */}
+              {(() => {
+                const lfgPlayers = (players || [])
+                  .filter(p => currentUser && p.id !== currentUser.id)
+                  .filter(p => !currentUser?.blockedUserIds?.includes(p.id))
+                  .filter(p => p.lfgStatus && p.lfgStatus !== LFGStatus.None)
+                  .sort((a, b) => {
+                    if (a.lfgStatus === LFGStatus.Now && b.lfgStatus !== LFGStatus.Now) return -1;
+                    if (b.lfgStatus === LFGStatus.Now && a.lfgStatus !== LFGStatus.Now) return 1;
+                    return 0;
+                  })
+                  .slice(0, 8);
+
+                if (lfgPlayers.length === 0) return null;
+
+                return (
+                  <div className="space-y-3">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                        <h3 className="text-[11px] font-black uppercase tracking-widest">
+                          {lang === 'hu' ? 'Most keresnek játékost' : 'Looking for a game'}
+                        </h3>
+                        <span className="px-1.5 py-0.5 bg-[#141414] text-[#E2FF3B] rounded-md text-[9px] font-black">{lfgPlayers.length}</span>
+                      </div>
+                      {/* Quick LFG setter */}
+                      <div className="relative group">
+                        <button className="flex items-center gap-1 px-3 py-1.5 bg-[#141414]/5 hover:bg-[#E2FF3B] rounded-xl transition-colors text-[10px] font-black uppercase tracking-widest">
+                          {currentUser?.lfgStatus && currentUser.lfgStatus !== LFGStatus.None ? '🔥' : '+'} {lang === 'hu' ? 'Én is' : 'Join'}
+                        </button>
+                        <div className="absolute right-0 top-full mt-1 z-50 hidden group-hover:flex flex-col bg-white border border-[#141414]/10 rounded-2xl shadow-xl overflow-hidden w-44">
+                          {[
+                            { key: LFGStatus.Now,   label: lang === 'hu' ? '🔥 Azonnal játszanék' : '🔥 Playing Now', },
+                            { key: LFGStatus.Today, label: lang === 'hu' ? '📅 Ma játszanék' : '📅 Playing Today', },
+                            { key: LFGStatus.None,  label: lang === 'hu' ? '⏸ Nem most' : '⏸ Not now', },
+                          ].map(opt => (
+                            <button
+                              key={opt.key}
+                              onClick={() => handleUpdateUser({ lfgStatus: opt.key })}
+                              className={`px-4 py-3 text-left text-xs font-bold hover:bg-[#E2FF3B] transition-colors ${
+                                currentUser?.lfgStatus === opt.key ? 'bg-[#E2FF3B]/30 font-black' : ''
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Horizontal scroll cards */}
+                    <div className="flex gap-3 overflow-x-auto scrollbar-none pb-2 -mx-4 px-4">
+                      {lfgPlayers.map(player => {
+                        const isNow = player.lfgStatus === LFGStatus.Now;
+                        return (
+                          <button
+                            key={player.id}
+                            onClick={() => setSelectedPlayer(player)}
+                            className="shrink-0 w-36 bg-white border border-[#141414]/5 rounded-2xl p-3 text-left hover:shadow-md hover:border-[#E2FF3B] transition-all group"
+                          >
+                            {/* Avatar */}
+                            <div className="relative mb-2">
+                              <div className="w-12 h-12 rounded-xl bg-[#141414] flex items-center justify-center overflow-hidden">
+                                {player.avatarUrl ? (
+                                  <img src={player.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <UserIcon className="w-6 h-6 text-white/50" />
+                                )}
+                              </div>
+                              <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${isNow ? 'bg-red-500 animate-pulse' : 'bg-yellow-400'}`} />
+                            </div>
+                            {/* Name & level */}
+                            <p className="font-black text-sm leading-tight truncate">{player.name}</p>
+                            <p className="text-[10px] opacity-40 font-bold uppercase truncate">{player.location?.city || '—'}</p>
+                            {/* LFG badge */}
+                            <div className={`mt-2 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-block ${
+                              isNow ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {isNow ? '🔥 Most' : '📅 Ma'}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
               
               <div className="flex flex-col gap-4">
                 <div className="relative">
@@ -1100,7 +1191,7 @@ export default function App() {
                         playerFilter === f ? 'bg-[#141414] text-[#E2FF3B]' : 'bg-[#141414]/5 text-[#141414]/40'
                       }`}
                     >
-                      {f === 'lfg' ? t('profile.status') : f === 'friends' ? t('profile.friends') : t(`common.${f}`)}
+                      {f === 'lfg' ? '🔥 LFG' : f === 'friends' ? t('profile.friends') : f === 'active' ? t('common.active') : t('common.all')}
                     </button>
                   ))}
                 </div>
