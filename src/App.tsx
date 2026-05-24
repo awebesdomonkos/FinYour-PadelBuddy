@@ -336,6 +336,7 @@ export default function App() {
       fetchData();
       if (!onboardingDoneRef.current && (!currentUser.bio || !currentUser.location?.city)) {
         setIsCompletingProfile(true);
+        setOnboardingStep(1);
       } else {
         setIsCompletingProfile(false);
       }
@@ -1372,7 +1373,7 @@ export default function App() {
                       <GameCard 
                         key={game.id} 
                         game={game}
-                        isJoined={game.joinedPlayers.includes(currentUser?.id || '')}
+                        isJoined={(game.joinedPlayers || []).includes(currentUser?.id || '')}
                         requestStatus={game.requests?.find(r => r.userId === currentUser?.id)?.status}
                         isOwner={game.creatorId === currentUser?.id}
                         t={t}
@@ -2018,7 +2019,7 @@ function GameCard({
       <div className="flex items-center justify-between mt-6">
         <div className="flex items-center gap-3">
           <div className="flex -space-x-2">
-            {game.joinedPlayers.map((_, i) => (
+            {(game.joinedPlayers || []).map((_, i) => (
               <div key={i} className="w-8 h-8 rounded-full bg-[#141414] border-2 border-white flex items-center justify-center shadow-sm text-[10px] text-white">
                 {i === 0 ? <TrendingUp className="w-3 h-3 text-[#E2FF3B]" /> : <UserIcon className="w-3 h-3" />}
               </div>
@@ -2120,7 +2121,7 @@ function AttendanceModal({
   t: (key: string) => string
 }) {
   const [records, setRecords] = useState<Record<string, "appeared" | "missed">>(
-    game.joinedPlayers.reduce((acc, uid) => ({ ...acc, [uid]: "appeared" }), {})
+    (game.joinedPlayers || []).reduce((acc, uid) => ({ ...acc, [uid]: "appeared" }), {})
   );
 
   return (
@@ -2137,7 +2138,7 @@ function AttendanceModal({
         </div>
 
         <div className="space-y-3">
-          {game.joinedPlayers.map(uid => {
+          {(game.joinedPlayers || []).map(uid => {
             const player = players.find(p => p.id === uid);
             return (
               <div key={uid} className="flex items-center justify-between p-3 bg-[#141414]/5 rounded-2xl">
@@ -2313,25 +2314,36 @@ function CreateGameForm({
     }
   }, [gameToEdit]);
 
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
+    // Validation
+    if (!formData.location.trim()) { setSubmitError(lang === 'hu' ? 'Add meg a helyszínt!' : 'Location is required!'); return; }
+    if (!formData.datetime) { setSubmitError(lang === 'hu' ? 'Add meg az időpontot!' : 'Date & time is required!'); return; }
+    const gameDate = new Date(formData.datetime);
+    if (gameDate < new Date()) { setSubmitError(lang === 'hu' ? 'Az időpont a múltban van!' : 'Date must be in the future!'); return; }
+    setIsSubmitting(true);
     try {
       const url = gameToEdit ? `/api/games/${gameToEdit.id}` : '/api/games';
       const method = gameToEdit ? 'PUT' : 'POST';
-      
       const res = await fetch(url, {
         method,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ ...formData, creator_id: creatorId })
       });
       if (res.ok) {
         onSuccess();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setSubmitError(data?.message || (lang === 'hu' ? 'Hiba történt, próbáld újra!' : 'Something went wrong, try again!'));
       }
     } catch (err) {
-      console.error(err);
+      setSubmitError(lang === 'hu' ? 'Hálózati hiba. Ellenőrizd az internetkapcsolatot.' : 'Network error. Check your connection.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -2590,10 +2602,15 @@ function CreateGameForm({
 
       <button 
         type="submit"
-        className="w-full bg-[#141414] text-[#E2FF3B] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-black/10"
-      >
-        {t('games.createGame')}
-      </button>
+          disabled={isSubmitting}
+          className="w-full bg-[#141414] text-[#E2FF3B] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-black/10 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {isSubmitting
+            ? <><div className="w-4 h-4 border-2 border-[#E2FF3B]/30 border-t-[#E2FF3B] rounded-full animate-spin" />{lang === 'hu' ? 'Mentés...' : 'Saving...'}</>
+            : (gameToEdit ? t('common.save') : t('games.createGame'))
+          }
+        </button>
+        {submitError && <p className="text-xs font-bold text-red-500 text-center">{submitError}</p>}
     </form>
   );
 }
@@ -4118,14 +4135,14 @@ function MatchHistory({ games = [] }: { games: Game[] }) {
             </div>
           </div>
           <div className="flex -space-x-1.5 translate-x-1">
-            {game.joinedPlayers.slice(0, 3).map((pid, i) => (
+            {(game.joinedPlayers || []).slice(0, 3).map((pid, i) => (
               <div key={i} className="w-6 h-6 rounded-full border border-white bg-gray-100 overflow-hidden ring-1 ring-black/5">
                 <UserIcon className="w-3 h-3 m-auto mt-1.5 opacity-20" />
               </div>
             ))}
-            {game.joinedPlayers.length > 3 && (
+            {(game.joinedPlayers || []).length > 3 && (
               <div className="w-6 h-6 rounded-full border border-white bg-[#141414] flex items-center justify-center text-[8px] font-bold text-white ring-1 ring-black/5">
-                +{game.joinedPlayers.length - 3}
+                +{(game.joinedPlayers || []).length - 3}
               </div>
             )}
           </div>
@@ -4231,7 +4248,7 @@ function ProfileDrawer({
   onBlock: (id: string) => void
 }) {
   const { t, lang } = useI18n(currentUser.languagePreference || 'hu');
-  const userGames = (games || []).filter(g => g.joinedPlayers.includes(user.id));
+  const userGames = (games || []).filter(g => (g.joinedPlayers || []).includes(user.id));
   const isFriend = currentUser.friendIds?.includes(user.id);
   const isBlocked = currentUser.blockedUserIds?.includes(user.id);
   
@@ -4572,7 +4589,7 @@ function CreateGroupModal({
   const [formData, setFormData] = useState<Partial<Group>>({
     name: '',
     description: '',
-    city: currentUser.location.city,
+    city: currentUser.location?.city || '',
     recommendedLevel: SkillLevel.Bronze,
     visibility: 'public'
   });
@@ -4830,7 +4847,7 @@ function GameDetailDrawer({
             <div className="space-y-4">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{t('notifications.title') || 'Recent Activity'}</h4>
               <div className="bg-[#141414] rounded-3xl p-6 shadow-xl space-y-4">
-                {game.chat.slice(-2).map((msg, i) => (
+                {(game.chat || []).slice(-2).map((msg, i) => (
                   <div key={msg.id || i} className="flex gap-3">
                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                       <UserIcon className="w-4 h-4 text-[#E2FF3B]" />
