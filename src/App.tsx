@@ -291,8 +291,29 @@ export default function App() {
       setGroups(Array.isArray(groupsData) ? groupsData : []);
       setClubs(Array.isArray(clubsData) ? clubsData : []);
       setNotifications(Array.isArray(notifsData) ? notifsData : []);
-      // Check for upcoming game reminders
-      if (currentUser?.id) checkReminders(uniqueGames, currentUser.id);
+      // Check for upcoming game reminders (inline to avoid hook order issues)
+      if (currentUser?.id) {
+        const now = Date.now();
+        const userId = currentUser.id;
+        const upcoming = uniqueGames
+          .filter(g => (g.joinedPlayers || []).includes(userId) && g.status !== 'played' && g.status !== 'cancelled')
+          .filter(g => {
+            const dt = g.datetime || (g.date && g.time ? `${g.date}T${g.time}` : null);
+            if (!dt) return false;
+            const diff = new Date(dt).getTime() - now;
+            return diff > 0 && diff < 7200000;
+          })
+          .sort((a, b) => new Date(a.datetime || a.date || '').getTime() - new Date(b.datetime || b.date || '').getTime());
+        let found = false;
+        for (const g of upcoming) {
+          if (!localStorage.getItem(`reminded_${g.id}`)) {
+            setReminderGame(g);
+            found = true;
+            break;
+          }
+        }
+        if (!found) setReminderGame(null);
+      }
     } catch (err) {
       console.error("Failed to fetch data", err);
     } finally {
@@ -378,32 +399,6 @@ export default function App() {
       // Error handled by context
     }
   };
-
-  const checkReminders = React.useCallback((gamesList: Game[], userId: string) => {
-    const now = Date.now();
-    const myUpcoming = gamesList
-      .filter(g => (g.joinedPlayers || []).includes(userId) && g.status !== 'played' && g.status !== 'cancelled')
-      .filter(g => {
-        const dt = g.datetime || (g.date && g.time ? `${g.date}T${g.time}` : null);
-        if (!dt) return false;
-        const diff = new Date(dt).getTime() - now;
-        return diff > 0 && diff < 7200000; // within 2 hours
-      })
-      .sort((a, b) => {
-        const da = a.datetime || a.date || '';
-        const db2 = b.datetime || b.date || '';
-        return new Date(da).getTime() - new Date(db2).getTime();
-      });
-
-    for (const game of myUpcoming) {
-      const key = `reminded_${game.id}`;
-      if (!localStorage.getItem(key)) {
-        setReminderGame(game);
-        return;
-      }
-    }
-    setReminderGame(null);
-  }, []);
 
   const handleProfileComplete = async (data: Partial<User>) => {
     if (!currentUser) return;
