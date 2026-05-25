@@ -5245,59 +5245,6 @@ function OnboardingWizard({
         )}
       </div>
 
-      {/* ── Reminder Banner ── */}
-      <AnimatePresence>
-        {reminderGame && (() => {
-          const dt = reminderGame.datetime || (reminderGame.date && reminderGame.time ? `${reminderGame.date}T${reminderGame.time}` : null);
-          const diff = dt ? new Date(dt).getTime() - Date.now() : 0;
-          const mins = Math.round(diff / 60000);
-          const label = mins <= 30 ? `🔥 ${mins} perc múlva pályán vagy!` : mins <= 60 ? `⏰ 1 óra múlva meccs!` : `🎾 Meccs ${Math.round(mins/60)} óra múlva!`;
-          const timeStr = dt ? new Date(dt).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }) : '';
-          return (
-            <motion.div
-              key="reminder"
-              initial={{ y: -100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -100, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed top-0 left-0 right-0 z-[200] flex justify-center px-4 pt-3"
-            >
-              <div className="w-full max-w-md bg-[#E2FF3B] border-2 border-[#141414]/10 rounded-2xl shadow-2xl shadow-black/20 p-4">
-                <div className="flex items-start gap-3">
-                  <div className="text-2xl shrink-0">🎾</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-black text-sm leading-tight">{label}</p>
-                    <p className="text-[11px] opacity-60 font-bold mt-0.5 truncate">
-                      {reminderGame.location} · {timeStr} · {(reminderGame.joinedPlayers || []).length}/{reminderGame.requiredPlayers || 4} játékos
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={() => {
-                      localStorage.setItem(`reminded_${reminderGame.id}`, '1');
-                      const fresh = (games || []).find(g => g.id === reminderGame.id) || reminderGame;
-                      setSelectedGame(fresh);
-                      setIsChatOpen(true);
-                      setReminderGame(null);
-                    }}
-                    className="flex-1 py-2.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-[#252525] transition-colors"
-                  >
-                    Megnyitom →
-                  </button>
-                  <button
-                    onClick={() => { localStorage.setItem(`reminded_${reminderGame.id}`, '1'); setReminderGame(null); }}
-                    className="px-4 py-2.5 bg-[#141414]/10 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-[#141414]/20 transition-colors"
-                  >
-                    Elhalaszt
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })()}
-      </AnimatePresence>
-
       {/* Toast */}
       {toastMsg && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[#141414] text-white text-sm font-bold px-6 py-3 rounded-2xl shadow-xl whitespace-nowrap">
