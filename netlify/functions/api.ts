@@ -224,6 +224,25 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
         }}).catch(() => {});
         return jsonResponse(201, { success: true, data: { id: req.id, fromUserId: req.from_user_id, toUserId: req.to_user_id, status: req.status, createdAt: req.created_at } });
       }
+      if (itemId === "remove" && method === "POST") {
+        const { friendId } = JSON.parse(body || "{}");
+        const [u1rows, u2rows] = await Promise.all([
+          db('users', `id=eq.${authUser.id}&select=*`),
+          db('users', `id=eq.${friendId}&select=*`)
+        ]);
+        if (u1rows[0]) {
+          const d1 = u1rows[0].data || {};
+          await db('users', `id=eq.${authUser.id}`, { method: 'PATCH', body: { data: { ...d1, friendIds: (d1.friendIds || []).filter((id: string) => id !== friendId) } } });
+        }
+        if (u2rows[0]) {
+          const d2 = u2rows[0].data || {};
+          await db('users', `id=eq.${friendId}`, { method: 'PATCH', body: { data: { ...d2, friendIds: (d2.friendIds || []).filter((id: string) => id !== authUser.id) } } });
+        }
+        // Also remove pending friend requests between them
+        await db('friend_requests', `or=(and(from_user_id.eq.${authUser.id},to_user_id.eq.${friendId}),and(from_user_id.eq.${friendId},to_user_id.eq.${authUser.id}))`, { method: 'DELETE' }).catch(() => {});
+        return jsonResponse(200, { success: true });
+      }
+
       if (itemId === "respond" && method === "POST") {
         const { requestId, status } = JSON.parse(body || "{}");
         const reqs = await db('friend_requests', `id=eq.${requestId}&select=*`);
@@ -488,6 +507,18 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
       if (!targetId) return jsonResponse(200, { success: true, data: [] });
       const rows = await db('notifications', `user_id=eq.${targetId}&select=*&order=created_at.desc`);
       return jsonResponse(200, { success: true, data: rows.map((r: any) => ({ ...(r.data || {}), id: r.id, userId: r.user_id, createdAt: r.created_at })) });
+    }
+
+    // NOTIFICATIONS - mark as read
+    if (action === "notifications" && itemId && subAction === "read" && method === "POST") {
+      try {
+        const rows = await db('notifications', `id=eq.${itemId}&select=*`);
+        if (rows[0]) {
+          const existing = rows[0].data || {};
+          await db('notifications', `id=eq.${itemId}`, { method: 'PATCH', body: { data: { ...existing, read: true } } });
+        }
+      } catch { /* silent */ }
+      return jsonResponse(200, { success: true });
     }
 
     // CLUBS

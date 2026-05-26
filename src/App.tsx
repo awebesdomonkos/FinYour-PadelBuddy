@@ -355,7 +355,8 @@ export default function App() {
   useEffect(() => {
     if (currentUser?.id) {
       fetchData();
-      if (!onboardingDoneRef.current && (!currentUser.bio || !currentUser.location?.city)) {
+      const onboardingDone = localStorage.getItem(`onboarding_done_${currentUser.id}`);
+      if (!onboardingDoneRef.current && !onboardingDone) {
         setIsCompletingProfile(true);
         setOnboardingStep(1);
       } else {
@@ -415,6 +416,7 @@ export default function App() {
       console.error('Profile save error:', err);
     } finally {
       onboardingDoneRef.current = true;
+      if (currentUser?.id) localStorage.setItem(`onboarding_done_${currentUser.id}`, '1');
       updateUser(data);
       setIsCompletingProfile(false);
       setActiveTab('games');
@@ -756,6 +758,22 @@ export default function App() {
     }
   };
 
+  const handleRemoveFriend = async (friendId: string) => {
+    if (!currentUser) return;
+    try {
+      await safeFetch(`/api/friends/remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ friendId })
+      });
+      updateUser({ friendIds: (currentUser.friendIds || []).filter(id => id !== friendId) });
+      showToast(lang === 'hu' ? '✅ Barát eltávolítva' : '✅ Friend removed');
+      fetchData();
+    } catch (err: any) {
+      showToast('❌ ' + (err?.message || 'Hiba'));
+    }
+  };
+
   const handleCreateGroup = async (groupData: Partial<Group>) => {
     if (!currentUser) return;
     try {
@@ -1047,7 +1065,8 @@ export default function App() {
                             onLeave={() => handleLeaveGame(game.id)}
                             onDelete={() => setGameIdToDelete(game.id)}
                             onRepeat={() => handleRepeatGame(game)}
-                            onConfirmAttendance={() => {
+                            onConfirmAttendance={(e?: React.MouseEvent) => {
+                              e?.stopPropagation?.();
                               setSelectedGame(game);
                               setIsAttendanceOpen(true);
                             }}
@@ -1385,12 +1404,9 @@ export default function App() {
                         }}
                         onDelete={() => setGameIdToDelete(game.id)}
                         onLeave={() => handleLeaveGame(game.id)}
-                        onRepeat={() => {
-                          const newGame = { ...game, id: undefined, datetime: new Date(Date.now() + 86400000).toISOString(), joinedPlayers: [currentUser!.id], requests: [], chat: [] };
-                          setGameToEdit(newGame as any);
-                          setActiveTab('create');
-                        }}
-                        onConfirmAttendance={() => {
+                        onRepeat={() => handleRepeatGame(game)}
+                        onConfirmAttendance={(e?: React.MouseEvent) => {
+                          e?.stopPropagation?.();
                           setSelectedGame(game);
                           setIsAttendanceOpen(true);
                         }}
@@ -1537,13 +1553,12 @@ export default function App() {
                                 <p className="text-[10px] opacity-40 font-bold uppercase">{friend.skillLevel} • {friend.location?.city || ''}</p>
                               </div>
                             </div>
-                            <button 
-                              onClick={() => {
-                                setActiveTab('create');
-                              }}
-                              className="px-3 py-1.5 bg-[#E2FF3B] text-[#141414] rounded-lg text-[10px] font-black uppercase tracking-widest"
+                            <button
+                              onClick={() => handleRemoveFriend(friend.id)}
+                              className="p-2 text-[#141414]/20 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                              title={lang === 'hu' ? 'Barát eltávolítása' : 'Remove friend'}
                             >
-                              {t('groups.invite')}
+                              <X className="w-4 h-4" />
                             </button>
                           </div>
                         ))}
@@ -1785,9 +1800,14 @@ export default function App() {
             onGameInviteResponse={handleGameInviteResponse}
             t={t}
             onFriendResponse={handleFriendResponse}
-            onRead={(id) => {
-              // Mark as read locally or call API
-              setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+            onRead={async (id) => {
+              setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+              try {
+                await fetch(`/api/notifications/${id}/read`, {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${token}` }
+                });
+              } catch { /* silent */ }
             }}
             onClose={() => setIsNotificationsOpen(false)}
           />
@@ -1932,6 +1952,7 @@ function GameCard({
   const joinedPlayers = game.joinedPlayers || [];
   const slotsLeft = Number(game.requiredPlayers || 4) - joinedPlayers.length;
   const isFull = slotsLeft <= 0;
+  const creatorName = currentUser?.id === game.creatorId ? currentUser?.name : undefined;
 
   return (
     <div 
@@ -1983,7 +2004,7 @@ function GameCard({
               )}
             </div>
             <div className="flex flex-col">
-              <span className="text-xs font-bold tracking-tight">{game.creator?.name || 'Player'}</span>
+              <span className="text-xs font-bold tracking-tight">{(allPlayers || []).find(p => p.id === game.creatorId)?.name || 'Ismeretlen'}</span>
               {game.creator?.reliabilityStatus && (
                 <span className="text-[10px] uppercase tracking-tighter font-black opacity-30">{t(`profile.reliabilityStatus.${game.creator.reliabilityStatus}`)}</span>
               )}
@@ -2319,7 +2340,7 @@ function CreateGameForm({
     if (!formData.location.trim()) { setSubmitError(lang === 'hu' ? 'Add meg a helyszínt!' : 'Location is required!'); return; }
     if (!formData.datetime) { setSubmitError(lang === 'hu' ? 'Add meg az időpontot!' : 'Date & time is required!'); return; }
     const gameDate = new Date(formData.datetime);
-    if (gameDate < new Date()) { setSubmitError(lang === 'hu' ? 'Az időpont a múltban van!' : 'Date must be in the future!'); return; }
+    if (formData.datetime && gameDate < new Date() && !gameToEdit) { setSubmitError(lang === 'hu' ? 'Az időpont a múltban van! Adj meg jövőbeli időpontot.' : 'Date must be in the future!'); return; }
     setIsSubmitting(true);
     try {
       const url = gameToEdit ? `/api/games/${gameToEdit.id}` : '/api/games';
@@ -4095,7 +4116,11 @@ function GroupsTab({
 
 function MatchHistory({ games = [] }: { games: Game[] }) {
   const { t } = useI18n('hu');
-  const completedGames = (games || []).filter(g => g.isCompleted || g.status === 'played').sort((a, b) => { const da = a.datetime || a.date || ''; const db2 = b.datetime || b.date || ''; return new Date(db2).getTime() - new Date(da).getTime(); });
+  const completedGames = (games || []).filter(g => {
+    const dt = g.datetime || g.date;
+    const isPast = dt ? new Date(dt).getTime() < Date.now() : false;
+    return g.isCompleted || g.status === 'played' || (isPast && (g.joinedPlayers || []).includes(user.id));
+  }).sort((a, b) => { const da = a.datetime || a.date || ''; const db2 = b.datetime || b.date || ''; return new Date(db2).getTime() - new Date(da).getTime(); });
 
   if (completedGames.length === 0) {
     return (
