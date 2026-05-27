@@ -874,7 +874,9 @@ export default function App() {
           setAuthError(null);
           setAuthMode(mode);
         }} 
-        t={t} 
+        t={t}
+        lang={lang}
+        onLangChange={(l) => { setLang(l); }}
       />
     );
   }
@@ -2657,11 +2659,29 @@ function CreateGameForm({
   );
 }
 
-function AuthScreen({ onSelectMode, t }: { onSelectMode: (mode: 'login' | 'register') => void, t: any }) {
+function AuthScreen({ onSelectMode, t, lang, onLangChange }: { onSelectMode: (mode: 'login' | 'register') => void, t: any, lang: string, onLangChange: (l: 'hu' | 'en') => void }) {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col p-6 overflow-hidden relative">
       <div className="absolute top-[10%] right-[-10%] w-[80%] h-[50%] bg-[#E2FF3B]/10 blur-[120px] rounded-full" />
       <div className="absolute bottom-[20%] left-[-5%] w-[60%] h-[40%] bg-[#E2FF3B]/5 blur-[100px] rounded-full" />
+
+      {/* Language selector - top right */}
+      <div className="absolute top-6 right-6 z-20 flex gap-2">
+        <button
+          onClick={() => onLangChange('hu')}
+          className={`w-9 h-9 rounded-xl flex items-center justify-center text-xl transition-all ${lang === 'hu' ? 'bg-[#E2FF3B] shadow-lg scale-110' : 'bg-white/10 hover:bg-white/20 opacity-50 hover:opacity-100'}`}
+          title="Magyar"
+        >
+          🇭🇺
+        </button>
+        <button
+          onClick={() => onLangChange('en')}
+          className={`w-9 h-9 rounded-xl flex items-center justify-center text-xl transition-all ${lang === 'en' ? 'bg-[#E2FF3B] shadow-lg scale-110' : 'bg-white/10 hover:bg-white/20 opacity-50 hover:opacity-100'}`}
+          title="English"
+        >
+          🇬🇧
+        </button>
+      </div>
       
       <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full relative z-10 text-center">
         <motion.div 
