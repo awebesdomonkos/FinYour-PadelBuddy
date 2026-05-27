@@ -565,7 +565,7 @@ export default function App() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ attendanceRecords: records })
+        body: JSON.stringify({ attendanceRecords: records, status: 'played', isCompleted: true })
       });
       fetchData();
       setIsAttendanceOpen(false);
@@ -998,7 +998,7 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {isLoading ? (
                   <div className="md:col-span-2 lg:col-span-3 py-20 text-center font-mono text-xs opacity-50 uppercase tracking-widest">{t('common.scanning')}</div>
                 ) : (
@@ -1657,7 +1657,7 @@ export default function App() {
                           <History className="w-3 h-3" /> {t('profile.matchHistory')}
                         </h3>
                       </div>
-                      <MatchHistory games={(games || []).filter(g => g.joinedPlayers.includes(currentUser?.id || ''))} />
+                      <MatchHistory games={(games || []).filter(g => (g.joinedPlayers || []).includes(currentUser?.id || ''))} userId={currentUser?.id || ''} />
                     </div>
 
                     <div className="pt-6 border-t border-[#141414]/5">
@@ -2209,50 +2209,76 @@ function PlayerCard({
   onToggleFavorite: () => void,
   onOpenProfile: (p: User) => void
 }) {
-  const { t } = useI18n('hu');
+  const { t } = useI18n(player.languagePreference || 'hu');
   const isOnline = player.lastActive && (new Date(player.lastActive) > new Date(Date.now() - 3600000));
+  const isLfg = player.lfgStatus && player.lfgStatus !== LFGStatus.None;
+
+  const levelColors: Record<string, string> = {
+    Bronze: 'bg-orange-100 text-orange-700',
+    Silver: 'bg-slate-100 text-slate-600',
+    Gold:   'bg-yellow-100 text-yellow-700',
+  };
+  const reliabilityIcon = player.reliabilityStatus === 'Very Reliable' ? '🏆'
+    : player.reliabilityStatus === 'Regularly Appears' ? '✅'
+    : player.reliabilityStatus === 'Unreliable' ? '⚠️' : null;
 
   return (
     <div 
       onClick={() => onOpenProfile(player)}
-      className="bg-white rounded-3xl p-4 flex items-center gap-4 border border-[#141414]/5 shadow-sm hover:border-[#E2FF3B] hover:shadow-md transition-all group relative cursor-pointer"
+      className="bg-white rounded-3xl p-4 flex items-center gap-3 border border-[#141414]/5 shadow-sm hover:border-[#E2FF3B] hover:shadow-md transition-all cursor-pointer group"
     >
-      <div className="w-14 h-14 bg-[#141414] text-[#E2FF3B] rounded-2xl flex items-center justify-center shrink-0 overflow-hidden relative">
-        {player.avatarUrl ? (
-          <img src={player.avatarUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <UserIcon className="w-6 h-6" />
-        )}
-        {isOnline && (
-          <div className="absolute bottom-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#141414]" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <h3 className="font-bold truncate">{player.name}</h3>
-          {(player.lfgStatus && player.lfgStatus !== LFGStatus.None) && (
-             <span className="text-[8px] sm:text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-black uppercase whitespace-nowrap">
-               LFG: {t(`profile.lfg.${player.lfgStatus}`)}
-             </span>
+      {/* Avatar */}
+      <div className="relative shrink-0">
+        <div className="w-12 h-12 bg-[#141414] text-[#E2FF3B] rounded-2xl flex items-center justify-center overflow-hidden">
+          {player.avatarUrl ? (
+            <img src={player.avatarUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <UserIcon className="w-5 h-5" />
           )}
         </div>
-        <div className="flex gap-2 items-center mt-1">
-          <span className="text-[10px] font-black uppercase tracking-widest bg-[#141414]/5 px-2 py-0.5 rounded italic">{t(`profile.levels.${player.skillLevel}`)}</span>
-          <span className="text-[10px] opacity-40 flex items-center gap-0.5 truncate max-w-[100px]"><MapPin className="w-2 h-2 shrink-0" /> {player.location?.city || ''}</span>
+        {isOnline && (
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+        )}
+        {isLfg && !isOnline && (
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#E2FF3B] rounded-full border-2 border-white flex items-center justify-center">
+            <span className="text-[6px]">🔥</span>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 mb-1">
+          <h3 className="font-black text-sm truncate">{player.name}</h3>
+          {reliabilityIcon && <span className="text-[11px]">{reliabilityIcon}</span>}
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${levelColors[player.skillLevel] || 'bg-[#141414]/5 text-[#141414]/50'}`}>
+            {t(`profile.levels.${player.skillLevel}`)}
+          </span>
+          {player.location?.city && (
+            <span className="text-[10px] opacity-40 flex items-center gap-0.5 truncate">
+              <MapPin className="w-2.5 h-2.5 shrink-0" /> {player.location.city}
+            </span>
+          )}
+          {isLfg && (
+            <span className="text-[9px] bg-[#E2FF3B]/30 text-[#141414] px-1.5 py-0.5 rounded-lg font-black uppercase tracking-widest whitespace-nowrap">
+              {player.lfgStatus === LFGStatus.Now ? '🔥 Most' : '📅 Ma'}
+            </span>
+          )}
         </div>
       </div>
-      <div className="flex items-center gap-1">
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 shrink-0">
         <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite();
-          }}
-          className={`p-3 rounded-2xl transition-colors ${isFavorite ? 'text-red-500 bg-red-50' : 'bg-[#141414]/5 text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+          className={`p-2.5 rounded-xl transition-colors ${isFavorite ? 'text-red-500 bg-red-50' : 'bg-[#141414]/5 text-[#141414]/30 hover:text-red-500 hover:bg-red-50'}`}
         >
           <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
         </button>
-        <button className="p-3 rounded-2xl bg-[#141414]/5 hover:bg-[#E2FF3B] transition-colors group/btn">
-          <ChevronRight className="w-5 h-5 opacity-40 group-hover/btn:opacity-100" />
+        <button className="p-2.5 rounded-xl bg-[#141414]/5 hover:bg-[#E2FF3B] transition-colors">
+          <ChevronRight className="w-4 h-4 opacity-40" />
         </button>
       </div>
     </div>
@@ -4114,12 +4140,12 @@ function GroupsTab({
   );
 }
 
-function MatchHistory({ games = [] }: { games: Game[] }) {
+function MatchHistory({ games = [], userId = '' }: { games: Game[], userId?: string }) {
   const { t } = useI18n('hu');
   const completedGames = (games || []).filter(g => {
     const dt = g.datetime || g.date;
     const isPast = dt ? new Date(dt).getTime() < Date.now() : false;
-    return g.isCompleted || g.status === 'played' || (isPast && (g.joinedPlayers || []).includes(user.id));
+    return g.isCompleted || g.status === 'played' || (isPast && (g.joinedPlayers || []).includes(userId));
   }).sort((a, b) => { const da = a.datetime || a.date || ''; const db2 = b.datetime || b.date || ''; return new Date(db2).getTime() - new Date(da).getTime(); });
 
   if (completedGames.length === 0) {

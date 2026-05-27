@@ -95,6 +95,10 @@ export const translations: Record<Language, any> = {
       recommendedLevel: "Ajánlott szint", players: "játékos", spots: "hely",
       requestToJoin: "Csatlakozás kérése", cancelRequest: "Kérelem visszavonása", leaveGame: "Kilépés a meccsből",
       deleteGame: "Játék törlése", editGame: "Játék szerkesztése",
+      deleteGameConfirm: "Biztosan törlöd ezt a meccset?",
+      leaveGameConfirm: "Biztosan kilépsz ebből a meccsből?",
+      gameDeleted: "Meccs törölve", gameSaved: "Meccs mentve",
+      noPlayersFound: "Nincs találat",
       deleteConfirmTitle: "Játék törlése", deleteConfirmMessage: "Biztosan törölni szeretnéd ezt a játékot? Ez a művelet nem vonható vissza.",
       confirmDelete: "Biztosan törölni akarod ezt a meccset?",
       noGamesYet: "Még nincs meccs. Legyél te az első!", myCreated: "Általam szervezett", myJoined: "Csatlakozott meccsek"
@@ -211,6 +215,10 @@ export const translations: Record<Language, any> = {
       recommendedLevel: "Recommended Level", players: "players", spots: "spots",
       requestToJoin: "Request to Join", cancelRequest: "Cancel Request", leaveGame: "Leave Game",
       deleteGame: "Delete Game", editGame: "Edit Game",
+      deleteGameConfirm: "Are you sure you want to delete this match?",
+      leaveGameConfirm: "Are you sure you want to leave this match?",
+      gameDeleted: "Match deleted", gameSaved: "Match saved",
+      noPlayersFound: "No players found",
       deleteConfirmTitle: "Delete Game", deleteConfirmMessage: "Are you sure you want to delete this game? This action cannot be undone.",
       confirmDelete: "Are you sure you want to delete this match?",
       noGamesYet: "No games yet. Be the first to create one!", myCreated: "Created by me", myJoined: "Joined matches"
