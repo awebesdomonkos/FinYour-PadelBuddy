@@ -2006,7 +2006,7 @@ function GameCard({
               )}
             </div>
             <div className="flex flex-col">
-              <span className="text-xs font-bold tracking-tight">{(allPlayers || []).find(p => p.id === game.creatorId)?.name || 'Ismeretlen'}</span>
+              <span className="text-xs font-bold tracking-tight">{game.creatorName || 'Player'}</span>
               {game.creator?.reliabilityStatus && (
                 <span className="text-[10px] uppercase tracking-tighter font-black opacity-30">{t(`profile.reliabilityStatus.${game.creator.reliabilityStatus}`)}</span>
               )}

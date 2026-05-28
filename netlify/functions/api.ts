@@ -296,6 +296,7 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
           ...payload,
           id,
           creatorId: authUser.id,
+          creatorName: authUser.name,
           joinedPlayers: [authUser.id],
           requests: [],
           chat: [],
