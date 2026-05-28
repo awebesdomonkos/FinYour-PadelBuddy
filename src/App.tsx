@@ -2211,7 +2211,7 @@ function PlayerCard({
   onToggleFavorite: () => void,
   onOpenProfile: (p: User) => void
 }) {
-  const { t } = useI18n(player.languagePreference || 'hu');
+  const { t, lang } = useI18n(player.languagePreference || 'hu');
   const isOnline = player.lastActive && (new Date(player.lastActive) > new Date(Date.now() - 3600000));
   const isLfg = player.lfgStatus && player.lfgStatus !== LFGStatus.None;
 
@@ -2951,7 +2951,7 @@ function LoginForm({
 }
 
 function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: { user: User, onSave: (data: Partial<User>) => void, onCancel: () => void, onShowTutorial?: () => void }) {
-  const { t } = useI18n(user?.languagePreference || 'hu');
+  const { t, lang } = useI18n(user?.languagePreference || 'hu');
   const [formData, setFormData] = useState({
     name: user?.name || '',
     skillLevel: user?.skillLevel || 'Bronze',
@@ -4064,7 +4064,7 @@ function GroupsTab({
   onOpenChat: (group: Group) => void,
   onCreateClick: () => void
 }) {
-  const { t } = useI18n(currentUser?.languagePreference || 'hu');
+  const { t, lang } = useI18n(currentUser?.languagePreference || 'hu');
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -4161,7 +4161,7 @@ function GroupsTab({
 }
 
 function MatchHistory({ games = [], userId = '' }: { games: Game[], userId?: string }) {
-  const { t } = useI18n('hu');
+  const { t, lang } = useI18n('hu');
   const completedGames = (games || []).filter(g => {
     const dt = g.datetime || g.date;
     const isPast = dt ? new Date(dt).getTime() < Date.now() : false;
@@ -4651,7 +4651,7 @@ function CreateGroupModal({
   onClose: () => void, 
   onSave: (data: Partial<Group>) => void 
 }) {
-  const { t } = useI18n(currentUser.languagePreference || 'hu');
+  const { t, lang } = useI18n(currentUser.languagePreference || 'hu');
   const [formData, setFormData] = useState<Partial<Group>>({
     name: '',
     description: '',
