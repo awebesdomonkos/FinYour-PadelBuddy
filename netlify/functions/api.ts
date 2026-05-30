@@ -494,6 +494,12 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
         if (method === "POST" && subAction) {
           const payload = JSON.parse(body || "{}");
           if (subAction === "join") { if (!groupData.memberIds) groupData.memberIds = []; if (!groupData.memberIds.includes(authUser.id)) { groupData.memberIds.push(authUser.id); } }
+          else if (subAction === "leave") {
+            if (!groupData.memberIds) groupData.memberIds = [];
+            groupData.memberIds = groupData.memberIds.filter((id: string) => id !== authUser.id);
+            // Also remove from adminIds if admin
+            if (groupData.adminIds) groupData.adminIds = groupData.adminIds.filter((id: string) => id !== authUser.id);
+          }
           else if (subAction === "invite") { if (!groupData.invitedUserIds) groupData.invitedUserIds = []; if (!groupData.invitedUserIds.includes(payload.invitedUserId)) groupData.invitedUserIds.push(payload.invitedUserId); }
           else if (subAction === "chat") { if (!groupData.chat) groupData.chat = []; groupData.chat.push({ id: Math.random().toString(36).substr(2, 9), userId: authUser.id, userName: authUser.name, text: payload.text, timestamp: new Date().toISOString() }); }
           const updated = await db('groups', `id=eq.${itemId}`, { method: 'PATCH', body: { data: groupData } });

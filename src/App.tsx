@@ -238,6 +238,7 @@ export default function App() {
   const onboardingDoneRef = React.useRef(false);
   const [onboardingStep, setOnboardingStep] = useState(1); // 1, 2, 3
   const [ratingGameId, setRatingGameId] = useState<string | null>(null);
+  const [selectedGroupDetail, setSelectedGroupDetail] = useState<Group | null>(null);
   const [reminderGame, setReminderGame] = useState<Game | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -774,6 +775,21 @@ export default function App() {
     }
   };
 
+  const handleLeaveGroup = async (groupId: string) => {
+    if (!currentUser) return;
+    try {
+      await safeFetch(`/api/groups/${groupId}/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ userId: currentUser.id })
+      });
+      showToast(lang === 'hu' ? '✅ Kilépés sikeres' : '✅ Left the group');
+      fetchData();
+    } catch (err: any) {
+      showToast('❌ ' + (err?.message || 'Hiba'));
+    }
+  };
+
   const handleCreateGroup = async (groupData: Partial<Group>) => {
     if (!currentUser) return;
     try {
@@ -1018,23 +1034,27 @@ export default function App() {
                         if (!g.invitedUserIds?.includes(currentUser?.id || '') && g.creatorId !== currentUser?.id) return false;
                       }
 
-                      const date = new Date(g.datetime);
+                      const dt = g.datetime || (g.date && g.time ? `${g.date}T${g.time}` : null);
+                      const date = dt ? new Date(dt) : null;
                       const now = new Date();
+
+                      // Hide past games from main list
+                      if (!date || date < now) return false;
                       
                       if (gameFilter === 'lastminute') {
-                        const diffHours = (date.getTime() - now.getTime()) / 3600000;
-                        const slotsLeft = Number(g.requiredPlayers || 4) - g.joinedPlayers.length;
+                        const diffHours = (date!.getTime() - now.getTime()) / 3600000;
+                        const slotsLeft = Number(g.requiredPlayers || 4) - (g.joinedPlayers || []).length;
                         return diffHours > 0 && diffHours <= 3 && slotsLeft > 0;
                       }
 
-                      if (gameFilter === 'today') return date.toDateString() === now.toDateString();
+                      if (gameFilter === 'today') return date!.toDateString() === now.toDateString();
                       if (gameFilter === 'tomorrow') {
                         const tomorrow = new Date(now);
                         tomorrow.setDate(now.getDate() + 1);
-                        return date.toDateString() === tomorrow.toDateString();
+                        return date!.toDateString() === tomorrow.toDateString();
                       }
                       if (gameFilter === 'weekend') {
-                        const day = date.getDay();
+                        const day = date!.getDay();
                         return day === 0 || day === 6;
                       }
                       return true;
@@ -1328,7 +1348,9 @@ export default function App() {
               <GroupsTab 
                 groups={groups} 
                 currentUser={currentUser}
-                onJoin={handleJoinGroup} 
+                onJoin={handleJoinGroup}
+                onLeaveGroup={handleLeaveGroup}
+                onSelectGroup={(group) => setSelectedGroupDetail(group)}
                 onOpenChat={(group) => {
                   setSelectedGroup(group);
                   setIsGroupChatOpen(true);
@@ -1659,7 +1681,11 @@ export default function App() {
                           <History className="w-3 h-3" /> {t('profile.matchHistory')}
                         </h3>
                       </div>
-                      <MatchHistory games={(games || []).filter(g => (g.joinedPlayers || []).includes(currentUser?.id || ''))} userId={currentUser?.id || ''} />
+                      <MatchHistory 
+                    games={(games || []).filter(g => (g.joinedPlayers || []).includes(currentUser?.id || ''))} 
+                    userId={currentUser?.id || ''}
+                    onGameClick={(game) => setSelectedGameDetail(game)}
+                  />
                     </div>
 
                     <div className="pt-6 border-t border-[#141414]/5">
@@ -1796,6 +1822,99 @@ export default function App() {
             onConfirm={(recs) => handleConfirmAttendance(selectedGame.id, recs)}
           />
         )}
+        {/* Group Detail Drawer */}
+        {selectedGroupDetail && (
+          <div className="fixed inset-0 z-[60] flex justify-end">
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSelectedGroupDetail(null)} />
+            <div className="relative w-full max-w-sm bg-[#F8F8F5] h-full shadow-2xl flex flex-col overflow-y-auto">
+              <div className="bg-[#141414] text-white p-5">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setSelectedGroupDetail(null)} className="p-2 hover:bg-white/10 rounded-xl">
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <div className="flex-1">
+                    <h3 className="font-black text-lg uppercase">{selectedGroupDetail.name}</h3>
+                    <p className="text-white/40 text-[10px] font-bold uppercase">{selectedGroupDetail.city}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  <span className="px-2 py-1 bg-white/10 rounded-lg text-[10px] font-black uppercase">{(selectedGroupDetail.memberIds || []).length} {lang === 'hu' ? 'tag' : 'members'}</span>
+                  {selectedGroupDetail.recommendedLevel && <span className="px-2 py-1 bg-[#E2FF3B] text-[#141414] rounded-lg text-[10px] font-black uppercase">{t(`profile.levels.${selectedGroupDetail.recommendedLevel}`)}</span>}
+                  <span className="px-2 py-1 bg-white/10 rounded-lg text-[10px] font-black uppercase">{selectedGroupDetail.visibility === 'public' ? (lang === 'hu' ? 'Nyilvános' : 'Public') : (lang === 'hu' ? 'Privát' : 'Private')}</span>
+                </div>
+              </div>
+              <div className="flex-1 p-4 space-y-4">
+                {selectedGroupDetail.description && (
+                  <div className="bg-white p-4 rounded-2xl border border-[#141414]/5">
+                    <p className="text-[10px] opacity-40 font-bold uppercase mb-1">{lang === 'hu' ? 'Leírás' : 'Description'}</p>
+                    <p className="text-sm">{selectedGroupDetail.description}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">{t('groups.members')}</p>
+                  <div className="space-y-2">
+                    {(selectedGroupDetail.memberIds || []).map(mid => {
+                      const member = (players || []).find(p => p.id === mid);
+                      const isAdmin = (selectedGroupDetail.adminIds || []).includes(mid);
+                      return (
+                        <div key={mid} className="bg-white p-3 rounded-2xl border border-[#141414]/5 flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#141414]/5 flex items-center justify-center overflow-hidden shrink-0">
+                            {member?.avatarUrl ? <img src={member.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-4 h-4 opacity-40" />}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-bold">{member?.name || 'Ismeretlen'}</p>
+                            <p className="text-[10px] opacity-40 font-bold uppercase">{member ? t(`profile.levels.${member.skillLevel}`) : ''}</p>
+                          </div>
+                          {isAdmin && <span className="px-2 py-0.5 bg-[#E2FF3B] text-[#141414] text-[9px] font-black rounded-lg uppercase">Admin</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {(selectedGroupDetail.memberIds || []).includes(currentUser?.id || '') && (
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">{lang === 'hu' ? 'Barátok meghívása' : 'Invite Friends'}</p>
+                    <div className="space-y-2">
+                      {(players || []).filter(p => (currentUser?.friendIds || []).includes(p.id) && !(selectedGroupDetail.memberIds || []).includes(p.id)).map(friend => (
+                        <div key={friend.id} className="bg-white p-3 rounded-2xl border border-[#141414]/5 flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#141414]/5 flex items-center justify-center overflow-hidden shrink-0">
+                            {friend.avatarUrl ? <img src={friend.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-4 h-4 opacity-40" />}
+                          </div>
+                          <p className="flex-1 text-sm font-bold">{friend.name}</p>
+                          <button onClick={async () => { try { await safeFetch(`/api/groups/${selectedGroupDetail.id}/invite`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ invitedUserId: friend.id }) }); showToast('✅ ' + (lang === 'hu' ? 'Meghívó elküldve!' : 'Sent!')); } catch { showToast('❌'); } }} className="px-3 py-1.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-[10px] font-black uppercase hover:bg-[#252525] transition-colors">
+                            {lang === 'hu' ? 'Meghív' : 'Invite'}
+                          </button>
+                        </div>
+                      ))}
+                      {(players || []).filter(p => (currentUser?.friendIds || []).includes(p.id) && !(selectedGroupDetail.memberIds || []).includes(p.id)).length === 0 && (
+                        <p className="text-xs opacity-40 italic text-center py-3">{lang === 'hu' ? 'Nincs meghívható barát' : 'No friends to invite'}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="p-4 border-t border-[#141414]/5 space-y-2">
+                {(selectedGroupDetail.memberIds || []).includes(currentUser?.id || '') ? (
+                  <div className="flex gap-2">
+                    <button onClick={() => { setSelectedGroup(selectedGroupDetail); setIsGroupChatOpen(true); setSelectedGroupDetail(null); }} className="flex-1 py-3 bg-[#141414] text-[#E2FF3B] rounded-2xl font-black uppercase text-sm flex items-center justify-center gap-2 hover:bg-[#252525] transition-colors">
+                      <MessageSquare className="w-4 h-4" /> Chat
+                    </button>
+                    {!(selectedGroupDetail.adminIds || []).includes(currentUser?.id || '') && (
+                      <button onClick={() => { handleLeaveGroup(selectedGroupDetail.id); setSelectedGroupDetail(null); }} className="px-4 py-3 bg-red-50 text-red-500 rounded-2xl font-black uppercase text-sm flex items-center gap-2 hover:bg-red-100 transition-colors">
+                        <LogOut className="w-4 h-4" /> {lang === 'hu' ? 'Kilépés' : 'Leave'}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <button onClick={() => { handleJoinGroup(selectedGroupDetail.id); setSelectedGroupDetail(null); }} className="w-full py-3 bg-[#E2FF3B] text-[#141414] rounded-2xl font-black uppercase text-sm hover:scale-[1.02] transition-all">
+                    {t('groups.joinGroup')}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {isNotificationsOpen && (
           <NotificationsDrawer 
             notifications={notifications}
@@ -1954,171 +2073,187 @@ function GameCard({
   const joinedPlayers = game.joinedPlayers || [];
   const slotsLeft = Number(game.requiredPlayers || 4) - joinedPlayers.length;
   const isFull = slotsLeft <= 0;
-  const creatorName = currentUser?.id === game.creatorId ? currentUser?.name : undefined;
+  const creatorName = game.creatorName || (currentUser?.id === game.creatorId ? currentUser?.name : undefined);
 
   return (
     <div 
       onClick={onShowDetails}
-      className={`bg-white rounded-3xl p-5 border shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group cursor-pointer ${isPast ? 'opacity-70 grayscale-[0.5]' : 'border-[#141414]/5'}`}
+      className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all relative cursor-pointer ${isPast ? 'opacity-60' : 'border-[#141414]/5 hover:border-[#E2FF3B]'}`}
     >
-      {isOwner && !isPast && (
-        <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button 
-            onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
-            className="p-2 bg-white/80 backdrop-blur-md rounded-xl border border-[#141414]/5 shadow-sm hover:bg-[#E2FF3B] hover:border-[#141414]/10"
-            title="Edit Game"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
-            className="p-2 bg-white/80 backdrop-blur-md rounded-xl border border-[#141414]/5 shadow-sm hover:bg-red-500 hover:text-white hover:border-red-600"
-            title="Cancel Game"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+      {/* Top badges */}
       {isLastMinute && !isFull && !isPast && (
-        <div className="absolute top-0 left-0 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-br-xl z-20 animate-pulse">
-          {t('notifications.lastMinute')} 🔥
+        <div className="absolute top-0 left-0 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-tl-2xl rounded-br-xl z-20 animate-pulse">
+          🔥 Last Minute
         </div>
       )}
-      {requestStatus === 'pending' && (
-        <div className="absolute top-0 right-0 bg-yellow-400 text-[#141414] text-[10px] font-black uppercase px-3 py-1 rounded-bl-xl z-20">
+      {requestStatus === 'pending' && !isJoined && (
+        <div className="absolute top-3 right-3 bg-yellow-400 text-[#141414] text-[9px] font-black uppercase px-2 py-1 rounded-xl z-20">
           {t('common.requested')}
         </div>
       )}
       {isJoined && (
-        <div className="absolute top-0 right-0 bg-[#E2FF3B] text-[#141414] text-[10px] font-black uppercase px-3 py-1 rounded-bl-xl z-10">
+        <div className="absolute top-3 right-3 bg-[#E2FF3B] text-[#141414] text-[9px] font-black uppercase px-2 py-1 rounded-xl z-20">
           {t('common.joined')}
         </div>
       )}
-      
-      <div className="flex justify-between items-start mb-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 mb-1">
-             <div className="w-6 h-6 bg-[#141414]/5 rounded-full flex items-center justify-center overflow-hidden">
-              {game.creator?.avatarUrl ? (
-                <img src={game.creator.avatarUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <UserIcon className="w-4 h-4 opacity-40" />
-              )}
+
+      <div className="p-4">
+        {/* Header row: creator + date */}
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 bg-[#141414]/5 rounded-full flex items-center justify-center shrink-0">
+              <UserIcon className="w-3.5 h-3.5 opacity-40" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-bold tracking-tight">{game.creatorName || 'Player'}</span>
-              {game.creator?.reliabilityStatus && (
-                <span className="text-[10px] uppercase tracking-tighter font-black opacity-30">{t(`profile.reliabilityStatus.${game.creator.reliabilityStatus}`)}</span>
-              )}
-            </div>
+            <span className="text-xs font-bold truncate opacity-50">
+              {creatorName || game.creatorName || (lang === 'hu' ? 'Játékos' : 'Player')}
+            </span>
           </div>
-          <h3 className="font-bold text-lg leading-tight">{game.location}</h3>
-          <div className="flex gap-2 flex-wrap pt-1">
-            {game.recommendedLevel && (
-              <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-black uppercase">{t(`profile.levels.${game.recommendedLevel}`)} {t('groups.recommendedLevel')}</span>
-            )}
-            {game.gameType && (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded font-black uppercase ${game.gameType === 'Competitive' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                {t(`games.gameTypes.${game.gameType}`)}
-              </span>
-            )}
+          <div className="text-right shrink-0 mr-14">
+            <p className="text-[10px] font-bold uppercase tracking-tighter opacity-40">
+              {date.toLocaleDateString(lang === 'hu' ? 'hu-HU' : 'en-US', { month: 'short', day: 'numeric' })}
+            </p>
+            <p className="text-base font-black leading-none">
+              {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-xs font-bold uppercase tracking-tighter opacity-40">{date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
-          <p className="text-lg font-black">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-        </div>
-      </div>
 
-      {game.note && (
-        <p className="text-xs opacity-50 mb-4 line-clamp-2 italic">{game.note}</p>
-      )}
+        {/* Location */}
+        <h3 className="font-black text-base leading-tight mb-2 truncate">{game.location}</h3>
 
-      <div className="flex items-center justify-between mt-6">
-        <div className="flex items-center gap-3">
-          <div className="flex -space-x-2">
-            {(game.joinedPlayers || []).map((_, i) => (
-              <div key={i} className="w-8 h-8 rounded-full bg-[#141414] border-2 border-white flex items-center justify-center shadow-sm text-[10px] text-white">
-                {i === 0 ? <TrendingUp className="w-3 h-3 text-[#E2FF3B]" /> : <UserIcon className="w-3 h-3" />}
-              </div>
-            ))}
-            {Array.from({ length: Math.max(0, slotsLeft) }).map((_, i) => (
-              <div key={i} className="w-8 h-8 rounded-full bg-[#F5F5F0] border-2 border-white border-dashed flex items-center justify-center">
-                <Plus className="w-3 h-3 opacity-20" />
-              </div>
-            ))}
-          </div>
-          {(isJoined || isOwner) && (
-            <button 
-              onClick={onOpenChat}
-              className="w-10 h-10 rounded-full bg-[#141414]/5 flex items-center justify-center hover:bg-[#141414]/10 transition-colors relative"
-            >
-              <MessageSquare className="w-5 h-5" />
-              {(game.chat && game.chat.length > 0) && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white" />
-              )}
-            </button>
+        {/* Tags */}
+        <div className="flex gap-1.5 flex-wrap mb-3">
+          {game.recommendedLevel && (
+            <span className="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg font-black uppercase">
+              {t(`profile.levels.${game.recommendedLevel}`)}
+            </span>
           )}
-          <button
-            onClick={(e) => { e.stopPropagation(); onShare(); }}
-            className="w-10 h-10 rounded-full bg-[#141414]/5 flex items-center justify-center hover:bg-[#E2FF3B] transition-colors"
-            title="Megosztás"
-          >
-            <Share2 className="w-4 h-4" />
-          </button>
+          {game.gameType && (
+            <span className={`text-[9px] px-2 py-0.5 rounded-lg font-black uppercase ${
+              game.gameType === 'Competitive' ? 'bg-red-50 text-red-600' : 
+              game.gameType === 'Training' ? 'bg-purple-50 text-purple-600' : 'bg-green-50 text-green-600'
+            }`}>
+              {t(`games.gameTypes.${game.gameType}`)}
+            </span>
+          )}
+          {isFull && !isJoined && (
+            <span className="text-[9px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg font-black uppercase">
+              {t('common.full')}
+            </span>
+          )}
         </div>
-        
-        <div className="flex gap-2">
-          {isPast ? (
-            <>
-              {isOwner && !game.attendanceConfirmed && (
-                <button 
-                  onClick={onConfirmAttendance}
-                  className="px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest bg-orange-500 text-white hover:scale-105 active:scale-95 transition-all"
-                >
-                  {t('common.verify')}
-                </button>
-              )}
-              {isOwner && game.attendanceConfirmed && !game.isCompleted && (
-                 <button 
-                  onClick={onRecordResult}
-                  className="px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest bg-blue-500 text-white hover:scale-105 active:scale-95 transition-all"
-                >
-                  {t('common.score')}
-                </button>
-              )}
-              {isJoined && !(game.ratedBy || []).includes(currentUser?.id || '') && (game.joinedPlayers || []).length > 1 && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRate(); }}
-                  className="px-4 py-3 rounded-2xl text-sm font-black bg-[#E2FF3B] text-[#141414] hover:scale-105 active:scale-95 transition-all animate-pulse"
-                >
-                  ⭐ Értékelj!
-                </button>
-              )}
+
+        {game.note && (
+          <p className="text-xs opacity-40 mb-3 line-clamp-1 italic">{game.note}</p>
+        )}
+
+        {/* Bottom row: slots + actions */}
+        <div className="flex items-center justify-between gap-2">
+          {/* Player slots */}
+          <div className="flex -space-x-1.5 shrink-0">
+            {(game.joinedPlayers || []).slice(0, 4).map((_, i) => (
+              <div key={i} className="w-7 h-7 rounded-full bg-[#141414] border-2 border-white flex items-center justify-center shadow-sm">
+                {i === 0 ? <TrendingUp className="w-3 h-3 text-[#E2FF3B]" /> : <UserIcon className="w-3 h-3 text-white/60" />}
+              </div>
+            ))}
+            {Array.from({ length: Math.max(0, Math.min(slotsLeft, 3)) }).map((_, i) => (
+              <div key={i} className="w-7 h-7 rounded-full bg-[#F5F5F0] border-2 border-white border-dashed flex items-center justify-center">
+                <Plus className="w-2.5 h-2.5 opacity-20" />
+              </div>
+            ))}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-1.5">
+            {(isJoined || isOwner) && (
               <button 
-                onClick={onRepeat}
-                className="px-6 py-3 rounded-2xl text-sm font-bold bg-[#141414] text-[#E2FF3B] hover:scale-105 active:scale-95 transition-all shadow-lg shadow-black/10 flex items-center gap-2"
+                onClick={(e) => { e.stopPropagation(); onOpenChat(); }}
+                className="w-8 h-8 rounded-xl bg-[#141414]/5 flex items-center justify-center hover:bg-[#141414]/10 transition-colors relative shrink-0"
               >
-                <Plus className="w-4 h-4" /> {t('common.repeat')}
+                <MessageSquare className="w-4 h-4" />
+                {(game.chat && game.chat.length > 0) && (
+                  <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
+                )}
               </button>
-            </>
-          ) : (
-            <button 
-              disabled={isFull || isJoined || requestStatus === 'pending'}
-              onClick={onJoin}
-              className={`px-6 py-3 rounded-2xl text-sm font-bold transition-all ${
-                isJoined || requestStatus === 'accepted'
-                  ? 'bg-[#141414] text-[#E2FF3B]' 
-                  : requestStatus === 'pending'
-                    ? 'bg-yellow-100 text-yellow-700 cursor-default'
-                    : isFull 
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-[#E2FF3B] text-[#141414] hover:scale-105 active:scale-95 shadow-lg shadow-[#E2FF3B]/20'
-              }`}
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); onShare(); }}
+              className="w-8 h-8 rounded-xl bg-[#141414]/5 flex items-center justify-center hover:bg-[#E2FF3B] transition-colors shrink-0"
             >
-              {isJoined ? t('common.joined') : requestStatus === 'pending' ? t('common.requested') : isFull ? t('common.full') : t('common.joinMatch')}
+              <Share2 className="w-3.5 h-3.5" />
             </button>
-          )}
+
+            {/* Owner edit/delete */}
+            {isOwner && !isPast && (
+              <>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
+                  className="w-8 h-8 rounded-xl bg-[#141414]/5 flex items-center justify-center hover:bg-[#E2FF3B] transition-colors shrink-0"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
+                  className="w-8 h-8 rounded-xl bg-[#141414]/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors shrink-0"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+
+            {/* Past game actions */}
+            {isPast && isOwner && !game.attendanceRecords && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); onConfirmAttendance(); }}
+                className="px-3 py-2 rounded-xl text-[10px] font-black uppercase bg-orange-500 text-white hover:bg-orange-600 transition-colors whitespace-nowrap"
+              >
+                {t('common.verify')}
+              </button>
+            )}
+            {isPast && isOwner && game.attendanceRecords && !game.result && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); onRecordResult(); }}
+                className="px-3 py-2 rounded-xl text-[10px] font-black uppercase bg-blue-500 text-white hover:bg-blue-600 transition-colors whitespace-nowrap"
+              >
+                {t('common.score')}
+              </button>
+            )}
+            {isPast && isJoined && !(game.ratedBy || []).includes(currentUser?.id || '') && (game.joinedPlayers || []).length > 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onRate(); }}
+                className="px-3 py-2 rounded-xl text-[10px] font-black bg-[#E2FF3B] text-[#141414] hover:scale-105 transition-all whitespace-nowrap"
+              >
+                ⭐ {lang === 'hu' ? 'Értékelj!' : 'Rate!'}
+              </button>
+            )}
+            {isPast && (isJoined || isOwner) && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); onRepeat(); }}
+                className="px-3 py-2 rounded-xl text-[10px] font-black bg-[#141414] text-[#E2FF3B] hover:bg-[#252525] transition-all flex items-center gap-1 whitespace-nowrap"
+              >
+                <Plus className="w-3 h-3" /> {t('common.repeat')}
+              </button>
+            )}
+
+            {/* Future game join */}
+            {!isPast && (
+              <button 
+                disabled={isFull && !isJoined}
+                onClick={(e) => { e.stopPropagation(); onJoin(); }}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${
+                  isJoined
+                    ? 'bg-[#141414] text-[#E2FF3B] cursor-default' 
+                    : requestStatus === 'pending'
+                      ? 'bg-yellow-100 text-yellow-700 cursor-default'
+                      : isFull 
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-[#E2FF3B] text-[#141414] hover:scale-105 active:scale-95 shadow-md shadow-[#E2FF3B]/20'
+                }`}
+              >
+                {isJoined ? t('common.joined') : requestStatus === 'pending' ? t('common.requested') : isFull ? t('common.full') : t('common.joinMatch')}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -4056,13 +4191,17 @@ function GroupsTab({
   currentUser, 
   onJoin, 
   onOpenChat,
-  onCreateClick
+  onCreateClick,
+  onLeaveGroup,
+  onSelectGroup
 }: { 
   groups: Group[], 
   currentUser: User | null, 
   onJoin: (id: string) => void,
   onOpenChat: (group: Group) => void,
-  onCreateClick: () => void
+  onCreateClick: () => void,
+  onLeaveGroup: (id: string) => void,
+  onSelectGroup: (group: Group) => void
 }) {
   const { t, lang } = useI18n(currentUser?.languagePreference || 'hu');
   return (
@@ -4136,13 +4275,31 @@ function GroupsTab({
                   <span className="text-[10px] font-bold opacity-30 uppercase">{(group.memberIds || []).length} {t('groups.members')}</span>
                 </div>
                 {isMember ? (
-                  <button 
-                    onClick={() => onOpenChat(group)}
-                    className="px-6 py-2.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    {t('games.chatShort') || 'Chat'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => onSelectGroup(group)}
+                      className="px-3 py-2.5 bg-[#141414]/5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#141414]/10 transition-all"
+                      title={lang === 'hu' ? 'Részletek' : 'Details'}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => onOpenChat(group)}
+                      className="px-4 py-2.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {t('games.chatShort') || 'Chat'}
+                    </button>
+                    {group.adminIds && !group.adminIds.includes(currentUser?.id || '') && (
+                      <button 
+                        onClick={() => onLeaveGroup(group.id)}
+                        className="px-3 py-2.5 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all"
+                        title={t('groups.leaveGroup')}
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <button 
                     onClick={() => onJoin(group.id)}
@@ -4160,7 +4317,7 @@ function GroupsTab({
   );
 }
 
-function MatchHistory({ games = [], userId = '' }: { games: Game[], userId?: string }) {
+function MatchHistory({ games = [], userId = '', onGameClick }: { games: Game[], userId?: string, onGameClick?: (game: Game) => void }) {
   const { t, lang } = useI18n('hu');
   const completedGames = (games || []).filter(g => {
     const dt = g.datetime || g.date;
@@ -4180,7 +4337,7 @@ function MatchHistory({ games = [], userId = '' }: { games: Game[], userId?: str
   return (
     <div className="space-y-3">
       {completedGames.map(game => (
-        <div key={game.id} className="bg-white p-4 rounded-2xl border border-[#141414]/5 flex justify-between items-center group hover:border-[#E2FF3B]/50 transition-colors">
+        <div key={game.id} onClick={() => onGameClick?.(game)} className={`bg-white p-4 rounded-2xl border border-[#141414]/5 flex justify-between items-center transition-all ${onGameClick ? 'cursor-pointer hover:border-[#E2FF3B]/50 hover:shadow-sm' : ''}`}>
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${game.status === 'played' ? 'bg-[#E2FF3B]/10 text-[#141414]' : 'bg-red-50/50 text-red-500'}`}>
               <CheckCircle2 className="w-5 h-5" />
