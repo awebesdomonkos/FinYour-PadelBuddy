@@ -2043,7 +2043,8 @@ function GameCard({
   onRate,
   onShowDetails,
   onShare,
-  t
+  t,
+  lang = 'hu'
 }: { 
   key?: string, 
   game: Game,
@@ -2062,7 +2063,8 @@ function GameCard({
   onRate: () => void,
   onShowDetails: () => void,
   onShare: () => void,
-  t: (key: string) => string
+  t: (key: string) => string,
+  lang?: string
 }) {
   const gameDateTime = game.datetime || (game.date && game.time ? `${game.date}T${game.time}` : null);
   const date = gameDateTime ? new Date(gameDateTime) : new Date();
