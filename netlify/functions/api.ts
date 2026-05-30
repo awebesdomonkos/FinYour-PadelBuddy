@@ -509,7 +509,7 @@ export const handler: Handler = async (event: HandlerEvent, _ctx: HandlerContext
     }
 
     // NOTIFICATIONS
-    if (action === "notifications") {
+    if (action === "notifications" && subAction !== "read") {
       const targetId = itemId === 'me' ? authUser?.id : itemId;
       if (!targetId) return jsonResponse(200, { success: true, data: [] });
       const rows = await db('notifications', `user_id=eq.${targetId}&select=*&order=created_at.desc`);

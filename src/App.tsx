@@ -445,7 +445,7 @@ export default function App() {
         body: JSON.stringify({ userId: currentUser?.id, userName: currentUser?.name })
       });
       fetchData();
-      showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Joined the game!'));
+      showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Csatlakoztál a meccshez!'));
     } catch (err: any) {
       console.error("Failed to request joining game", err);
       showToast('❌ ' + (err?.message || (lang === 'hu' ? 'Csatlakozás sikertelen' : 'Failed to join')));
@@ -645,7 +645,7 @@ export default function App() {
         body: JSON.stringify({ fromUserId: currentUser?.id, toUserId })
       });
       fetchData();
-      showToast('✅ ' + (lang === 'hu' ? 'Barátkérés elküldve!' : 'Friend request sent!'));
+      showToast('✅ ' + (lang === 'hu' ? 'Barátkérés elküldve!' : 'Barátkérés elküldve!'));
     } catch (err: any) {
       console.error("Failed to send friend request", err);
       showToast('❌ ' + (err?.message || (lang === 'hu' ? 'Hiba történt' : 'Error')));
@@ -684,9 +684,9 @@ export default function App() {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ userId: currentUser?.id, userName: currentUser?.name })
         });
-        showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Joined the game!'));
+        showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Csatlakoztál a meccshez!'));
       } else {
-        showToast(lang === 'hu' ? 'Meghívás elutasítva' : 'Invitation declined');
+        showToast(lang === 'hu' ? 'Meghívás elutasítva' : 'Meghívás elutasítva');
       }
       // Mark notification as read
       setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, read: true } : n));
@@ -737,7 +737,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ ratings })
       });
-      showToast('⭐ ' + (lang === 'hu' ? 'Értékelés elküldve, köszönöm!' : 'Rating sent, thank you!'));
+      showToast('⭐ ' + (lang === 'hu' ? 'Értékelés elküldve, köszönöm!' : 'Értékelés elküldve, köszönöm!'));
       fetchData();
     } catch (err: any) {
       showToast('❌ ' + (err?.message || 'Hiba'));
@@ -904,8 +904,8 @@ export default function App() {
         step={onboardingStep}
         setStep={setOnboardingStep}
         onComplete={handleProfileComplete}
-        onSkip={() => { setIsCompletingProfile(false); setActiveTab('games'); }}
-        onLogout={() => { logout(); setAuthMode('landing'); }}
+        onSkip={() => { if (currentUser?.id) localStorage.setItem(`onboarding_done_${currentUser.id}`, '1'); setIsCompletingProfile(false); setActiveTab('games'); }}
+        onLogout={() => { if (currentUser?.id) localStorage.setItem(`onboarding_done_${currentUser.id}`, '1'); logout(); setAuthMode('landing'); }}
         t={t}
         toastMsg={toastMsg}
       />
@@ -1685,6 +1685,7 @@ export default function App() {
                     games={(games || []).filter(g => (g.joinedPlayers || []).includes(currentUser?.id || ''))} 
                     userId={currentUser?.id || ''}
                     onGameClick={(game) => setSelectedGameDetail(game)}
+                    onDeleteGame={(gameId) => { if(currentUser?.id === (games.find(g=>g.id===gameId)?.creatorId)) handleDeleteGame(gameId); }}
                   />
                     </div>
 
@@ -1881,13 +1882,13 @@ export default function App() {
                             {friend.avatarUrl ? <img src={friend.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-4 h-4 opacity-40" />}
                           </div>
                           <p className="flex-1 text-sm font-bold">{friend.name}</p>
-                          <button onClick={async () => { try { await safeFetch(`/api/groups/${selectedGroupDetail.id}/invite`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ invitedUserId: friend.id }) }); showToast('✅ ' + (lang === 'hu' ? 'Meghívó elküldve!' : 'Sent!')); } catch { showToast('❌'); } }} className="px-3 py-1.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-[10px] font-black uppercase hover:bg-[#252525] transition-colors">
-                            {lang === 'hu' ? 'Meghív' : 'Invite'}
+                          <button onClick={async () => { try { await safeFetch(`/api/groups/${selectedGroupDetail.id}/invite`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ invitedUserId: friend.id }) }); showToast('✅ ' + (lang === 'hu' ? 'Meghívó elküldve!' : 'Elküldve!')); } catch { showToast('❌'); } }} className="px-3 py-1.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-[10px] font-black uppercase hover:bg-[#252525] transition-colors">
+                            {lang === 'hu' ? 'Meghív' : 'Meghív'}
                           </button>
                         </div>
                       ))}
                       {(players || []).filter(p => (currentUser?.friendIds || []).includes(p.id) && !(selectedGroupDetail.memberIds || []).includes(p.id)).length === 0 && (
-                        <p className="text-xs opacity-40 italic text-center py-3">{lang === 'hu' ? 'Nincs meghívható barát' : 'No friends to invite'}</p>
+                        <p className="text-xs opacity-40 italic text-center py-3">{lang === 'hu' ? 'Nincs meghívható barát' : 'Nincs meghívható barát'}</p>
                       )}
                     </div>
                   </div>
@@ -2502,8 +2503,8 @@ function CreateGameForm({
     e.preventDefault();
     setSubmitError(null);
     // Validation
-    if (!formData.location.trim()) { setSubmitError(lang === 'hu' ? 'Add meg a helyszínt!' : 'Location is required!'); return; }
-    if (!formData.datetime) { setSubmitError(lang === 'hu' ? 'Add meg az időpontot!' : 'Date & time is required!'); return; }
+    if (!formData.location.trim()) { setSubmitError(lang === 'hu' ? 'Add meg a helyszínt!' : 'Helyszín megadása kötelező!'); return; }
+    if (!formData.datetime) { setSubmitError(lang === 'hu' ? 'Add meg az időpontot!' : 'Dátum és időpont megadása kötelező!'); return; }
     const gameDate = new Date(formData.datetime);
     if (formData.datetime && gameDate < new Date() && !gameToEdit) { setSubmitError(lang === 'hu' ? 'Az időpont a múltban van! Adj meg jövőbeli időpontot.' : 'Date must be in the future!'); return; }
     setIsSubmitting(true);
@@ -2519,10 +2520,10 @@ function CreateGameForm({
         onSuccess();
       } else {
         const data = await res.json().catch(() => ({}));
-        setSubmitError(data?.message || (lang === 'hu' ? 'Hiba történt, próbáld újra!' : 'Something went wrong, try again!'));
+        setSubmitError(data?.message || (lang === 'hu' ? 'Hiba történt, próbáld újra!' : 'Valami hiba történt, próbáld újra!'));
       }
     } catch (err) {
-      setSubmitError(lang === 'hu' ? 'Hálózati hiba. Ellenőrizd az internetkapcsolatot.' : 'Network error. Check your connection.');
+      setSubmitError(lang === 'hu' ? 'Hálózati hiba. Ellenőrizd az internetkapcsolatot.' : 'Hálózati hiba. Ellenőrizd az internetkapcsolatot.');
     } finally {
       setIsSubmitting(false);
     }
@@ -2563,10 +2564,10 @@ function CreateGameForm({
               onChange={e => setFormData({ ...formData, recurrence: e.target.value })}
               className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none appearance-none"
             >
-              <option value="none">{lang === 'hu' ? 'Egyszeri alkalom' : 'One-time game'}</option>
-              <option value="weekly">{lang === 'hu' ? 'Minden héten' : 'Every Week'}</option>
-              <option value="biweekly">{lang === 'hu' ? '2 hetente' : 'Every 2 Weeks'}</option>
-              <option value="monthly">{lang === 'hu' ? 'Havonta' : 'Every Month'}</option>
+              <option value="none">{lang === 'hu' ? 'Egyszeri alkalom' : 'Egyszeri meccs'}</option>
+              <option value="weekly">{lang === 'hu' ? 'Minden héten' : 'Minden héten'}</option>
+              <option value="biweekly">{lang === 'hu' ? '2 hetente' : '2 hetente'}</option>
+              <option value="monthly">{lang === 'hu' ? 'Havonta' : 'Havonta'}</option>
             </select>
           </div>
         </div>
@@ -2787,7 +2788,7 @@ function CreateGameForm({
           className="w-full bg-[#141414] text-[#E2FF3B] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-black/10 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {isSubmitting
-            ? <><div className="w-4 h-4 border-2 border-[#E2FF3B]/30 border-t-[#E2FF3B] rounded-full animate-spin" />{lang === 'hu' ? 'Mentés...' : 'Saving...'}</>
+            ? <><div className="w-4 h-4 border-2 border-[#E2FF3B]/30 border-t-[#E2FF3B] rounded-full animate-spin" />{lang === 'hu' ? 'Mentés...' : 'Mentés...'}</>
             : (gameToEdit ? t('common.save') : t('games.createGame'))
           }
         </button>
@@ -4319,7 +4320,7 @@ function GroupsTab({
   );
 }
 
-function MatchHistory({ games = [], userId = '', onGameClick }: { games: Game[], userId?: string, onGameClick?: (game: Game) => void }) {
+function MatchHistory({ games = [], userId = '', onGameClick, onDeleteGame }: { games: Game[], userId?: string, onGameClick?: (game: Game) => void, onDeleteGame?: (gameId: string) => void }) {
   const { t, lang } = useI18n('hu');
   const completedGames = (games || []).filter(g => {
     const dt = g.datetime || g.date;
@@ -4339,8 +4340,9 @@ function MatchHistory({ games = [], userId = '', onGameClick }: { games: Game[],
   return (
     <div className="space-y-3">
       {completedGames.map(game => (
-        <div key={game.id} onClick={() => onGameClick?.(game)} className={`bg-white p-4 rounded-2xl border border-[#141414]/5 flex justify-between items-center transition-all ${onGameClick ? 'cursor-pointer hover:border-[#E2FF3B]/50 hover:shadow-sm' : ''}`}>
-          <div className="flex items-center gap-3">
+        <div key={game.id} className="bg-white p-4 rounded-2xl border border-[#141414]/5 flex items-center gap-3 transition-all hover:border-[#E2FF3B]/30 hover:shadow-sm">
+          <div onClick={() => onGameClick?.(game)} className={`flex-1 flex items-center gap-3 min-w-0 ${onGameClick ? 'cursor-pointer' : ''}`}>
+            <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${game.status === 'played' ? 'bg-[#E2FF3B]/10 text-[#141414]' : 'bg-red-50/50 text-red-500'}`}>
               <CheckCircle2 className="w-5 h-5" />
             </div>
@@ -4350,13 +4352,14 @@ function MatchHistory({ games = [], userId = '', onGameClick }: { games: Game[],
                   {game.datetime || game.date ? new Date(game.datetime || game.date).toLocaleDateString('hu-HU') : '-'}
                 </p>
                 <span className="text-[10px] px-2 py-0.5 bg-[#141414]/5 rounded-full font-bold opacity-60 capitalize">
-                  {game.gameType || 'Friendly'}
+                  {game.gameType ? t(`games.gameTypes.${game.gameType}`) : t('games.gameTypes.Friendly')}
                 </span>
               </div>
               <h4 className="font-bold text-sm truncate max-w-[150px]">{game.location}</h4>
               <p className="text-[10px] font-bold text-[#E2FF3B] bg-[#141414] inline-block px-1.5 rounded mt-1">
-                {game.result?.score || (lang === 'hu' ? 'Nincs eredmény' : 'No score recorded')}
+                {game.result?.score || (lang === 'hu' ? 'Nincs eredmény' : 'Nincs rögzített eredmény')}
               </p>
+            </div>
             </div>
           </div>
           <div className="flex -space-x-1.5 translate-x-1">
@@ -4371,6 +4374,14 @@ function MatchHistory({ games = [], userId = '', onGameClick }: { games: Game[],
               </div>
             )}
           </div>
+          {onDeleteGame && (
+            <button
+              onClick={(e) => { e.stopPropagation(); if(window.confirm('Biztosan törlöd ezt a meccset?')) onDeleteGame(game.id); }}
+              className="ml-1 p-2 text-[#141414]/20 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       ))}
     </div>
@@ -4660,7 +4671,7 @@ function ProfileDrawer({
             ) : (
               <div className="p-8 text-center bg-[#141414]/5 rounded-[32px] border border-dashed border-[#141414]/10">
                 <EyeOff className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-30">{lang === 'hu' ? 'Ez az előzmény privát' : 'This history is private'}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-30">{lang === 'hu' ? 'Ez az előzmény privát' : 'Ez az előzmény privát'}</p>
               </div>
             )}
           </div>
@@ -5560,7 +5571,7 @@ function RatingModal({
         <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
           {teammates.length === 0 ? (
             <div className="py-8 text-center opacity-40">
-              <p className="text-sm font-bold">{lang === 'hu' ? 'Nincs értékelhető játékos' : 'No players to rate'}</p>
+              <p className="text-sm font-bold">{lang === 'hu' ? 'Nincs értékelhető játékos' : 'Nincs értékelhető játékos'}</p>
             </div>
           ) : (
             teammates.map(player => {
@@ -5593,7 +5604,7 @@ function RatingModal({
                     >
                       <span className="text-lg">👍</span>
                       <span className="text-[11px] font-black uppercase tracking-wide">
-                        {lang === 'hu' ? 'Megbízható' : 'Reliable'}
+                        {lang === 'hu' ? 'Megbízható' : 'Megbízható'}
                       </span>
                     </button>
                     <button
@@ -5606,7 +5617,7 @@ function RatingModal({
                     >
                       <span className="text-lg">🎾</span>
                       <span className="text-[11px] font-black uppercase tracking-wide">
-                        {lang === 'hu' ? 'Jó játékos' : 'Good player'}
+                        {lang === 'hu' ? 'Jó játékos' : 'Jó játékos'}
                       </span>
                     </button>
                   </div>
