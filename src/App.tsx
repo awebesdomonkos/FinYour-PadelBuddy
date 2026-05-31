@@ -955,7 +955,16 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button 
+            {/* Language switcher */}
+            <button
+              onClick={() => handleUpdateLanguage(lang === 'hu' ? 'en' : 'hu')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#141414]/5 hover:bg-[#E2FF3B] transition-colors text-xs font-black uppercase tracking-widest"
+              title={lang === 'hu' ? 'Switch to English' : 'Váltás magyarra'}
+            >
+              <span className="text-base leading-none">{lang === 'hu' ? '🇭🇺' : '🇬🇧'}</span>
+              <span className="hidden sm:block">{lang === 'hu' ? 'HU' : 'EN'}</span>
+            </button>
+            <button
               onClick={() => setIsNotificationsOpen(true)}
               className="w-10 h-10 rounded-full bg-[#141414]/5 flex items-center justify-center relative hover:bg-[#141414]/10 transition-colors"
             >
