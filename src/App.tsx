@@ -20,6 +20,7 @@ import {
   Target,
   X,
   LogOut,
+  Trash2,
 } from 'lucide-react';
 import { useI18n } from './hooks/useI18n.ts';
 import { useAuth } from './context/AuthContext.tsx';
@@ -733,6 +734,38 @@ export default function App() {
     }
   };
 
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!currentUser) return;
+    try {
+      await safeFetch(`/api/groups/${groupId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchGroups();
+      showToast('✅ ' + (lang === 'hu' ? 'Csoport törölve' : 'Group deleted'));
+    } catch (err: any) {
+      showToast('❌ ' + (err?.message || 'Hiba'));
+    }
+  };
+
+  const handleMakeAdmin = async (groupId: string, userId: string) => {
+    if (!currentUser) return;
+    try {
+      const groupRows = groups.find(g => g.id === groupId);
+      if (!groupRows) return;
+      const newAdminIds = [...new Set([...(groupRows.adminIds || []), userId])];
+      await safeFetch(`/api/groups/${groupId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ adminIds: newAdminIds })
+      });
+      fetchGroups();
+      showToast('✅ ' + (lang === 'hu' ? 'Admin jog megadva' : 'Admin rights granted'));
+    } catch (err: any) {
+      showToast('❌ ' + (err?.message || 'Hiba'));
+    }
+  };
+
   const handleUpdateUser = async (updatedData: Partial<User>) => {
     if (!currentUser) return;
     try {
@@ -1246,16 +1279,18 @@ export default function App() {
               exit={{ opacity: 0, y: -10 }}
               className="space-y-6"
             >
-              <GroupsTab 
-                groups={groups} 
+              <GroupsTab
+                groups={groups}
                 currentUser={currentUser}
                 onJoin={handleJoinGroup}
                 onLeaveGroup={handleLeaveGroup}
+                onDeleteGroup={handleDeleteGroup}
+                onMakeAdmin={handleMakeAdmin}
                 onSelectGroup={(group) => setSelectedGroupDetail(group)}
                 onOpenChat={(group) => {
                   setSelectedGroup(group);
                   setIsGroupChatOpen(true);
-                }} 
+                }}
                 onCreateClick={() => setIsCreateGroupModalOpen(true)}
               />
             </motion.div>
@@ -1509,20 +1544,44 @@ export default function App() {
                           <Users className="w-3 h-3" /> {t('nav.groups')}
                         </h3>
                         <div className="space-y-2">
-                          {(groups || []).filter(g => currentUser && (g.memberIds || []).includes(currentUser.id)).map(group => (
-                            <div key={group.id} className="flex items-center justify-between p-3 bg-[#141414]/5 rounded-2xl">
-                              <div>
-                                <p className="text-sm font-bold">{group.name}</p>
-                                <p className="text-[10px] opacity-40 font-bold uppercase">{group.city} • {(group.memberIds || []).length} {t('groups.members')}</p>
+                          {(groups || []).filter(g => currentUser && (g.memberIds || []).includes(currentUser.id)).map(group => {
+                            const isAdmin = (group.adminIds || []).includes(currentUser?.id || '');
+                            const isOnlyAdmin = isAdmin && (group.adminIds || []).length === 1;
+                            return (
+                              <div key={group.id} className="flex items-center justify-between p-3 bg-[#141414]/5 rounded-2xl">
+                                <div>
+                                  <p className="text-sm font-bold">{group.name}</p>
+                                  <p className="text-[10px] opacity-40 font-bold uppercase">{group.city} • {(group.memberIds || []).length} {t('groups.members')}{isAdmin ? ' • 👑 Admin' : ''}</p>
+                                </div>
+                                <div className="flex gap-1.5">
+                                  <button
+                                    onClick={() => setActiveTab('groups')}
+                                    className="px-3 py-1.5 bg-[#141414] text-[#E2FF3B] rounded-lg text-[10px] font-black uppercase tracking-widest"
+                                  >
+                                    {t('games.chatShort')}
+                                  </button>
+                                  {isAdmin ? (
+                                    <button
+                                      onClick={() => { if (window.confirm(lang === 'hu' ? 'Biztosan törlöd a csoportot?' : 'Delete this group?')) handleDeleteGroup(group.id); }}
+                                      className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors"
+                                      title={lang === 'hu' ? 'Csoport törlése' : 'Delete group'}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => !isOnlyAdmin && handleLeaveGroup(group.id)}
+                                      disabled={isOnlyAdmin}
+                                      className={`p-1.5 rounded-lg transition-colors ${isOnlyAdmin ? 'bg-gray-50 text-gray-300 cursor-not-allowed' : 'bg-red-50 text-red-500 hover:bg-red-100'}`}
+                                      title={lang === 'hu' ? 'Kilépés' : 'Leave'}
+                                    >
+                                      <LogOut className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                              <button
-                                onClick={() => { setActiveTab('groups'); }}
-                                className="px-3 py-1.5 bg-[#141414] text-[#E2FF3B] rounded-lg text-[10px] font-black uppercase tracking-widest"
-                              >
-                                {t('games.chatShort')}
-                              </button>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
