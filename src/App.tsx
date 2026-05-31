@@ -530,7 +530,7 @@ export default function App() {
 
   const handleSendMessage = async (gameId: string, text: string) => {
     if (!currentUser) return;
-    const optimisticMsg = { id: Math.random().toString(36).substr(2, 9), userId: currentUser.id, userName: currentUser.name, text, timestamp: new Date().toISOString() };
+    const optimisticMsg = { id: crypto.randomUUID(), userId: currentUser.id, userName: currentUser.name, text, timestamp: new Date().toISOString() };
     // Optimistic update
     setGames(prev => prev.map(g => g.id === gameId ? { ...g, chat: [...(g.chat || []), optimisticMsg] } : g));
     if (selectedGame?.id === gameId) setSelectedGame(prev => prev ? { ...prev, chat: [...(prev.chat || []), optimisticMsg] } : prev);
@@ -596,7 +596,7 @@ export default function App() {
 
   const handleSendGroupMessage = async (text: string) => {
     if (!currentUser || !selectedGroup) return;
-    const optimisticMsg = { id: Math.random().toString(36).substr(2, 9), userId: currentUser.id, userName: currentUser.name, text, timestamp: new Date().toISOString() };
+    const optimisticMsg = { id: crypto.randomUUID(), userId: currentUser.id, userName: currentUser.name, text, timestamp: new Date().toISOString() };
     // Optimistic update
     setSelectedGroup(prev => prev ? { ...prev, chat: [...(prev.chat || []), optimisticMsg] } : prev);
     try {

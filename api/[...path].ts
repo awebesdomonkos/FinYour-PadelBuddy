@@ -117,7 +117,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const normalizedEmail = email.toLowerCase().trim();
       const existing = await db('users', `email=eq.${encodeURIComponent(normalizedEmail)}&select=id`);
       if (existing.length > 0) return jsonResponse(res, 400, { success: false, message: "Email already exists" });
-      const id = Math.random().toString(36).substr(2, 9);
+      const id = crypto.randomUUID();
       const password_hash = await bcrypt.hash(password, 10);
       const { password: _p, email: _e, name: _n, ...restData } = userData;
       const row = {
@@ -214,10 +214,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       if (itemId === "request" && method === "POST") {
         const { toUserId } = JSON.parse(body);
-        const reqId = Math.random().toString(36).substr(2, 9);
+        const reqId = crypto.randomUUID();
         const created = await db('friend_requests', '', { method: 'POST', body: { id: reqId, from_user_id: authUser.id, to_user_id: toUserId, status: 'pending', created_at: new Date().toISOString() } });
         const req = Array.isArray(created) ? created[0] : created;
-        const notifId = Math.random().toString(36).substr(2, 9);
+        const notifId = crypto.randomUUID();
         await db('notifications', '', { method: 'POST', body: {
           id: notifId, user_id: toUserId,
           data: { type: 'new_request', title: 'Új barátkérés', message: `${authUser.name} barátnak jelölt`, fromUserId: authUser.id, requestId: reqId, read: false },
@@ -260,7 +260,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               db('users', `id=eq.${req.to_user_id}`, { method: 'PATCH', body: { data: { ...d2, friendIds: f2 } } })
             ]);
           }
-          const notifId = Math.random().toString(36).substr(2, 9);
+          const notifId = crypto.randomUUID();
           const acceptorRows = await db('users', `id=eq.${authUser.id}&select=*`);
           const acceptorName = acceptorRows[0] ? (rowToUser(acceptorRows[0]).name || authUser.name) : authUser.name;
           await db('notifications', '', { method: 'POST', body: {
@@ -289,7 +289,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
       if (method === "POST" && !itemId) {
         const payload = JSON.parse(body);
-        const id = Math.random().toString(36).substr(2, 9);
+        const id = crypto.randomUUID();
         const gameData = {
           ...payload, id,
           creatorId: authUser.id,
@@ -313,7 +313,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             })
             .slice(0, 20)
             .map(async (u: any) => {
-              const nid = Math.random().toString(36).substr(2, 9);
+              const nid = crypto.randomUUID();
               return db('notifications', '', { method: 'POST', body: {
                 id: nid, user_id: u.id,
                 data: { type: 'game_near', title: 'Új meccs a közeledben!', message: `${authUser.name} új ${gameData.recommendedLevel} szintű meccset hirdetett: ${gameData.location}`, gameId: id, fromUserId: authUser.id, read: false },
@@ -324,7 +324,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         if (payload.invitedUserIds && payload.invitedUserIds.length > 0) {
           await Promise.all(payload.invitedUserIds.map(async (uid: string) => {
-            const notifId = Math.random().toString(36).substr(2, 9);
+            const notifId = crypto.randomUUID();
             await db('notifications', '', { method: 'POST', body: {
               id: notifId, user_id: uid,
               data: { type: 'gameInvite', title: 'Játékmeghívás', message: `${authUser.name} meghívott egy meccsre: ${payload.location}`, gameId: id, fromUserId: authUser.id, read: false },
@@ -355,7 +355,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               if (!gameData.joinedPlayers.includes(authUser.id)) {
                 gameData.joinedPlayers.push(authUser.id);
                 if (gameData.creatorId !== authUser.id) {
-                  const nid = Math.random().toString(36).substr(2,9);
+                  const nid = crypto.randomUUID();
                   await db('notifications', '', { method: 'POST', body: {
                     id: nid, user_id: gameData.creatorId,
                     data: { type: 'new_request', title: 'Új résztvevő', message: `${authUser.name} csatlakozott a meccsedhez: ${gameData.location}`, gameId: itemId, fromUserId: authUser.id, read: false },
@@ -367,7 +367,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               if (!gameData.requests) gameData.requests = [];
               if (!gameData.requests.find((r: any) => r.userId === authUser.id)) {
                 gameData.requests.push({ userId: authUser.id, userName: authUser.name, status: 'pending', timestamp: new Date().toISOString() });
-                const notifId = Math.random().toString(36).substr(2, 9);
+                const notifId = crypto.randomUUID();
                 await db('notifications', '', { method: 'POST', body: {
                   id: notifId, user_id: gameData.creatorId,
                   data: { type: 'new_request', title: 'Csatlakozási kérelem', message: `${authUser.name} csatlakozni szeretne a meccsedhez`, gameId: itemId, fromUserId: authUser.id, read: false },
@@ -382,14 +382,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               gameData.requests[rIdx].status = approve ? 'approved' : 'rejected';
               if (approve && !gameData.joinedPlayers.includes(userId)) {
                 gameData.joinedPlayers.push(userId);
-                const notifId = Math.random().toString(36).substr(2, 9);
+                const notifId = crypto.randomUUID();
                 await db('notifications', '', { method: 'POST', body: {
                   id: notifId, user_id: userId,
                   data: { type: 'request_status', title: 'Kérelem elfogadva', message: `Csatlakozhatsz a meccshez: ${gameData.location}`, gameId: itemId, read: false },
                   created_at: new Date().toISOString()
                 }}).catch(() => {});
               } else if (!approve) {
-                const notifId = Math.random().toString(36).substr(2, 9);
+                const notifId = crypto.randomUUID();
                 await db('notifications', '', { method: 'POST', body: {
                   id: notifId, user_id: userId,
                   data: { type: 'request_status', title: 'Kérelem elutasítva', message: `A meccsre való csatlakozási kérelmed elutasításra került: ${gameData.location}`, gameId: itemId, read: false },
@@ -417,7 +417,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               else if (totalRatings >= 3 && posRatio >= 0.7) reliabilityStatus = 'Regularly Appears';
               else if (totalRatings >= 1 && posRatio < 0.4) reliabilityStatus = 'Unreliable';
               await db('users', `id=eq.${r.userId}`, { method: 'PATCH', body: { data: { ...uData, reliabilityScore, goodPlayerScore, totalRatings, reliabilityStatus } } });
-              const nid = Math.random().toString(36).substr(2, 9);
+              const nid = crypto.randomUUID();
               const badges = [r.reliable ? '👍' : '', r.goodPlayer ? '🎾' : ''].filter(Boolean).join(' ');
               await db('notifications', '', { method: 'POST', body: {
                 id: nid, user_id: r.userId,
@@ -428,7 +428,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           } else if (subAction === "leave") {
             gameData.joinedPlayers = (gameData.joinedPlayers || []).filter((id: string) => id !== authUser.id);
             if (gameData.creatorId !== authUser.id) {
-              const nid = Math.random().toString(36).substr(2, 9);
+              const nid = crypto.randomUUID();
               await db('notifications', '', { method: 'POST', body: {
                 id: nid, user_id: gameData.creatorId,
                 data: { type: 'request_status', title: 'Játékos kilépett', message: `${authUser.name} kilépett a meccsedből: ${gameData.location}`, gameId: itemId, read: false },
@@ -439,7 +439,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (!gameData.joinedPlayers.includes(authUser.id)) gameData.joinedPlayers.push(authUser.id);
           } else if (subAction === "chat") {
             if (!gameData.chat) gameData.chat = [];
-            gameData.chat.push({ id: Math.random().toString(36).substr(2, 9), userId: authUser.id, userName: authUser.name, text: payload.text, timestamp: new Date().toISOString() });
+            gameData.chat.push({ id: crypto.randomUUID(), userId: authUser.id, userName: authUser.name, text: payload.text, timestamp: new Date().toISOString() });
           } else if (subAction === "attendance") {
             gameData.attendanceRecords = payload.attendanceRecords;
           } else if (subAction === "result") {
@@ -465,7 +465,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
       if (method === "POST" && !itemId) {
         const payload = JSON.parse(body);
-        const id = Math.random().toString(36).substr(2, 9);
+        const id = crypto.randomUUID();
         const groupData = { ...payload, id, adminIds: [authUser.id], memberIds: [authUser.id], chat: [], invitedUserIds: [], createdAt: new Date().toISOString() };
         const created = await db('groups', '', { method: 'POST', body: { id, data: groupData } });
         return jsonResponse(res, 201, { success: true, data: rowToObj(Array.isArray(created) ? created[0] : created) });
@@ -489,7 +489,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (groupData.adminIds) groupData.adminIds = groupData.adminIds.filter((id: string) => id !== authUser.id);
           }
           else if (subAction === "invite") { if (!groupData.invitedUserIds) groupData.invitedUserIds = []; if (!groupData.invitedUserIds.includes(payload.invitedUserId)) groupData.invitedUserIds.push(payload.invitedUserId); }
-          else if (subAction === "chat") { if (!groupData.chat) groupData.chat = []; groupData.chat.push({ id: Math.random().toString(36).substr(2, 9), userId: authUser.id, userName: authUser.name, text: payload.text, timestamp: new Date().toISOString() }); }
+          else if (subAction === "chat") { if (!groupData.chat) groupData.chat = []; groupData.chat.push({ id: crypto.randomUUID(), userId: authUser.id, userName: authUser.name, text: payload.text, timestamp: new Date().toISOString() }); }
           const updated = await db('groups', `id=eq.${itemId}`, { method: 'PATCH', body: { data: groupData } });
           return jsonResponse(res, 200, { success: true, data: rowToObj(Array.isArray(updated) ? updated[0] : updated) });
         }
