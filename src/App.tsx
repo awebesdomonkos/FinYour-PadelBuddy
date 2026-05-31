@@ -417,11 +417,11 @@ export default function App() {
       updateUser(data);
       setIsCompletingProfile(false);
       setActiveTab('games');
-      showToast('✅ Profil sikeresen mentve!');
+      showToast('✅ ' + (lang === 'hu' ? 'Profil sikeresen mentve!' : 'Profile saved!'));
       fetchData();
     } catch (err: any) {
       console.error('Profile save error:', err);
-      showToast('❌ Hiba: ' + (err?.message || 'Mentés sikertelen'));
+      showToast('❌ ' + (lang === 'hu' ? 'Hiba: ' : 'Error: ') + (err?.message || (lang === 'hu' ? 'Mentés sikertelen' : 'Save failed')));
     }
   };
 
@@ -444,7 +444,7 @@ export default function App() {
         body: JSON.stringify({ userId: currentUser?.id, userName: currentUser?.name })
       });
       fetchData();
-      showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Csatlakoztál a meccshez!'));
+      showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Joined the game!'));
     } catch (err: any) {
       console.error("Failed to request joining game", err);
       showToast('❌ ' + (err?.message || (lang === 'hu' ? 'Csatlakozás sikertelen' : 'Failed to join')));
@@ -644,7 +644,7 @@ export default function App() {
         body: JSON.stringify({ fromUserId: currentUser?.id, toUserId })
       });
       fetchData();
-      showToast('✅ ' + (lang === 'hu' ? 'Barátkérés elküldve!' : 'Barátkérés elküldve!'));
+      showToast('✅ ' + (lang === 'hu' ? 'Barátkérés elküldve!' : 'Friend request sent!'));
     } catch (err: any) {
       console.error("Failed to send friend request", err);
       showToast('❌ ' + (err?.message || (lang === 'hu' ? 'Hiba történt' : 'Error')));
@@ -683,9 +683,9 @@ export default function App() {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ userId: currentUser?.id, userName: currentUser?.name })
         });
-        showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Csatlakoztál a meccshez!'));
+        showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Joined the game!'));
       } else {
-        showToast(lang === 'hu' ? 'Meghívás elutasítva' : 'Meghívás elutasítva');
+        showToast(lang === 'hu' ? 'Meghívás elutasítva' : 'Invite declined');
       }
       // Mark notification as read
       setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, read: true } : n));
@@ -724,7 +724,7 @@ export default function App() {
         await navigator.clipboard.writeText(url);
         showToast('🔗 ' + (lang === 'hu' ? 'Link másolva!' : 'Link copied!'));
       } catch {
-        showToast('❌ Megosztás sikertelen');
+        showToast('❌ ' + (lang === 'hu' ? 'Megosztás sikertelen' : 'Share failed'));
       }
     }
   };
@@ -736,7 +736,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ ratings })
       });
-      showToast('⭐ ' + (lang === 'hu' ? 'Értékelés elküldve, köszönöm!' : 'Értékelés elküldve, köszönöm!'));
+      showToast('⭐ ' + (lang === 'hu' ? 'Értékelés elküldve, köszönöm!' : 'Rating submitted, thank you!'));
       fetchData();
     } catch (err: any) {
       showToast('❌ ' + (err?.message || 'Hiba'));
@@ -839,10 +839,10 @@ export default function App() {
       if (savedUser?.id) updateUser(savedUser); else updateUser(updatedData);
       fetchData();
       setIsEditingProfile(false);
-      showToast('✅ Profil sikeresen mentve!');
+      showToast('✅ ' + (lang === 'hu' ? 'Profil sikeresen mentve!' : 'Profile saved!'));
     } catch (err: any) {
       console.error("Failed to update user", err);
-      showToast('❌ Hiba: ' + (err?.message || 'Mentés sikertelen'));
+      showToast('❌ ' + (lang === 'hu' ? 'Hiba: ' : 'Error: ') + (err?.message || (lang === 'hu' ? 'Mentés sikertelen' : 'Save failed')));
     }
   };
 
