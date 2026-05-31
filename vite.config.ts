@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
-import { handler } from './netlify/functions/api';
+import apiHandler from './api/[...path]';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
@@ -16,33 +16,42 @@ export default defineConfig(({mode}) => {
           server.middlewares.use(async (req, res, next) => {
             if (req.url?.startsWith('/api/')) {
               try {
-                const url = new URL(req.url, `http://${req.headers.host}`);
-                const body = await new Promise<string>((resolve) => {
+                const bodyStr = await new Promise<string>((resolve) => {
                   let data = '';
                   req.on('data', chunk => data += chunk);
                   req.on('end', () => resolve(data));
                 });
 
-                const event: any = {
-                  httpMethod: req.method,
-                  path: req.url,
-                  rawUrl: `http://${req.headers.host}${req.url}`,
+                let parsedBody: any = undefined;
+                try { parsedBody = bodyStr ? JSON.parse(bodyStr) : undefined; } catch { parsedBody = bodyStr; }
+
+                // Fake VercelRequest
+                const fakeReq: any = {
+                  method: req.method,
+                  url: req.url,
                   headers: req.headers,
-                  body,
-                  queryStringParameters: Object.fromEntries(url.searchParams)
+                  body: parsedBody,
+                  query: Object.fromEntries(new URL(req.url!, `http://${req.headers.host}`).searchParams),
                 };
 
-                const result: any = await handler(event, {} as any);
-                
-                res.statusCode = result.statusCode || 200;
-                Object.entries(result.headers || {}).forEach(([key, val]) => {
-                  res.setHeader(key, val as string);
-                });
-                res.setHeader('Content-Type', 'application/json');
-                res.end(result.body);
+                // Fake VercelResponse
+                let statusCode = 200;
+                const fakeRes: any = {
+                  statusCode,
+                  status(code: number) { statusCode = code; return fakeRes; },
+                  setHeader(k: string, v: string) { res.setHeader(k, v); return fakeRes; },
+                  json(data: any) {
+                    res.statusCode = statusCode;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify(data));
+                  },
+                  end(data: any) { res.statusCode = statusCode; res.end(data); },
+                };
+
+                await apiHandler(fakeReq, fakeRes);
                 return;
               } catch (error) {
-                console.error('Function execution error:', error);
+                console.error('API emulator error:', error);
                 res.statusCode = 500;
                 res.end(JSON.stringify({ error: 'Internal server error' }));
                 return;
