@@ -16,7 +16,7 @@ export const translations: Record<Language, any> = {
     nav: { games: "Játékok", players: "Játékosok", groups: "Csoportok", profile: "Profil", myGames: "Saját meccsek" },
     players: { subTitle: "Találj partnereket a közeledben." },
     auth: {
-      title: "FindYour PadelBuddy", subTitle: "Csatlakozz a helyi padel közösséghez",
+      title: "Find Your Padel Buddy", subTitle: "Csatlakozz a helyi padel közösséghez",
       usernameLabel: "Felhasználónév", nameLabel: "Neved", emailLabel: "Email cím",
       phoneLabel: "Telefonszám", passwordLabel: "Jelszó", levelLabel: "Szinted",
       usernamePlaceholder: "pl. roger99", namePlaceholder: "pl. Roger",
@@ -137,7 +137,7 @@ export const translations: Record<Language, any> = {
     nav: { games: "Games", players: "Players", groups: "Groups", profile: "Profile", myGames: "My Games" },
     players: { subTitle: "Find partners near you." },
     auth: {
-      title: "FindYour PadelBuddy", subTitle: "Join the local padel community",
+      title: "Find Your Padel Buddy", subTitle: "Join the local padel community",
       usernameLabel: "Username", nameLabel: "Your name", emailLabel: "Email address",
       phoneLabel: "Phone number", passwordLabel: "Password", levelLabel: "Your level",
       usernamePlaceholder: "e.g. roger99", namePlaceholder: "e.g. Roger",

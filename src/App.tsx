@@ -292,7 +292,7 @@ export default function App() {
       <div className="min-h-screen bg-[#F5F5F0] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[#141414] border-t-[#E2FF3B] rounded-full animate-spin"></div>
-          <p className="font-black uppercase tracking-tighter italic text-sm opacity-50">FindYour PadelBuddy</p>
+          <p className="font-black uppercase tracking-tighter italic text-sm opacity-50">Find Your Padel Buddy</p>
         </div>
       </div>
     );
@@ -631,7 +631,7 @@ export default function App() {
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'FindYour PadelBuddy', text, url });
+        await navigator.share({ title: 'Find Your Padel Buddy', text, url });
         return;
       }
       // WhatsApp fallback
@@ -922,7 +922,7 @@ export default function App() {
               <div className="w-8 h-8 bg-[#141414] rounded-full flex items-center justify-center">
                 <TrendingUp className="text-[#E2FF3B] w-5 h-5" />
               </div>
-              <span className="font-bold text-xl tracking-tight">FindYour PadelBuddy</span>
+              <span className="font-bold text-xl tracking-tight">Find Your Padel Buddy</span>
             </div>
 
             {/* Desktop Nav */}
