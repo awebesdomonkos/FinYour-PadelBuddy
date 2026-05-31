@@ -216,7 +216,7 @@ export default function App() {
 
   // Modals / Overlays
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [selectedGameDetail, setSelectedGameDetail] = useState<Game | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<User | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -366,7 +366,8 @@ export default function App() {
     if (gameId) {
       const game = games.find(g => g.id === gameId);
       if (game) {
-        setSelectedGameDetail(game);
+        setSelectedGame(game);
+        setIsDetailOpen(true);
         // Clean URL without reload
         window.history.replaceState({}, '', window.location.pathname);
       }
@@ -1113,7 +1114,7 @@ export default function App() {
                               setSelectedGame(game);
                               setIsResultModalOpen(true);
                             }}
-                            onShowDetails={() => setSelectedGameDetail(game)}
+                            onShowDetails={() => { setSelectedGame(game); setIsDetailOpen(true); }}
                             onRate={() => setRatingGameId(game.id)}
                             onShare={() => handleShareGame(game)}
                             currentUser={currentUser}
@@ -1420,7 +1421,7 @@ export default function App() {
                         requestStatus={game.requests?.find(r => r.userId === currentUser?.id)?.status}
                         isOwner={game.creatorId === currentUser?.id}
                         t={t}
-                        onShowDetails={() => setSelectedGameDetail(game)}
+                        onShowDetails={() => { setSelectedGame(game); setIsDetailOpen(true); }}
                         onJoin={() => handleJoinGame(game.id)}
                         onOpenChat={() => {
                           const freshGame = (games || []).find(g => g.id === game.id) || game;
@@ -1689,7 +1690,7 @@ export default function App() {
                       <MatchHistory 
                     games={(games || []).filter(g => (g.joinedPlayers || []).includes(currentUser?.id || ''))} 
                     userId={currentUser?.id || ''}
-                    onGameClick={(game) => setSelectedGameDetail(game)}
+                    onGameClick={(game) => { setSelectedGame(game); setIsDetailOpen(true); }}
                     onDeleteGame={(gameId) => { if(currentUser?.id === (games.find(g=>g.id===gameId)?.creatorId)) handleDeleteGame(gameId); }}
                   />
                     </div>
@@ -1939,18 +1940,16 @@ export default function App() {
             onClose={() => setIsNotificationsOpen(false)}
           />
         )}
-        {selectedGameDetail && (
-          <GameDetailDrawer 
-            game={selectedGameDetail}
+        {isDetailOpen && selectedGame && (
+          <GameDetailDrawer
+            game={selectedGame}
             players={players}
             currentUser={currentUser!}
             t={t}
-            onClose={() => setSelectedGameDetail(null)}
-            onJoin={() => handleJoinGame(selectedGameDetail.id)}
+            onClose={() => setIsDetailOpen(false)}
+            onJoin={() => handleJoinGame(selectedGame.id)}
             onOpenChat={() => {
-              const freshGame = (games || []).find(g => g.id === selectedGameDetail.id) || selectedGameDetail;
-              setSelectedGame(freshGame);
-              setSelectedGameDetail(null);
+              setIsDetailOpen(false);
               setIsChatOpen(true);
             }}
           />
