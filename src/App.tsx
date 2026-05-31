@@ -744,6 +744,50 @@ export default function App() {
     }
   };
 
+  // Hide a single game from the user's history (non-creator)
+  const handleHideFromHistory = async (gameId: string) => {
+    if (!currentUser) return;
+    const hidden = [...(currentUser.hiddenFromHistory || []), gameId];
+    updateUser({ hiddenFromHistory: hidden });
+    try {
+      await safeFetch(`/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ hiddenFromHistory: hidden })
+      });
+    } catch (err) { console.error(err); }
+  };
+
+  // Clear all past games from history
+  const handleClearHistory = async () => {
+    if (!currentUser) return;
+    const confirmed = window.confirm(
+      lang === 'hu'
+        ? 'Biztosan törlöd az összes meccselőzményt? Ez nem vonható vissza.'
+        : 'Are you sure you want to clear all match history? This cannot be undone.'
+    );
+    if (!confirmed) return;
+    const pastGameIds = (games || [])
+      .filter(g => {
+        const dt = g.datetime || (g.date && g.time ? `${g.date}T${g.time}` : null);
+        return dt && new Date(dt) < new Date() &&
+          (g.creatorId === currentUser.id || (g.joinedPlayers || []).includes(currentUser.id));
+      })
+      .map(g => g.id);
+    const hidden = [...new Set([...(currentUser.hiddenFromHistory || []), ...pastGameIds])];
+    updateUser({ hiddenFromHistory: hidden });
+    try {
+      await safeFetch(`/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ hiddenFromHistory: hidden })
+      });
+      showToast('✅ ' + (lang === 'hu' ? 'Előzmények törölve' : 'History cleared'));
+    } catch (err: any) {
+      showToast('❌ ' + (err?.message || 'Hiba'));
+    }
+  };
+
   const handleDeleteGroup = async (groupId: string) => {
     if (!currentUser) return;
     try {
@@ -1347,16 +1391,36 @@ export default function App() {
                   <h2 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter">{t('nav.myGames') || 'Saját meccsek'}</h2>
                   <p className="text-xs sm:text-sm opacity-60">{t('profile.matchHistory')}</p>
                 </div>
+                <button
+                  onClick={handleClearHistory}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {lang === 'hu' ? 'Mind törlése' : 'Clear all'}
+                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {(games || []).filter(g => g.creatorId === currentUser?.id || g.joinedPlayers.includes(currentUser?.id || '')).length > 0 ? (
-                  (games || [])
-                    .filter(g => g.creatorId === currentUser?.id || g.joinedPlayers.includes(currentUser?.id || ''))
-                    .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())
-                    .map(game => (
-                      <GameCard 
-                        key={game.id} 
+                {(() => {
+                  const hidden = currentUser?.hiddenFromHistory || [];
+                  const myGames = (games || [])
+                    .filter(g => !hidden.includes(g.id))
+                    .filter(g => g.creatorId === currentUser?.id || (g.joinedPlayers || []).includes(currentUser?.id || ''))
+                    .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
+
+                  return myGames.length > 0 ? myGames.map(game => (
+                    <div key={game.id} className="relative group">
+                      {/* Swipe/hover delete overlay for non-owners */}
+                      {game.creatorId !== currentUser?.id && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleHideFromHistory(game.id); }}
+                          className="absolute top-2 left-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 bg-red-500 text-white rounded-lg flex items-center justify-center shadow-md"
+                          title={lang === 'hu' ? 'Eltávolítás az előzményekből' : 'Remove from history'}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <GameCard
                         game={game}
                         isJoined={(game.joinedPlayers || []).includes(currentUser?.id || '')}
                         requestStatus={game.requests?.find(r => r.userId === currentUser?.id)?.status}
@@ -1369,10 +1433,7 @@ export default function App() {
                           setSelectedGame(freshGame);
                           setIsChatOpen(true);
                         }}
-                        onEdit={() => {
-                          setGameToEdit(game);
-                          setActiveTab('create');
-                        }}
+                        onEdit={() => { setGameToEdit(game); setActiveTab('create'); }}
                         onDelete={() => handleDeleteGame(game.id)}
                         onLeave={() => handleLeaveGame(game.id)}
                         onRepeat={() => handleRepeatGame(game)}
@@ -1381,16 +1442,13 @@ export default function App() {
                           setSelectedGame(game);
                           setIsAttendanceOpen(true);
                         }}
-                        onRecordResult={() => {
-                          setSelectedGame(game);
-                          setIsResultModalOpen(true);
-                        }}
+                        onRecordResult={() => { setSelectedGame(game); setIsResultModalOpen(true); }}
                         onRate={() => setRatingGameId(game.id)}
                         onShare={() => handleShareGame(game)}
                         currentUser={currentUser}
                       />
-                    ))
-                ) : (
+                    </div>
+                  )) : (
                   <div className="col-span-full py-16 flex flex-col items-center text-center gap-5 bg-white rounded-3xl border border-[#141414]/5 shadow-sm">
                     <div className="w-20 h-20 bg-[#F8F8F5] rounded-3xl flex items-center justify-center text-4xl">📅</div>
                     <div>
@@ -1412,7 +1470,8 @@ export default function App() {
                       </button>
                     </div>
                   </div>
-                )}
+                  );
+                })()}
               </div>
             </motion.div>
           )}
@@ -1651,13 +1710,26 @@ export default function App() {
                         <h3 className="text-xs font-black uppercase tracking-widest opacity-40 flex items-center gap-2">
                           <History className="w-3 h-3" /> {t('profile.matchHistory')}
                         </h3>
+                        <button
+                          onClick={handleClearHistory}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          {lang === 'hu' ? 'Mind törlése' : 'Clear all'}
+                        </button>
                       </div>
-                      <MatchHistory 
-                    games={(games || []).filter(g => (g.joinedPlayers || []).includes(currentUser?.id || ''))} 
-                    userId={currentUser?.id || ''}
-                    onGameClick={(game) => { setSelectedGame(game); setIsDetailOpen(true); }}
-                    onDeleteGame={(gameId) => { if(currentUser?.id === (games.find(g=>g.id===gameId)?.creatorId)) handleDeleteGame(gameId); }}
-                  />
+                      <MatchHistory
+                        games={(games || [])
+                          .filter(g => !(currentUser?.hiddenFromHistory || []).includes(g.id))
+                          .filter(g => (g.joinedPlayers || []).includes(currentUser?.id || ''))}
+                        userId={currentUser?.id || ''}
+                        onGameClick={(game) => { setSelectedGame(game); setIsDetailOpen(true); }}
+                        onDeleteGame={(gameId) => {
+                          const game = games.find(g => g.id === gameId);
+                          if (game?.creatorId === currentUser?.id) handleDeleteGame(gameId);
+                          else handleHideFromHistory(gameId);
+                        }}
+                      />
                     </div>
 
                     <div className="pt-6 border-t border-[#141414]/5">
@@ -1907,6 +1979,10 @@ export default function App() {
               setIsDetailOpen(false);
               setIsChatOpen(true);
             }}
+            onDelete={selectedGame.creatorId === currentUser?.id
+              ? () => { setIsDetailOpen(false); handleDeleteGame(selectedGame.id); }
+              : () => { setIsDetailOpen(false); handleHideFromHistory(selectedGame.id); }
+            }
           />
         )}
         {selectedPlayer && (

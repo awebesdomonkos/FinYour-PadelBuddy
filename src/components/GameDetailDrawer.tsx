@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Calendar, User as UserIcon, Plus, TrendingUp, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Calendar, User as UserIcon, Plus, TrendingUp, MessageSquare, Trash2 } from 'lucide-react';
 import { Game, User } from '../types.ts';
 
 export default function GameDetailDrawer({
@@ -10,7 +10,8 @@ export default function GameDetailDrawer({
   t,
   onClose,
   onJoin,
-  onOpenChat
+  onOpenChat,
+  onDelete
 }: {
   game: Game,
   players: User[],
@@ -18,7 +19,8 @@ export default function GameDetailDrawer({
   t: (key: string) => string,
   onClose: () => void,
   onJoin: () => void,
-  onOpenChat: () => void
+  onOpenChat: () => void,
+  onDelete?: () => void
 }) {
   const gameDateTime = game.datetime || (game.date && game.time ? `${game.date}T${game.time}` : null);
   const date = gameDateTime ? new Date(gameDateTime) : new Date();
@@ -50,7 +52,15 @@ export default function GameDetailDrawer({
         <div className="p-6 flex justify-between items-center bg-white border-b border-[#141414]/5">
           <button onClick={onClose} className="p-2 -ml-2 hover:bg-[#141414]/5 rounded-full"><ArrowLeft className="w-5 h-5"/></button>
           <h3 className="text-xl font-black uppercase tracking-tight italic">{t('games.title')}</h3>
-          <div className="w-9" />
+          {onDelete ? (
+            <button
+              onClick={onDelete}
+              className="p-2 -mr-2 hover:bg-red-50 text-red-500 rounded-full transition-colors"
+              title={isOwner ? t('games.deleteGame') : 'Remove from history'}
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          ) : <div className="w-9" />}
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8">

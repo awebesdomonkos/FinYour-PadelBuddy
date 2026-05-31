@@ -91,6 +91,7 @@ export interface User {
   };
   createdAt?: string;
   onboardingDone?: boolean;
+  hiddenFromHistory?: string[];
 }
 
 export interface Club {
