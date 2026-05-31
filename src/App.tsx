@@ -209,11 +209,20 @@ export default function App() {
     }
   }, [currentUser?.languagePreference, setLang]);
 
-  // Keep selectedGame in sync with games array
+  // Keep selectedGame in sync with games array; close modals if game was deleted
   useEffect(() => {
     if (selectedGame) {
       const fresh = (games || []).find(g => g.id === selectedGame.id);
-      if (fresh) setSelectedGame(fresh);
+      if (fresh) {
+        setSelectedGame(fresh);
+      } else {
+        // Game was deleted — close all related modals
+        setSelectedGame(null);
+        setIsChatOpen(false);
+        setIsAttendanceOpen(false);
+        setIsResultModalOpen(false);
+        setIsDetailOpen(false);
+      }
     }
   }, [games]);
 
@@ -544,6 +553,10 @@ export default function App() {
 
   const handleSendFriendRequest = async (toUserId: string) => {
     if (!currentUser) return;
+    if ((currentUser.friendIds || []).includes(toUserId)) {
+      showToast(lang === 'hu' ? 'Már barátok vagytok!' : 'Already friends!');
+      return;
+    }
     try {
       await safeFetch('/api/friends/request', {
         method: 'POST',
@@ -1282,6 +1295,7 @@ export default function App() {
               <GroupsTab
                 groups={groups}
                 currentUser={currentUser}
+                players={players}
                 onJoin={handleJoinGroup}
                 onLeaveGroup={handleLeaveGroup}
                 onDeleteGroup={handleDeleteGroup}

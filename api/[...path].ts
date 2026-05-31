@@ -214,6 +214,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       if (itemId === "request" && method === "POST") {
         const { toUserId } = JSON.parse(body);
+        // Prevent duplicate pending requests
+        const existing = await db('friend_requests',
+          `or=(and(from_user_id.eq.${authUser.id},to_user_id.eq.${toUserId}),and(from_user_id.eq.${toUserId},to_user_id.eq.${authUser.id}))&status=eq.pending&select=id`
+        );
+        if (existing.length > 0) return jsonResponse(res, 400, { success: false, message: 'Friend request already pending' });
         const reqId = crypto.randomUUID();
         const created = await db('friend_requests', '', { method: 'POST', body: { id: reqId, from_user_id: authUser.id, to_user_id: toUserId, status: 'pending', created_at: new Date().toISOString() } });
         const req = Array.isArray(created) ? created[0] : created;
@@ -339,11 +344,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!rows[0]) return jsonResponse(res, 404, { success: false, message: "Game not found" });
         const gameData = rowToObj(rows[0]);
         if (method === "PUT") {
+          if (!authUser || authUser.id !== gameData.creatorId) return jsonResponse(res, 403, { success: false, message: 'Only the creator can edit this game' });
           const payload = JSON.parse(body);
           const updated = await db('games', `id=eq.${itemId}`, { method: 'PATCH', body: { data: { ...gameData, ...payload, id: itemId } } });
           return jsonResponse(res, 200, { success: true, data: rowToObj(Array.isArray(updated) ? updated[0] : updated) });
         }
-        if (method === "DELETE") { await db('games', `id=eq.${itemId}`, { method: 'DELETE' }); return jsonResponse(res, 200, { success: true }); }
+        if (method === "DELETE") {
+          if (!authUser || authUser.id !== gameData.creatorId) return jsonResponse(res, 403, { success: false, message: 'Only the creator can delete this game' });
+          await db('games', `id=eq.${itemId}`, { method: 'DELETE' });
+          return jsonResponse(res, 200, { success: true });
+        }
         if (method === "POST" && subAction) {
           const payload = JSON.parse(body);
           if (subAction === "request") {

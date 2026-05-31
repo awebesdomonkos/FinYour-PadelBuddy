@@ -6,6 +6,7 @@ import { useI18n } from '../hooks/useI18n.ts';
 export default function GroupsTab({
   groups,
   currentUser,
+  players,
   onJoin,
   onOpenChat,
   onCreateClick,
@@ -16,6 +17,7 @@ export default function GroupsTab({
 }: {
   groups: Group[],
   currentUser: User | null,
+  players: User[],
   onJoin: (id: string) => void,
   onOpenChat: (group: Group) => void,
   onCreateClick: () => void,
@@ -142,6 +144,7 @@ export default function GroupsTab({
                                   <p className="px-3 py-2 text-[10px] font-black uppercase opacity-40">{lang === 'hu' ? 'Admin jogot kap:' : 'Grant admin to:'}</p>
                                   {(group.memberIds || []).filter(mid => mid !== currentUser?.id).map(mid => {
                                     const isAlreadyAdmin = (group.adminIds || []).includes(mid);
+                                    const memberName = players.find(p => p.id === mid)?.name || mid;
                                     return (
                                       <button
                                         key={mid}
@@ -149,7 +152,7 @@ export default function GroupsTab({
                                         disabled={isAlreadyAdmin}
                                         className={`w-full px-3 py-2.5 text-left text-xs font-bold transition-colors ${isAlreadyAdmin ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[#E2FF3B]'}`}
                                       >
-                                        {mid} {isAlreadyAdmin ? '✓' : ''}
+                                        {memberName} {isAlreadyAdmin ? '👑' : ''}
                                       </button>
                                     );
                                   })}
