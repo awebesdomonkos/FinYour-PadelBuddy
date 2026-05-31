@@ -23,10 +23,10 @@ export default function MatchHistory({ games = [], userId = '', onGameClick, onD
   return (
     <div className="space-y-3">
       {completedGames.map(game => (
-        <div key={game.id} className="bg-[#1A2233] p-4 rounded-2xl border border-[#FFFFFF]/6 flex items-center gap-3 transition-all hover:border-[#00E676]/30 hover:shadow-sm">
+        <div key={game.id} className="bg-white p-4 rounded-2xl border border-[#141414]/5 flex items-center gap-3 transition-all hover:border-[#E2FF3B]/30 hover:shadow-sm">
           <div onClick={() => onGameClick?.(game)} className={`flex-1 flex items-center gap-3 min-w-0 ${onGameClick ? 'cursor-pointer' : ''}`}>
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${game.status === 'played' ? 'bg-[#00E676]/10 text-[#141414]' : 'bg-red-50/50 text-red-500'}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${game.status === 'played' ? 'bg-[#E2FF3B]/10 text-[#141414]' : 'bg-red-50/50 text-red-500'}`}>
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
@@ -34,12 +34,12 @@ export default function MatchHistory({ games = [], userId = '', onGameClick, onD
                   <p className="text-xs font-black uppercase tracking-widest opacity-40">
                     {game.datetime || game.date ? new Date(game.datetime || game.date).toLocaleDateString('hu-HU') : '-'}
                   </p>
-                  <span className="text-[10px] px-2 py-0.5 bg-[#FFFFFF]/5 rounded-full font-bold opacity-60 capitalize">
+                  <span className="text-[10px] px-2 py-0.5 bg-[#141414]/5 rounded-full font-bold opacity-60 capitalize">
                     {game.gameType ? t(`games.gameTypes.${game.gameType}`) : t('games.gameTypes.Friendly')}
                   </span>
                 </div>
                 <h4 className="font-bold text-sm truncate max-w-[150px]">{game.location}</h4>
-                <p className="text-[10px] font-bold text-[#080B0F] bg-[#141414] inline-block px-1.5 rounded mt-1">
+                <p className="text-[10px] font-bold text-[#E2FF3B] bg-[#141414] inline-block px-1.5 rounded mt-1">
                   {game.result?.score || (lang === 'hu' ? 'Nincs eredmény' : 'Nincs rögzített eredmény')}
                 </p>
               </div>
@@ -47,7 +47,7 @@ export default function MatchHistory({ games = [], userId = '', onGameClick, onD
           </div>
           <div className="flex -space-x-1.5 translate-x-1">
             {(game.joinedPlayers || []).slice(0, 3).map((pid, i) => (
-              <div key={i} className="w-6 h-6 rounded-full border border-white bg-[#161D26] overflow-hidden ring-1 ring-black/5">
+              <div key={i} className="w-6 h-6 rounded-full border border-white bg-gray-100 overflow-hidden ring-1 ring-black/5">
                 <UserIcon className="w-3 h-3 m-auto mt-1.5 opacity-20" />
               </div>
             ))}

@@ -99,7 +99,7 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
             <div
               key={i}
               className={`h-1.5 rounded-full transition-all duration-500 ${
-                i < step ? 'bg-[#00E676] w-8' : 'bg-[#0F1419]/15 w-4'
+                i < step ? 'bg-[#E2FF3B] w-8' : 'bg-white/15 w-4'
               }`}
             />
           ))}
@@ -147,8 +147,8 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
                       onClick={() => setForm(f => ({ ...f, skillLevel: l.level }))}
                       className={`w-full p-5 rounded-2xl border-2 text-left transition-all ${
                         form.skillLevel === l.level
-                          ? 'bg-[#00E676] border-[#00E676] text-[#141414] scale-[1.02]'
-                          : 'bg-[#0F1419]/5 border-white/10 text-white hover:bg-[#0F1419]/10'
+                          ? 'bg-[#E2FF3B] border-[#E2FF3B] text-[#141414] scale-[1.02]'
+                          : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
                       }`}
                     >
                       <div className="flex items-center gap-4">
@@ -161,7 +161,7 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
                         </div>
                         {form.skillLevel === l.level && (
                           <div className="w-6 h-6 bg-[#141414] rounded-full flex items-center justify-center shrink-0">
-                            <Check className="w-3.5 h-3.5 text-[#080B0F]" />
+                            <Check className="w-3.5 h-3.5 text-[#E2FF3B]" />
                           </div>
                         )}
                       </div>
@@ -180,8 +180,8 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
                         onClick={() => setForm(f => ({ ...f, experience: val as any }))}
                         className={`py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
                           form.experience === val
-                            ? 'bg-[#0F1419] text-[#141414] border-white'
-                            : 'bg-[#0F1419]/5 text-white/40 border-white/10 hover:bg-[#0F1419]/10'
+                            ? 'bg-white text-[#141414] border-white'
+                            : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'
                         }`}
                       >
                         {label}
@@ -211,7 +211,7 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
                     onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
                     placeholder="pl. Budapest"
                     autoFocus
-                    className="w-full bg-[#0F1419]/10 border-2 border-white/10 focus:border-[#00E676] rounded-2xl py-5 pl-12 pr-4 text-white text-lg font-bold placeholder:text-white/20 outline-none transition-colors"
+                    className="w-full bg-white/10 border-2 border-white/10 focus:border-[#E2FF3B] rounded-2xl py-5 pl-12 pr-4 text-white text-lg font-bold placeholder:text-white/20 outline-none transition-colors"
                   />
                   <datalist id="ob-cities">
                     {HU_CITIES.map(c => <option key={c} value={c} />)}
@@ -229,8 +229,8 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
                         onClick={() => setForm(f => ({ ...f, city: c }))}
                         className={`px-4 py-2 rounded-xl text-sm font-black uppercase tracking-wider transition-all ${
                           form.city === c
-                            ? 'bg-[#00E676] text-[#141414]'
-                            : 'bg-[#0F1419]/10 text-white/60 hover:bg-[#0F1419]/20'
+                            ? 'bg-[#E2FF3B] text-[#141414]'
+                            : 'bg-white/10 text-white/60 hover:bg-white/20'
                         }`}
                       >
                         {c}
@@ -260,8 +260,8 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
                         onClick={() => togglePlayTime(pt.val)}
                         className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center gap-4 ${
                           sel
-                            ? 'bg-[#00E676] border-[#00E676] text-[#141414] scale-[1.01]'
-                            : 'bg-[#0F1419]/5 border-white/10 text-white hover:bg-[#0F1419]/10'
+                            ? 'bg-[#E2FF3B] border-[#E2FF3B] text-[#141414] scale-[1.01]'
+                            : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
                         }`}
                       >
                         <span className="text-2xl">{pt.emoji}</span>
@@ -271,7 +271,7 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
                         </div>
                         {sel && (
                           <div className="w-6 h-6 bg-[#141414] rounded-full flex items-center justify-center shrink-0">
-                            <Check className="w-3.5 h-3.5 text-[#080B0F]" />
+                            <Check className="w-3.5 h-3.5 text-[#E2FF3B]" />
                           </div>
                         )}
                       </button>
@@ -293,8 +293,8 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
                         }))}
                         className={`p-3 rounded-xl border text-left transition-all ${
                           form.playStyle === ps.val
-                            ? 'bg-[#0F1419] text-[#141414] border-white'
-                            : 'bg-[#0F1419]/5 text-white/50 border-white/10 hover:bg-[#0F1419]/10'
+                            ? 'bg-white text-[#141414] border-white'
+                            : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'
                         }`}
                       >
                         <span className="text-xl">{ps.emoji}</span>
@@ -320,8 +320,8 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
           disabled={!canNext()}
           className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest text-base transition-all ${
             canNext()
-              ? 'bg-[#00E676] text-[#141414] hover:scale-[1.02] active:scale-95 shadow-xl shadow-[#00E676]/20'
-              : 'bg-[#0F1419]/10 text-white/20 cursor-not-allowed'
+              ? 'bg-[#E2FF3B] text-[#141414] hover:scale-[1.02] active:scale-95 shadow-xl shadow-[#E2FF3B]/20'
+              : 'bg-white/10 text-white/20 cursor-not-allowed'
           }`}
         >
           {step === TOTAL ? '🎾  Belépés a pályára!' : 'Tovább →'}
@@ -329,7 +329,7 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
       </div>
 
       {toastMsg && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[#0F1419] text-[#141414] text-sm font-bold px-6 py-3 rounded-2xl shadow-xl whitespace-nowrap">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-white text-[#141414] text-sm font-bold px-6 py-3 rounded-2xl shadow-xl whitespace-nowrap">
           {toastMsg}
         </div>
       )}

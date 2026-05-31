@@ -23,10 +23,10 @@ export default function GroupChatDrawer({
       initial={{ x: '100%' }}
       animate={{ x: 0 }}
       exit={{ x: '100%' }}
-      className="fixed inset-y-0 right-0 w-full max-w-sm bg-[#080B0F] z-[110] shadow-2xl border-l border-[#FFFFFF]/8 flex flex-col"
+      className="fixed inset-y-0 right-0 w-full max-w-sm bg-[#F5F5F0] z-[110] shadow-2xl border-l border-[#141414]/10 flex flex-col"
     >
-      <div className="p-4 bg-[#1A2233] border-b border-[#FFFFFF]/8 flex items-center gap-4">
-        <button onClick={onClose} className="p-2 hover:bg-[#FFFFFF]/5 rounded-xl">
+      <div className="p-4 bg-white border-b border-[#141414]/10 flex items-center gap-4">
+        <button onClick={onClose} className="p-2 hover:bg-[#141414]/5 rounded-xl">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
@@ -52,7 +52,7 @@ export default function GroupChatDrawer({
               <div className={`max-w-[85%] px-4 py-2 rounded-2xl text-sm shadow-sm ${
                 c.userId === currentUser?.id
                   ? 'bg-[#141414] text-white rounded-tr-none'
-                  : 'bg-[#1A2233] rounded-tl-none border border-[#141414]/5'
+                  : 'bg-white rounded-tl-none border border-[#141414]/5'
               }`}>
                 {c.text}
               </div>
@@ -61,7 +61,7 @@ export default function GroupChatDrawer({
         </div>
       </div>
 
-      <div className="p-4 bg-[#1A2233] border-t border-[#FFFFFF]/8">
+      <div className="p-4 bg-white border-t border-[#141414]/10">
         <div className="flex gap-2">
           <input
             type="text"
@@ -69,7 +69,7 @@ export default function GroupChatDrawer({
             value={msg}
             onChange={e => setMsg(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && msg.trim() && (onSendMessage(msg), setMsg(''))}
-            className="flex-1 bg-[#FFFFFF]/5 border-none rounded-2xl py-3 px-4 text-sm focus:ring-1 focus:ring-[#00E676] outline-none"
+            className="flex-1 bg-[#141414]/5 border-none rounded-2xl py-3 px-4 text-sm focus:ring-1 focus:ring-[#E2FF3B] outline-none"
           />
           <button
             disabled={!msg.trim()}
@@ -77,7 +77,7 @@ export default function GroupChatDrawer({
               onSendMessage(msg);
               setMsg('');
             }}
-            className="w-12 h-12 bg-[#141414] text-[#080B0F] rounded-2xl flex items-center justify-center disabled:opacity-30"
+            className="w-12 h-12 bg-[#141414] text-[#E2FF3B] rounded-2xl flex items-center justify-center disabled:opacity-30"
           >
             <Send className="w-5 h-5" />
           </button>

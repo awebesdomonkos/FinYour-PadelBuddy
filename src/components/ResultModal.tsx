@@ -17,16 +17,16 @@ export default function ResultModal({ game, onSave, onClose }: { game: Game, onS
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="relative bg-[#1A2233] w-full max-w-sm rounded-[32px] p-8 shadow-2xl overflow-hidden"
+        className="relative bg-white w-full max-w-sm rounded-[32px] p-8 shadow-2xl overflow-hidden"
       >
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-black uppercase tracking-tight italic">Record Result</h3>
-          <button onClick={onClose} className="p-2 hover:bg-[#FFFFFF]/5 rounded-full"><X className="w-5 h-5"/></button>
+          <button onClick={onClose} className="p-2 hover:bg-[#141414]/5 rounded-full"><X className="w-5 h-5"/></button>
         </div>
 
         <div className="space-y-6">
           {sets.map((set, idx) => (
-            <div key={idx} className="bg-[#FFFFFF]/5 p-4 rounded-3xl">
+            <div key={idx} className="bg-[#141414]/5 p-4 rounded-3xl">
               <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-3 text-center">Set {idx + 1}</p>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 flex flex-col items-center gap-2">
@@ -39,7 +39,7 @@ export default function ResultModal({ game, onSave, onClose }: { game: Game, onS
                       newSets[idx].team1 = parseInt(e.target.value) || 0;
                       setSets(newSets);
                     }}
-                    className="w-16 h-16 bg-[#1A2233] rounded-2xl text-center text-2xl font-black focus:ring-2 focus:ring-[#00E676] outline-none"
+                    className="w-16 h-16 bg-white rounded-2xl text-center text-2xl font-black focus:ring-2 focus:ring-[#E2FF3B] outline-none"
                   />
                 </div>
                 <div className="font-black opacity-20 text-2xl">:</div>
@@ -53,7 +53,7 @@ export default function ResultModal({ game, onSave, onClose }: { game: Game, onS
                       newSets[idx].team2 = parseInt(e.target.value) || 0;
                       setSets(newSets);
                     }}
-                    className="w-16 h-16 bg-[#1A2233] rounded-2xl text-center text-2xl font-black focus:ring-2 focus:ring-[#00E676] outline-none"
+                    className="w-16 h-16 bg-white rounded-2xl text-center text-2xl font-black focus:ring-2 focus:ring-[#E2FF3B] outline-none"
                   />
                 </div>
               </div>
@@ -62,7 +62,7 @@ export default function ResultModal({ game, onSave, onClose }: { game: Game, onS
 
           <button
             onClick={() => setSets([...sets, { team1: 0, team2: 0 }])}
-            className="w-full py-3 border-2 border-dashed border-[#FFFFFF]/8 rounded-2xl text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 hover:border-[#00E676]/40 transition-all"
+            className="w-full py-3 border-2 border-dashed border-[#141414]/10 rounded-2xl text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 hover:border-[#E2FF3B] transition-all"
           >
             + Add Set
           </button>
@@ -70,7 +70,7 @@ export default function ResultModal({ game, onSave, onClose }: { game: Game, onS
 
         <button
           onClick={handleSave}
-          className="w-full bg-[#00E676] text-[#141414] py-4 rounded-2xl mt-8 font-black uppercase tracking-widest shadow-lg shadow-[#00E676]/20 hover:scale-[1.02] active:scale-95 transition-all"
+          className="w-full bg-[#E2FF3B] text-[#141414] py-4 rounded-2xl mt-8 font-black uppercase tracking-widest shadow-lg shadow-[#E2FF3B]/20 hover:scale-[1.02] active:scale-95 transition-all"
         >
           Save Result
         </button>

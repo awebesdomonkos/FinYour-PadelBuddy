@@ -47,10 +47,10 @@ export default function GameDetailDrawer({
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
-        className="relative w-full max-w-md bg-[#080B0F] h-full shadow-2xl flex flex-col overflow-hidden"
+        className="relative w-full max-w-md bg-[#F5F5F0] h-full shadow-2xl flex flex-col overflow-hidden"
       >
-        <div className="p-6 flex justify-between items-center bg-[#1A2233] border-b border-[#FFFFFF]/6">
-          <button onClick={onClose} className="p-2 -ml-2 hover:bg-[#FFFFFF]/5 rounded-full"><ArrowLeft className="w-5 h-5"/></button>
+        <div className="p-6 flex justify-between items-center bg-white border-b border-[#141414]/5">
+          <button onClick={onClose} className="p-2 -ml-2 hover:bg-[#141414]/5 rounded-full"><ArrowLeft className="w-5 h-5"/></button>
           <h3 className="text-xl font-black uppercase tracking-tight italic">{t('games.title')}</h3>
           {onDelete ? (
             <button
@@ -90,7 +90,7 @@ export default function GameDetailDrawer({
             </div>
 
             {game.note && (
-              <div className="bg-[#1A2233] p-4 rounded-2xl border border-[#FFFFFF]/6 shadow-sm italic text-sm opacity-70">
+              <div className="bg-white p-4 rounded-2xl border border-[#141414]/5 shadow-sm italic text-sm opacity-70">
                 "{game.note}"
               </div>
             )}
@@ -99,9 +99,9 @@ export default function GameDetailDrawer({
           {/* Organizer */}
           <div className="space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{t('games.admin') || 'Organizer'}</h4>
-            <div className="bg-[#1A2233] p-4 rounded-2xl border border-[#FFFFFF]/6 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-4 rounded-2xl border border-[#141414]/5 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#FFFFFF]/5 flex items-center justify-center overflow-hidden">
+                <div className="w-10 h-10 rounded-full bg-[#141414]/5 flex items-center justify-center overflow-hidden">
                   {creatorUser?.avatarUrl ? (
                     <img src={creatorUser.avatarUrl} alt="" className="w-full h-full object-cover" />
                   ) : (
@@ -115,7 +115,7 @@ export default function GameDetailDrawer({
                   </p>
                 </div>
               </div>
-              <TrendingUp className="w-4 h-4 text-[#080B0F] fill-current" />
+              <TrendingUp className="w-4 h-4 text-[#E2FF3B] fill-current" />
             </div>
           </div>
 
@@ -123,16 +123,16 @@ export default function GameDetailDrawer({
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{t('groups.members')}</h4>
-              <span className="text-[10px] font-black px-2 py-0.5 bg-[#141414] text-[#080B0F] rounded-full">
+              <span className="text-[10px] font-black px-2 py-0.5 bg-[#141414] text-[#E2FF3B] rounded-full">
                 {joinedPlayers.length} / {Number(game.requiredPlayers || 4)}
               </span>
             </div>
 
             <div className="grid grid-cols-1 gap-2">
               {joinedUsers.map(user => (
-                <div key={user.id} className="bg-[#1A2233] p-4 rounded-2xl border border-[#FFFFFF]/6 shadow-sm flex items-center justify-between">
+                <div key={user.id} className="bg-white p-4 rounded-2xl border border-[#141414]/5 shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#FFFFFF]/5 flex items-center justify-center overflow-hidden">
+                    <div className="w-10 h-10 rounded-full bg-[#141414]/5 flex items-center justify-center overflow-hidden">
                       {user.avatarUrl ? (
                         <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -142,7 +142,7 @@ export default function GameDetailDrawer({
                     <div>
                       <p className="font-bold text-sm tracking-tight">{user.name}</p>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black uppercase opacity-40 bg-[#FFFFFF]/5 px-1.5 rounded">{t(`profile.levels.${user.skillLevel}`)}</span>
+                        <span className="text-[10px] font-black uppercase opacity-40 bg-[#141414]/5 px-1.5 rounded">{t(`profile.levels.${user.skillLevel}`)}</span>
                         {user.reliabilityStatus && (
                           <span className="text-[10px] font-bold text-blue-500 uppercase">{t(`profile.reliabilityStatus.${user.reliabilityStatus}`)}</span>
                         )}
@@ -150,14 +150,14 @@ export default function GameDetailDrawer({
                     </div>
                   </div>
                   {user.id === game.creatorId && (
-                    <div className="px-2 py-0.5 bg-[#00E676] text-[#141414] text-[8px] font-black uppercase rounded shadow-sm italic">Host</div>
+                    <div className="px-2 py-0.5 bg-[#E2FF3B] text-[#141414] text-[8px] font-black uppercase rounded shadow-sm italic">Host</div>
                   )}
                 </div>
               ))}
 
               {Array.from({ length: Math.max(0, Math.min(slotsLeft, 10)) }).map((_, i) => (
-                <div key={`empty-${i}`} className="bg-[#FFFFFF]/5 border border-dashed border-[#FFFFFF]/8 rounded-2xl p-4 flex items-center gap-3 opacity-40">
-                  <div className="w-10 h-10 rounded-full bg-[#1A2233] flex items-center justify-center">
+                <div key={`empty-${i}`} className="bg-[#141414]/5 border border-dashed border-[#141414]/10 rounded-2xl p-4 flex items-center gap-3 opacity-40">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
                     <Plus className="w-4 h-4" />
                   </div>
                   <span className="text-xs font-bold uppercase tracking-widest">{t('common.noData')}...</span>
@@ -173,12 +173,12 @@ export default function GameDetailDrawer({
               <div className="bg-[#141414] rounded-3xl p-6 shadow-xl space-y-4">
                 {(game.chat || []).slice(-2).map((msg, i) => (
                   <div key={msg.id || i} className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#1A2233]/10 flex items-center justify-center shrink-0">
-                      <UserIcon className="w-4 h-4 text-[#080B0F]" />
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                      <UserIcon className="w-4 h-4 text-[#E2FF3B]" />
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-[#080B0F] uppercase">{msg.userName}</span>
+                        <span className="text-[10px] font-black text-[#E2FF3B] uppercase">{msg.userName}</span>
                         <span className="text-[8px] text-white/30 uppercase font-bold">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <p className="text-xs text-white/70 leading-relaxed font-bold">{msg.text}</p>
@@ -187,7 +187,7 @@ export default function GameDetailDrawer({
                 ))}
                 <button
                   onClick={onOpenChat}
-                  className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-[#080B0F] bg-[#1A2233]/5 rounded-xl hover:bg-[#1A2233]/10 transition-colors"
+                  className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-[#E2FF3B] bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
                 >
                   {t('common.enter') || 'View all messages'}
                 </button>
@@ -197,11 +197,11 @@ export default function GameDetailDrawer({
         </div>
 
         {/* Action Bar */}
-        <div className="p-6 bg-[#1A2233] border-t border-[#FFFFFF]/6 space-y-3">
+        <div className="p-6 bg-white border-t border-[#141414]/5 space-y-3">
           {(isJoined || isOwner) ? (
             <button
               onClick={onOpenChat}
-              className="w-full py-4 bg-[#141414] text-[#080B0F] rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow-xl shadow-black/10"
+              className="w-full py-4 bg-[#141414] text-[#E2FF3B] rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow-xl shadow-black/10"
             >
               <MessageSquare className="w-5 h-5" />
               {t('games.chat')}
@@ -214,8 +214,8 @@ export default function GameDetailDrawer({
                 myRequest?.status === 'pending'
                   ? 'bg-yellow-400 text-[#141414]'
                   : isFull
-                    ? 'bg-[#FFFFFF]/8 text-[#4A5568] scale-95'
-                    : 'bg-[#00E676] text-[#141414] hover:scale-[1.02] active:scale-95 shadow-[#00E676]/20'
+                    ? 'bg-[#141414]/10 text-[#141414]/40 scale-95'
+                    : 'bg-[#E2FF3B] text-[#141414] hover:scale-[1.02] active:scale-95 shadow-[#E2FF3B]/30'
               }`}
             >
               {myRequest?.status === 'pending' ? t('common.requested') : isFull ? t('common.full') : t('common.joinMatch')}

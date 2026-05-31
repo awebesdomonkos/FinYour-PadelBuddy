@@ -25,7 +25,7 @@ export default function AttendanceModal({
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-[#1A2233] rounded-[40px] w-full max-w-sm p-8 space-y-6 shadow-2xl"
+        className="bg-white rounded-[40px] w-full max-w-sm p-8 space-y-6 shadow-2xl"
       >
         <div className="text-center space-y-2">
           <ShieldCheck className="w-12 h-12 text-orange-500 mx-auto" />
@@ -37,18 +37,18 @@ export default function AttendanceModal({
           {(game.joinedPlayers || []).map(uid => {
             const player = players.find(p => p.id === uid);
             return (
-              <div key={uid} className="flex items-center justify-between p-3 bg-[#FFFFFF]/5 rounded-2xl">
+              <div key={uid} className="flex items-center justify-between p-3 bg-[#141414]/5 rounded-2xl">
                 <span className="text-sm font-bold">{player?.name || 'Player'}</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setRecords({ ...records, [uid]: "missed" })}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${records[uid] === 'missed' ? 'bg-red-500 text-white' : 'bg-[#1A2233] text-red-500 opacity-40'}`}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${records[uid] === 'missed' ? 'bg-red-500 text-white' : 'bg-white text-red-500 opacity-40'}`}
                   >
                     {t('games.missed')}
                   </button>
                   <button
                     onClick={() => setRecords({ ...records, [uid]: "appeared" })}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${records[uid] === 'appeared' ? 'bg-green-500 text-white' : 'bg-[#1A2233] text-green-500 opacity-40'}`}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${records[uid] === 'appeared' ? 'bg-green-500 text-white' : 'bg-white text-green-500 opacity-40'}`}
                   >
                     {t('games.appeared')}
                   </button>
@@ -67,7 +67,7 @@ export default function AttendanceModal({
           </button>
           <button
             onClick={() => onConfirm(records)}
-            className="flex-1 py-4 bg-[#141414] text-[#080B0F] rounded-2xl text-sm font-black uppercase tracking-widest"
+            className="flex-1 py-4 bg-[#141414] text-[#E2FF3B] rounded-2xl text-sm font-black uppercase tracking-widest"
           >
             Confirm
           </button>

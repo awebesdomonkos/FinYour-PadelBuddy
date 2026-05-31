@@ -31,11 +31,11 @@ export default function PlayerCard({
   return (
     <div
       onClick={() => onOpenProfile(player)}
-      className="bg-[#1A2233] rounded-3xl p-4 flex items-center gap-3 border border-[#FFFFFF]/6 shadow-sm hover:border-[#00E676] hover:shadow-md transition-all cursor-pointer group"
+      className="bg-white rounded-3xl p-4 flex items-center gap-3 border border-[#141414]/5 shadow-sm hover:border-[#E2FF3B] hover:shadow-md transition-all cursor-pointer group"
     >
       {/* Avatar */}
       <div className="relative shrink-0">
-        <div className="w-12 h-12 bg-[#141414] text-[#080B0F] rounded-2xl flex items-center justify-center overflow-hidden">
+        <div className="w-12 h-12 bg-[#141414] text-[#E2FF3B] rounded-2xl flex items-center justify-center overflow-hidden">
           {player.avatarUrl ? (
             <img src={player.avatarUrl} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -46,7 +46,7 @@ export default function PlayerCard({
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
         )}
         {isLfg && !isOnline && (
-          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#00E676] rounded-full border-2 border-white flex items-center justify-center">
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#E2FF3B] rounded-full border-2 border-white flex items-center justify-center">
             <span className="text-[6px]">🔥</span>
           </div>
         )}
@@ -59,7 +59,7 @@ export default function PlayerCard({
           {reliabilityIcon && <span className="text-[11px]">{reliabilityIcon}</span>}
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${levelColors[player.skillLevel] || 'bg-[#FFFFFF]/5 text-[#141414]/50'}`}>
+          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${levelColors[player.skillLevel] || 'bg-[#141414]/5 text-[#141414]/50'}`}>
             {t(`profile.levels.${player.skillLevel}`)}
           </span>
           {player.location?.city && (
@@ -68,7 +68,7 @@ export default function PlayerCard({
             </span>
           )}
           {isLfg && (
-            <span className="text-[9px] bg-[#00E676]/30 text-[#141414] px-1.5 py-0.5 rounded-lg font-black uppercase tracking-widest whitespace-nowrap">
+            <span className="text-[9px] bg-[#E2FF3B]/30 text-[#141414] px-1.5 py-0.5 rounded-lg font-black uppercase tracking-widest whitespace-nowrap">
               {player.lfgStatus === LFGStatus.Now ? '🔥 Most' : '📅 Ma'}
             </span>
           )}
@@ -79,11 +79,11 @@ export default function PlayerCard({
       <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-          className={`p-2.5 rounded-xl transition-colors ${isFavorite ? 'text-red-500 bg-red-50' : 'bg-[#FFFFFF]/5 text-[#4A5568] hover:text-red-500 hover:bg-red-50'}`}
+          className={`p-2.5 rounded-xl transition-colors ${isFavorite ? 'text-red-500 bg-red-50' : 'bg-[#141414]/5 text-[#141414]/30 hover:text-red-500 hover:bg-red-50'}`}
         >
           <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
         </button>
-        <button className="p-2.5 rounded-xl bg-[#FFFFFF]/5 hover:bg-[#00E676] transition-colors">
+        <button className="p-2.5 rounded-xl bg-[#141414]/5 hover:bg-[#E2FF3B] transition-colors">
           <ChevronRight className="w-4 h-4 opacity-40" />
         </button>
       </div>

@@ -115,7 +115,7 @@ export default function CreateGameForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-[#1A2233] p-6 rounded-3xl border border-[#FFFFFF]/6">
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-3xl border border-[#141414]/5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-widest opacity-40 px-1">{t('games.location')}</label>
@@ -127,7 +127,7 @@ export default function CreateGameForm({
               value={formData.location}
               onChange={e => setFormData({ ...formData, location: e.target.value })}
               placeholder="e.g. Club Padel World"
-              className="w-full bg-[#FFFFFF]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#00E676] outline-none"
+              className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none"
             />
           </div>
         </div>
@@ -138,7 +138,7 @@ export default function CreateGameForm({
             <select
               value={formData.recurrence}
               onChange={e => setFormData({ ...formData, recurrence: e.target.value })}
-              className="w-full bg-[#FFFFFF]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#00E676] outline-none appearance-none"
+              className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none appearance-none"
             >
               <option value="none">{lang === 'hu' ? 'Egyszeri alkalom' : 'Egyszeri meccs'}</option>
               <option value="weekly">{lang === 'hu' ? 'Minden héten' : 'Minden héten'}</option>
@@ -159,7 +159,7 @@ export default function CreateGameForm({
               required
               value={formData.datetime}
               onChange={e => setFormData({ ...formData, datetime: e.target.value })}
-              className="w-full bg-[#FFFFFF]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#00E676] outline-none"
+              className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none"
             />
           </div>
         </div>
@@ -170,7 +170,7 @@ export default function CreateGameForm({
             <select
               value={formData.gameType}
               onChange={e => setFormData({ ...formData, gameType: e.target.value as GameType })}
-              className="w-full bg-[#FFFFFF]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#00E676] outline-none appearance-none"
+              className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none appearance-none"
             >
               <option value={GameType.Friendly}>{t('games.gameTypes.Friendly')}</option>
               <option value={GameType.Competitive}>{t('games.gameTypes.Competitive')}</option>
@@ -187,7 +187,7 @@ export default function CreateGameForm({
             <button
               type="button"
               onClick={onShowTutorial}
-              className="p-1 hover:bg-[#FFFFFF]/5 rounded-lg transition-colors"
+              className="p-1 hover:bg-[#141414]/5 rounded-lg transition-colors"
             >
               <Award className="w-3.5 h-3.5 opacity-40" />
             </button>
@@ -197,7 +197,7 @@ export default function CreateGameForm({
             <select
               value={formData.recommendedLevel}
               onChange={e => setFormData({ ...formData, recommendedLevel: e.target.value as SkillLevel })}
-              className="w-full bg-[#FFFFFF]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#00E676] outline-none appearance-none"
+              className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none appearance-none"
             >
               {Object.values(SkillLevel).map(lvl => <option key={lvl} value={lvl}>{t(`profile.levels.${lvl}`)}</option>)}
             </select>
@@ -210,7 +210,7 @@ export default function CreateGameForm({
             <select
               value={formData.requiredPlayers}
               onChange={e => setFormData({ ...formData, requiredPlayers: e.target.value })}
-              className="w-full bg-[#FFFFFF]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#00E676] outline-none appearance-none"
+              className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none appearance-none"
             >
               <option value="1">{`1 ${t('games.players')}`}</option>
               <option value="2">{`2 ${t('games.players')}`}</option>
@@ -227,11 +227,11 @@ export default function CreateGameForm({
           value={formData.note}
           onChange={e => setFormData({ ...formData, note: e.target.value })}
           placeholder={t('games.notePlaceholder')}
-          className="w-full bg-[#FFFFFF]/5 border-none rounded-2xl py-4 px-6 text-sm focus:ring-2 focus:ring-[#00E676] outline-none min-h-[100px]"
+          className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 px-6 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none min-h-[100px]"
         />
       </div>
 
-      <div className="pt-4 border-t border-[#FFFFFF]/6 space-y-6">
+      <div className="pt-4 border-t border-[#141414]/5 space-y-6">
         <div className="space-y-1">
           <label className="text-xs font-bold uppercase tracking-widest opacity-40 px-1">{t('games.visibility')}</label>
           <div className="grid grid-cols-3 gap-2">
@@ -241,7 +241,7 @@ export default function CreateGameForm({
                 type="button"
                 onClick={() => setFormData({ ...formData, visibility: v })}
                 className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  formData.visibility === v ? 'bg-[#141414] text-[#080B0F]' : 'bg-[#FFFFFF]/5 text-[#4A5568]'
+                  formData.visibility === v ? 'bg-[#141414] text-[#E2FF3B]' : 'bg-[#141414]/5 text-[#141414]/40'
                 }`}
               >
                 {v === 'public' ? t('games.public') : v === 'group-only' ? t('games.groupOnly') : t('games.inviteOnly')}
@@ -261,12 +261,12 @@ export default function CreateGameForm({
                   onClick={() => setFormData({ ...formData, groupId: g.id })}
                   className={`p-4 rounded-2xl text-left border transition-all ${
                     formData.groupId === g.id
-                    ? 'border-[#00E676] bg-[#00E676]/5 ring-1 ring-[#00E676]'
-                    : 'border-[#FFFFFF]/6 bg-[#FFFFFF]/5'
+                    ? 'border-[#E2FF3B] bg-[#E2FF3B]/5 ring-1 ring-[#E2FF3B]'
+                    : 'border-[#141414]/5 bg-[#141414]/5'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#141414] flex items-center justify-center text-[#080B0F] font-black italic">
+                    <div className="w-10 h-10 rounded-xl bg-[#141414] flex items-center justify-center text-[#E2FF3B] font-black italic">
                       {g.name[0]}
                     </div>
                     <div>
@@ -291,7 +291,7 @@ export default function CreateGameForm({
                 value={inviteSearch}
                 onChange={e => setInviteSearch(e.target.value)}
                 placeholder={t('common.search')}
-                className="w-full bg-[#FFFFFF]/5 border-none rounded-xl py-2 pl-8 pr-3 text-[10px] focus:ring-1 focus:ring-[#00E676] outline-none"
+                className="w-full bg-[#141414]/5 border-none rounded-xl py-2 pl-8 pr-3 text-[10px] focus:ring-1 focus:ring-[#E2FF3B] outline-none"
               />
             </div>
           </div>
@@ -332,13 +332,13 @@ export default function CreateGameForm({
                   }}
                   className={`w-full p-3 rounded-2xl text-left flex items-center justify-between border transition-all ${
                     formData.invitedUserIds.includes(f.id)
-                    ? 'border-[#00E676] bg-[#00E676]/5 ring-1 ring-[#00E676]'
-                    : 'border-[#FFFFFF]/6 bg-[#FFFFFF]/5'
+                    ? 'border-[#E2FF3B] bg-[#E2FF3B]/5 ring-1 ring-[#E2FF3B]'
+                    : 'border-[#141414]/5 bg-[#141414]/5'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-[#141414] overflow-hidden flex items-center justify-center border-2 border-white shadow-sm">
-                      {f.avatarUrl ? <img src={f.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-5 h-5 text-[#080B0F]" />}
+                      {f.avatarUrl ? <img src={f.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-5 h-5 text-[#E2FF3B]" />}
                     </div>
                     <div>
                       <p className="text-sm font-bold">{f.name}</p>
@@ -348,7 +348,7 @@ export default function CreateGameForm({
                       </div>
                     </div>
                   </div>
-                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${formData.invitedUserIds.includes(f.id) ? 'bg-green-500 text-white' : 'bg-[#1A2233]/50 text-white/0'}`}>
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${formData.invitedUserIds.includes(f.id) ? 'bg-green-500 text-white' : 'bg-white/50 text-white/0'}`}>
                     <Check className="w-4 h-4" />
                   </div>
                 </button>
@@ -361,10 +361,10 @@ export default function CreateGameForm({
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-[#141414] text-[#080B0F] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-black/10 disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full bg-[#141414] text-[#E2FF3B] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-black/10 disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {isSubmitting
-          ? <><div className="w-4 h-4 border-2 border-[#00E676]/30 border-t-[#00E676] rounded-full animate-spin" />{lang === 'hu' ? 'Mentés...' : 'Mentés...'}</>
+          ? <><div className="w-4 h-4 border-2 border-[#E2FF3B]/30 border-t-[#E2FF3B] rounded-full animate-spin" />{lang === 'hu' ? 'Mentés...' : 'Mentés...'}</>
           : (gameToEdit ? t('common.save') : t('games.createGame'))
         }
       </button>

@@ -37,7 +37,7 @@ export default function GroupsTab({
         </div>
         <button
           onClick={onCreateClick}
-          className="w-12 h-12 bg-[#141414] text-[#080B0F] rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg shadow-black/10"
+          className="w-12 h-12 bg-[#141414] text-[#E2FF3B] rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg shadow-black/10"
         >
           <Plus className="w-6 h-6" />
         </button>
@@ -45,15 +45,15 @@ export default function GroupsTab({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {groups.length === 0 && (
-          <div className="col-span-full py-16 flex flex-col items-center text-center gap-4 bg-[#1A2233] border border-[#141414]/5 rounded-3xl shadow-sm">
-            <div className="w-20 h-20 bg-[#0F1419] rounded-3xl flex items-center justify-center text-4xl">👥</div>
+          <div className="col-span-full py-16 flex flex-col items-center text-center gap-4 bg-white border border-[#141414]/5 rounded-3xl shadow-sm">
+            <div className="w-20 h-20 bg-[#F8F8F5] rounded-3xl flex items-center justify-center text-4xl">👥</div>
             <div>
               <p className="font-black text-lg uppercase tracking-tight">{t('groups.noGroups')}</p>
               <p className="text-xs opacity-40 mt-1">{t('groups.subTitle')}</p>
             </div>
             <button
               onClick={onCreateClick}
-              className="px-6 py-3 bg-[#141414] text-[#080B0F] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#00C853] transition-colors"
+              className="px-6 py-3 bg-[#141414] text-[#E2FF3B] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#252525] transition-colors"
             >
               + {t('groups.createGroup')}
             </button>
@@ -62,7 +62,7 @@ export default function GroupsTab({
         {groups.map(group => {
           const isMember = (group.memberIds || []).includes(currentUser?.id || '');
           return (
-            <div key={group.id} className="bg-[#1A2233] p-5 rounded-3xl border border-[#141414]/5 shadow-sm hover:shadow-md transition-all group">
+            <div key={group.id} className="bg-white p-5 rounded-3xl border border-[#141414]/5 shadow-sm hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="text-lg font-bold">{group.name}</h3>
@@ -72,7 +72,7 @@ export default function GroupsTab({
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   {group.recommendedLevel && (
-                    <span className="px-3 py-1 bg-[#141414] text-[#080B0F] rounded-full text-[10px] font-black uppercase tracking-widest">
+                    <span className="px-3 py-1 bg-[#141414] text-[#E2FF3B] rounded-full text-[10px] font-black uppercase tracking-widest">
                       {t(`profile.levels.${group.recommendedLevel}`)}
                     </span>
                   )}
@@ -86,12 +86,12 @@ export default function GroupsTab({
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-2">
                     {(group.memberIds || []).slice(0, 3).map(mid => (
-                      <div key={mid} className="w-8 h-8 rounded-full border-2 border-white bg-[#FFFFFF]/8 overflow-hidden flex items-center justify-center">
+                      <div key={mid} className="w-8 h-8 rounded-full border-2 border-white bg-[#141414]/10 overflow-hidden flex items-center justify-center">
                         <UserIcon className="w-4 h-4 opacity-40" />
                       </div>
                     ))}
                     {(group.memberIds || []).length > 3 && (
-                      <div className="w-8 h-8 rounded-full border-2 border-white bg-[#141414] flex items-center justify-center text-[10px] font-black text-[#080B0F]">
+                      <div className="w-8 h-8 rounded-full border-2 border-white bg-[#141414] flex items-center justify-center text-[10px] font-black text-[#E2FF3B]">
                         +{group.memberIds.length - 3}
                       </div>
                     )}
@@ -102,14 +102,14 @@ export default function GroupsTab({
                   <div className="flex gap-2">
                     <button
                       onClick={() => onSelectGroup(group)}
-                      className="px-3 py-2.5 bg-[#FFFFFF]/5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#FFFFFF]/8 transition-all"
+                      className="px-3 py-2.5 bg-[#141414]/5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#141414]/10 transition-all"
                       title={lang === 'hu' ? 'Részletek' : 'Details'}
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => onOpenChat(group)}
-                      className="px-4 py-2.5 bg-[#141414] text-[#080B0F] rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5"
+                      className="px-4 py-2.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       {t('games.chatShort') || 'Chat'}
@@ -140,7 +140,7 @@ export default function GroupsTab({
                                 <Shield className="w-3.5 h-3.5" />
                               </button>
                               {makeAdminGroupId === group.id && (
-                                <div className="absolute right-0 top-full mt-1 z-50 bg-[#1A2233] border border-[#FFFFFF]/8 rounded-2xl shadow-xl overflow-hidden w-48">
+                                <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-[#141414]/10 rounded-2xl shadow-xl overflow-hidden w-48">
                                   <p className="px-3 py-2 text-[10px] font-black uppercase opacity-40">{lang === 'hu' ? 'Admin jogot kap:' : 'Grant admin to:'}</p>
                                   {(group.memberIds || []).filter(mid => mid !== currentUser?.id).map(mid => {
                                     const isAlreadyAdmin = (group.adminIds || []).includes(mid);
@@ -150,7 +150,7 @@ export default function GroupsTab({
                                         key={mid}
                                         onClick={() => { onMakeAdmin(group.id, mid); setMakeAdminGroupId(null); }}
                                         disabled={isAlreadyAdmin}
-                                        className={`w-full px-3 py-2.5 text-left text-xs font-bold transition-colors ${isAlreadyAdmin ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[#00E676]'}`}
+                                        className={`w-full px-3 py-2.5 text-left text-xs font-bold transition-colors ${isAlreadyAdmin ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[#E2FF3B]'}`}
                                       >
                                         {memberName} {isAlreadyAdmin ? '👑' : ''}
                                       </button>
@@ -164,7 +164,7 @@ export default function GroupsTab({
                           {isOnlyAdmin ? (
                             <button
                               disabled
-                              className="px-3 py-2.5 bg-[#0F1419] text-gray-300 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed"
+                              className="px-3 py-2.5 bg-gray-50 text-gray-300 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed"
                               title={lang === 'hu' ? 'Előbb adj admin jogot másnak' : 'Grant admin to someone first'}
                             >
                               <LogOut className="w-3.5 h-3.5" />
@@ -185,7 +185,7 @@ export default function GroupsTab({
                 ) : (
                   <button
                     onClick={() => onJoin(group.id)}
-                    className="px-6 py-2.5 bg-[#00E676] text-[#141414] rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
+                    className="px-6 py-2.5 bg-[#E2FF3B] text-[#141414] rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
                   >
                     {t('common.join')}
                   </button>

@@ -125,12 +125,12 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-black uppercase italic tracking-tighter">{t('profile.editTitle')}</h2>
-        <button onClick={onCancel} className="p-2 hover:bg-[#FFFFFF]/5 rounded-xl transition-colors">
+        <button onClick={onCancel} className="p-2 hover:bg-[#141414]/5 rounded-xl transition-colors">
           <X className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="bg-[#1A2233] rounded-3xl p-6 shadow-sm border border-[#FFFFFF]/6 space-y-6">
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-[#141414]/5 space-y-6">
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">@{t('auth.usernameLabel')}</label>
@@ -138,7 +138,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
               type="text"
               disabled
               value={user.username || ''}
-              className="w-full bg-[#FFFFFF]/5 border-none rounded-2xl py-4 px-6 text-sm outline-none font-bold text-[#4A5568]"
+              className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 px-6 text-sm outline-none font-bold text-[#141414]/30"
             />
           </div>
           <div className="space-y-2">
@@ -148,11 +148,11 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                 {formData.avatarUrl ? (
                   <img src={formData.avatarUrl} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <ImageIcon className="w-8 h-8 text-[#080B0F]/40" />
+                  <ImageIcon className="w-8 h-8 text-[#E2FF3B]/40" />
                 )}
               </div>
 
-              <div {...getRootProps()} className={`flex-1 border-2 border-dashed rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors ${isDragActive ? 'border-[#00E676] bg-[#00E676]/5' : 'border-[#FFFFFF]/8 hover:border-[#FFFFFF]/10'}`}>
+              <div {...getRootProps()} className={`flex-1 border-2 border-dashed rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors ${isDragActive ? 'border-[#E2FF3B] bg-[#E2FF3B]/5' : 'border-[#141414]/10 hover:border-[#141414]/20'}`}>
                 <input {...getInputProps()} />
                 <Upload className="w-4 h-4 mb-2 opacity-40" />
                 <p className="text-[10px] font-bold uppercase tracking-wider opacity-40 text-center">
@@ -177,7 +177,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                 type="text"
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                className="w-full bg-[#FFFFFF]/5 border-none rounded-xl py-3 px-4 text-sm font-bold focus:ring-1 focus:ring-[#00E676] outline-none"
+                className="w-full bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-sm font-bold focus:ring-1 focus:ring-[#E2FF3B] outline-none"
               />
             </div>
             <div className="space-y-1">
@@ -190,7 +190,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                   value={formData.city}
                   onChange={e => setFormData({ ...formData, city: e.target.value })}
                   placeholder={t('profile.locationPlaceholder')}
-                  className="w-full bg-[#FFFFFF]/5 border-none rounded-xl py-3 pl-8 pr-4 text-sm font-bold focus:ring-1 focus:ring-[#00E676] outline-none"
+                  className="w-full bg-[#141414]/5 border-none rounded-xl py-3 pl-8 pr-4 text-sm font-bold focus:ring-1 focus:ring-[#E2FF3B] outline-none"
                 />
                 <datalist id="hu-cities">
                   <option value="Budapest" />
@@ -253,7 +253,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
               <button
                 type="button"
                 onClick={onShowTutorial}
-                className="p-1 hover:bg-[#FFFFFF]/5 rounded-lg transition-colors"
+                className="p-1 hover:bg-[#141414]/5 rounded-lg transition-colors"
                 title="Level Info"
               >
                 <Award className="w-3.5 h-3.5 opacity-40" />
@@ -266,8 +266,8 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                   onClick={() => setFormData({ ...formData, skillLevel: lvl })}
                   className={`py-2 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${
                     formData.skillLevel === lvl
-                    ? 'bg-[#141414] text-[#080B0F]'
-                    : 'bg-[#FFFFFF]/5 text-[#4A5568]'
+                    ? 'bg-[#141414] text-[#E2FF3B]'
+                    : 'bg-[#141414]/5 text-[#141414]/30'
                   }`}
                 >
                   {t(`profile.levels.${lvl}`)}
@@ -281,7 +281,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
             <textarea
               value={formData.bio}
               onChange={e => setFormData({ ...formData, bio: e.target.value })}
-              className="w-full bg-[#FFFFFF]/5 border-none rounded-xl py-3 px-4 text-sm focus:ring-1 focus:ring-[#00E676] outline-none min-h-[80px]"
+              className="w-full bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-sm focus:ring-1 focus:ring-[#E2FF3B] outline-none min-h-[80px]"
             />
           </div>
 
@@ -291,7 +291,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
               <select
                 value={formData.lfgStatus}
                 onChange={e => setFormData({ ...formData, lfgStatus: e.target.value as LFGStatus })}
-                className="w-full bg-[#FFFFFF]/5 border-none rounded-xl py-3 px-4 text-xs font-bold focus:ring-1 focus:ring-[#00E676] outline-none appearance-none"
+                className="w-full bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-xs font-bold focus:ring-1 focus:ring-[#E2FF3B] outline-none appearance-none"
               >
                 {Object.values(LFGStatus).map(s => <option key={s} value={s}>{t(`profile.lfg.${s}`)}</option>)}
               </select>
@@ -304,7 +304,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                     key={s}
                     onClick={() => setFormData({ ...formData, playStyle: s })}
                     className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                      formData.playStyle === s ? 'bg-[#141414] text-[#080B0F]' : 'bg-[#FFFFFF]/5 text-[#4A5568]'
+                      formData.playStyle === s ? 'bg-[#141414] text-[#E2FF3B]' : 'bg-[#141414]/5 text-[#141414]/40'
                     }`}
                   >
                     {t(`profile.playStyles.${s}`)}
@@ -326,8 +326,8 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                   onClick={() => setFormData({ ...formData, languagePreference: langOption.code as Language })}
                   className={`py-2 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${
                     formData.languagePreference === langOption.code
-                    ? 'bg-[#141414] text-[#080B0F]'
-                    : 'bg-[#FFFFFF]/5 text-[#4A5568]'
+                    ? 'bg-[#141414] text-[#E2FF3B]'
+                    : 'bg-[#141414]/5 text-[#141414]/30'
                   }`}
                 >
                   {langOption.label}
@@ -345,8 +345,8 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                   onClick={() => setFormData({ ...formData, experience: exp })}
                   className={`py-2 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${
                     formData.experience === exp
-                    ? 'bg-[#141414] text-[#080B0F]'
-                    : 'bg-[#FFFFFF]/5 text-[#4A5568]'
+                    ? 'bg-[#141414] text-[#E2FF3B]'
+                    : 'bg-[#141414]/5 text-[#141414]/30'
                   }`}
                 >
                   {t(`profile.experienceLevels.${exp}`) || exp}
@@ -369,8 +369,8 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                   }}
                   className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
                     formData.languages.includes(lang_val)
-                      ? 'bg-[#1A2233] border-[#141414] text-[#141414]'
-                      : 'bg-transparent border-[#FFFFFF]/8 text-[#4A5568]'
+                      ? 'bg-white border-[#141414] text-[#141414]'
+                      : 'bg-transparent border-[#141414]/10 text-[#141414]/40'
                   }`}
                 >
                   {t(`profile.languageList.${lang_val}`) || lang_val}
@@ -379,13 +379,13 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
             </div>
           </div>
 
-          <div className="space-y-4 pt-4 border-t border-[#FFFFFF]/6">
+          <div className="space-y-4 pt-4 border-t border-[#141414]/5">
             <div className="flex items-center gap-2">
               <Smartphone className="w-4 h-4 opacity-40" />
               <h3 className="text-xs font-bold uppercase tracking-widest opacity-40">{t('profile.socialLinks')}</h3>
             </div>
             <div className="space-y-3">
-              <div className="flex items-center gap-3 bg-[#FFFFFF]/5 rounded-xl px-3 group focus-within:ring-1 focus-within:ring-[#00E676]">
+              <div className="flex items-center gap-3 bg-[#141414]/5 rounded-xl px-3 group focus-within:ring-1 focus-within:ring-[#E2FF3B]">
                 <Instagram className="w-4 h-4 opacity-30" />
                 <input
                   type="text"
@@ -395,7 +395,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                   className="flex-1 bg-transparent border-none py-3 text-xs font-bold outline-none"
                 />
               </div>
-              <div className="flex items-center gap-3 bg-[#FFFFFF]/5 rounded-xl px-3 group focus-within:ring-1 focus-within:ring-[#00E676]">
+              <div className="flex items-center gap-3 bg-[#141414]/5 rounded-xl px-3 group focus-within:ring-1 focus-within:ring-[#E2FF3B]">
                 <Facebook className="w-4 h-4 opacity-30" />
                 <input
                   type="text"
@@ -408,7 +408,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
             </div>
           </div>
 
-          <div className="space-y-4 pt-4 border-t border-[#FFFFFF]/6">
+          <div className="space-y-4 pt-4 border-t border-[#141414]/5">
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 opacity-40" />
               <h3 className="text-xs font-bold uppercase tracking-widest opacity-40">{t('profile.privacy')}</h3>
@@ -428,7 +428,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                       ...formData,
                       privacySettings: { ...formData.privacySettings, [item.id]: e.target.checked }
                     })}
-                    className="w-5 h-5 accent-[#00E676] rounded-lg"
+                    className="w-5 h-5 accent-[#E2FF3B] rounded-lg"
                   />
                 </label>
               ))}
@@ -443,7 +443,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                   key={t_val}
                   onClick={() => togglePlayTime(t_val)}
                   className={`py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                    formData.playTime.includes(t_val) ? 'bg-[#141414] text-[#080B0F]' : 'bg-[#FFFFFF]/5 text-[#4A5568]'
+                    formData.playTime.includes(t_val) ? 'bg-[#141414] text-[#E2FF3B]' : 'bg-[#141414]/5 text-[#141414]/30'
                   }`}
                 >
                   {t(`profile.playTimesList.${t_val}`) || t_val}
@@ -454,7 +454,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
         </div>
 
         {/* Interests */}
-        <div className="space-y-4 pt-4 border-t border-[#FFFFFF]/6">
+        <div className="space-y-4 pt-4 border-t border-[#141414]/5">
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4 opacity-40" />
             <h3 className="text-xs font-bold uppercase tracking-widest opacity-40">{t('profile.interests')}</h3>
@@ -467,8 +467,8 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                 onClick={() => toggleInterest(interest)}
                 className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${
                   formData.interests.includes(interest)
-                  ? 'bg-[#00E676] text-[#141414]'
-                  : 'bg-[#FFFFFF]/5 text-[#141414]/50 hover:bg-[#FFFFFF]/8'
+                  ? 'bg-[#E2FF3B] text-[#141414]'
+                  : 'bg-[#141414]/5 text-[#141414]/50 hover:bg-[#141414]/10'
                 }`}
               >
                 {t(`profile.interestsList.${interest}`) || interest}
@@ -483,11 +483,11 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
               value={customInterest}
               onChange={e => setCustomInterest(e.target.value)}
               onKeyPress={e => e.key === 'Enter' && addCustomInterest()}
-              className="flex-1 bg-[#FFFFFF]/5 border-none rounded-xl py-3 px-4 text-xs focus:ring-1 focus:ring-[#00E676] outline-none"
+              className="flex-1 bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-xs focus:ring-1 focus:ring-[#E2FF3B] outline-none"
             />
             <button
               onClick={addCustomInterest}
-              className="p-3 bg-[#141414] text-[#080B0F] rounded-xl"
+              className="p-3 bg-[#141414] text-[#E2FF3B] rounded-xl"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -499,7 +499,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                 <span key={interest} className="flex items-center gap-1 px-3 py-1.5 bg-[#141414] text-white rounded-xl text-[10px] font-bold uppercase tracking-wider">
                   {interest}
                   <X
-                    className="w-3 h-3 ml-1 cursor-pointer hover:text-[#080B0F]"
+                    className="w-3 h-3 ml-1 cursor-pointer hover:text-[#E2FF3B]"
                     onClick={() => toggleInterest(interest)}
                   />
                 </span>
@@ -509,7 +509,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
         </div>
 
         {/* Clubs */}
-        <div className="space-y-4 pt-4 border-t border-[#FFFFFF]/6">
+        <div className="space-y-4 pt-4 border-t border-[#141414]/5">
           <div className="flex items-center gap-2">
             <Heart className="w-4 h-4 opacity-40" />
             <h3 className="text-xs font-bold uppercase tracking-widest opacity-40">{t('profile.favoriteClubs')}</h3>
@@ -517,7 +517,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
 
           <div className="space-y-3">
             {formData.favoriteClubs.map((club: string) => (
-              <div key={club} className="flex items-center justify-between bg-[#FFFFFF]/5 rounded-xl py-3 px-4">
+              <div key={club} className="flex items-center justify-between bg-[#141414]/5 rounded-xl py-3 px-4">
                 <span className="text-sm font-medium">{club}</span>
                 <X className="w-4 h-4 opacity-30 cursor-pointer hover:text-red-500" onClick={() => removeClub(club)} />
               </div>
@@ -530,11 +530,11 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                 value={newClub}
                 onChange={e => setNewClub(e.target.value)}
                 onKeyPress={e => e.key === 'Enter' && addClub()}
-                className="flex-1 bg-[#FFFFFF]/5 border-none rounded-xl py-3 px-4 text-xs focus:ring-1 focus:ring-[#00E676] outline-none"
+                className="flex-1 bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-xs focus:ring-1 focus:ring-[#E2FF3B] outline-none"
               />
               <button
                 onClick={addClub}
-                className="p-3 bg-[#141414] text-[#080B0F] rounded-xl"
+                className="p-3 bg-[#141414] text-[#E2FF3B] rounded-xl"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -543,7 +543,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
         </div>
 
         {/* Notifications */}
-        <div className="space-y-4 pt-4 border-t border-[#FFFFFF]/6">
+        <div className="space-y-4 pt-4 border-t border-[#141414]/5">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 opacity-40" />
             <h3 className="text-xs font-bold uppercase tracking-widest opacity-40">{t('profile.notifications')}</h3>
@@ -565,23 +565,23 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                     ...formData,
                     notifications: { ...formData.notifications, [pref.id]: e.target.checked }
                   })}
-                  className="w-5 h-5 accent-[#00E676] rounded-lg cursor-pointer"
+                  className="w-5 h-5 accent-[#E2FF3B] rounded-lg cursor-pointer"
                 />
               </label>
             ))}
           </div>
         </div>
 
-        <div className="pt-6 border-t border-[#FFFFFF]/6 flex gap-3">
+        <div className="pt-6 border-t border-[#141414]/5 flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 py-4 bg-[#FFFFFF]/5 text-[#141414] rounded-2xl font-bold text-sm hover:bg-[#FFFFFF]/8 transition-colors"
+            className="flex-1 py-4 bg-[#141414]/5 text-[#141414] rounded-2xl font-bold text-sm hover:bg-[#141414]/10 transition-colors"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={handleSave}
-            className="flex-2 py-4 bg-[#141414] text-[#080B0F] rounded-2xl font-black uppercase tracking-widest text-sm hover:shadow-xl transition-all"
+            className="flex-2 py-4 bg-[#141414] text-[#E2FF3B] rounded-2xl font-black uppercase tracking-widest text-sm hover:shadow-xl transition-all"
           >
             {t('common.save')}
           </button>
