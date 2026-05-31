@@ -265,61 +265,82 @@ export default function App() {
     return data;
   };
 
+  const authHeaders = useCallback((): Record<string, string> => ({
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  }), [token]);
+
+  const updateReminders = useCallback((gamesList: Game[]) => {
+    if (!currentUser?.id) return;
+    const now = Date.now();
+    const upcoming = gamesList
+      .filter(g => (g.joinedPlayers || []).includes(currentUser.id) && g.status !== 'played' && g.status !== 'cancelled')
+      .filter(g => {
+        const dt = g.datetime || (g.date && g.time ? `${g.date}T${g.time}` : null);
+        if (!dt) return false;
+        const diff = new Date(dt).getTime() - now;
+        return diff > 0 && diff < 7200000;
+      })
+      .sort((a, b) => new Date(a.datetime || a.date || '').getTime() - new Date(b.datetime || b.date || '').getTime());
+    const found = upcoming.find(g => !localStorage.getItem(`reminded_${g.id}`));
+    setReminderGame(found || null);
+  }, [currentUser?.id]);
+
+  const fetchGames = useCallback(async () => {
+    try {
+      const data = await safeFetch('/api/games', { headers: authHeaders() });
+      const list = Array.isArray(data) ? data : [];
+      const unique = list.filter((g, idx, arr) => arr.findIndex(x => x.id === g.id) === idx);
+      setGames(unique);
+      updateReminders(unique);
+    } catch (err) { console.error("Failed to fetch games", err); }
+  }, [authHeaders, updateReminders]);
+
+  const fetchPlayers = useCallback(async () => {
+    try {
+      const data = await safeFetch('/api/users', { headers: authHeaders() });
+      setPlayers(Array.isArray(data) ? data : []);
+    } catch (err) { console.error("Failed to fetch players", err); }
+  }, [authHeaders]);
+
+  const fetchGroups = useCallback(async () => {
+    try {
+      const data = await safeFetch('/api/groups', { headers: authHeaders() });
+      setGroups(Array.isArray(data) ? data : []);
+    } catch (err) { console.error("Failed to fetch groups", err); }
+  }, [authHeaders]);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const data = await safeFetch('/api/notifications/me', { headers: authHeaders() });
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) { console.error("Failed to fetch notifications", err); }
+  }, [authHeaders]);
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const results = await Promise.all([
+      const headers = authHeaders();
+      const [gamesData, playersData, groupsData, clubsData, notifsData] = await Promise.all([
         safeFetch('/api/games', { headers }),
         safeFetch('/api/users', { headers }),
         safeFetch('/api/groups', { headers }),
         safeFetch('/api/clubs', { headers }),
         safeFetch('/api/notifications/me', { headers })
       ]);
-      
-      const [gamesData, playersData, groupsData, clubsData, notifsData] = results;
-
-      // Deduplicate games by id
-      const rawGames = Array.isArray(gamesData) ? gamesData : [];
-      const uniqueGames = rawGames.filter((g, idx, arr) => arr.findIndex(x => x.id === g.id) === idx);
-      setGames(uniqueGames);
+      const unique = (Array.isArray(gamesData) ? gamesData : []).filter((g, idx, arr) => arr.findIndex(x => x.id === g.id) === idx);
+      setGames(unique);
       setPlayers(Array.isArray(playersData) ? playersData : []);
       setGroups(Array.isArray(groupsData) ? groupsData : []);
       setClubs(Array.isArray(clubsData) ? clubsData : []);
       setNotifications(Array.isArray(notifsData) ? notifsData : []);
-      // Check for upcoming game reminders (inline to avoid hook order issues)
-      if (currentUser?.id) {
-        const now = Date.now();
-        const userId = currentUser.id;
-        const upcoming = uniqueGames
-          .filter(g => (g.joinedPlayers || []).includes(userId) && g.status !== 'played' && g.status !== 'cancelled')
-          .filter(g => {
-            const dt = g.datetime || (g.date && g.time ? `${g.date}T${g.time}` : null);
-            if (!dt) return false;
-            const diff = new Date(dt).getTime() - now;
-            return diff > 0 && diff < 7200000;
-          })
-          .sort((a, b) => new Date(a.datetime || a.date || '').getTime() - new Date(b.datetime || b.date || '').getTime());
-        let found = false;
-        for (const g of upcoming) {
-          if (!localStorage.getItem(`reminded_${g.id}`)) {
-            setReminderGame(g);
-            found = true;
-            break;
-          }
-        }
-        if (!found) setReminderGame(null);
-      }
+      updateReminders(unique);
     } catch (err) {
       console.error("Failed to fetch data", err);
     } finally {
       setIsLoading(false);
     }
-  }, [token, currentUser?.id]);
+  }, [authHeaders, updateReminders]);
 
   useEffect(() => {
     if (currentUser?.languagePreference) {
@@ -437,13 +458,13 @@ export default function App() {
       // Always call /request - the API auto-joins for public games
       await safeFetch(`/api/games/${gameId}/request`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ userId: currentUser?.id, userName: currentUser?.name })
       });
-      fetchData();
+      fetchGames();
       showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Joined the game!'));
     } catch (err: any) {
       console.error("Failed to request joining game", err);
@@ -457,7 +478,7 @@ export default function App() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      fetchData();
+      fetchGames();
       setGameIdToDelete(null);
       if (selectedGame?.id === gameId) {
         setSelectedGame(null);
@@ -481,8 +502,7 @@ export default function App() {
       });
       const updatedUser = data?.user || data?.data || data;
       if (updatedUser?.id) updateUser(updatedUser);
-      fetchData();
-      
+      fetchPlayers();
       // If the blocked player was selected, maybe close the profile
       if (selectedPlayer?.id === targetId) {
         setSelectedPlayer(null);
@@ -502,7 +522,7 @@ export default function App() {
         },
         body: JSON.stringify({ userId, approve })
       });
-      fetchData();
+      fetchGames();
     } catch (err) {
       console.error(err);
     }
@@ -546,7 +566,6 @@ export default function App() {
       });
       const updatedUser = data?.user || data?.data || data;
       if (updatedUser?.id) updateUser(updatedUser);
-      fetchData();
     } catch (err) {
       console.error(err);
     }
@@ -567,7 +586,8 @@ export default function App() {
         },
         body: JSON.stringify({ attendanceRecords: records, status: 'played', isCompleted: true })
       });
-      fetchData();
+      fetchGames();
+      fetchPlayers();
       setIsAttendanceOpen(false);
     } catch (err) {
       console.error(err);
@@ -591,7 +611,6 @@ export default function App() {
       if (updatedGroup?.chat) {
         setSelectedGroup(prev => prev ? { ...prev, chat: updatedGroup.chat } : prev);
       }
-      fetchData();
     } catch (err) {
       console.error("Failed to send group message", err);
       showToast('❌ ' + (lang === 'hu' ? 'Üzenet küldése sikertelen' : 'Failed to send message'));
@@ -609,7 +628,7 @@ export default function App() {
         },
         body: JSON.stringify({ userId: currentUser?.id })
       });
-      fetchData();
+      fetchGroups();
     } catch (err) {
       console.error("Failed to join group", err);
     }
@@ -625,7 +644,7 @@ export default function App() {
         },
         body: JSON.stringify(result)
       });
-      fetchData();
+      fetchGames();
       setIsResultModalOpen(false);
     } catch (err) {
       console.error("Failed to record result", err);
@@ -643,7 +662,6 @@ export default function App() {
         },
         body: JSON.stringify({ fromUserId: currentUser?.id, toUserId })
       });
-      fetchData();
       showToast('✅ ' + (lang === 'hu' ? 'Barátkérés elküldve!' : 'Friend request sent!'));
     } catch (err: any) {
       console.error("Failed to send friend request", err);
@@ -663,7 +681,7 @@ export default function App() {
       });
       const updatedUser = data?.user || data?.data || data;
       if (updatedUser?.id) updateUser(updatedUser);
-      fetchData();
+      fetchPlayers();
       if (status === 'accepted') {
         showToast('✅ ' + (lang === 'hu' ? 'Barát elfogadva!' : 'Friend request accepted!'));
       } else {
@@ -689,7 +707,7 @@ export default function App() {
       }
       // Mark notification as read
       setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, read: true } : n));
-      fetchData();
+      fetchGames();
     } catch (err: any) {
       showToast('❌ ' + (err?.message || 'Error'));
     }
@@ -737,7 +755,8 @@ export default function App() {
         body: JSON.stringify({ ratings })
       });
       showToast('⭐ ' + (lang === 'hu' ? 'Értékelés elküldve, köszönöm!' : 'Rating submitted, thank you!'));
-      fetchData();
+      fetchGames();
+      fetchPlayers();
     } catch (err: any) {
       showToast('❌ ' + (err?.message || 'Hiba'));
     }
@@ -752,7 +771,7 @@ export default function App() {
         body: JSON.stringify({ userId: currentUser.id })
       });
       showToast(lang === 'hu' ? '✅ Kilépés sikeres' : '✅ Left the game');
-      fetchData();
+      fetchGames();
     } catch (err: any) {
       showToast('❌ ' + (err?.message || 'Hiba történt'));
     }
@@ -768,7 +787,7 @@ export default function App() {
       });
       updateUser({ friendIds: (currentUser.friendIds || []).filter(id => id !== friendId) });
       showToast(lang === 'hu' ? '✅ Barát eltávolítva' : '✅ Friend removed');
-      fetchData();
+      fetchPlayers();
     } catch (err: any) {
       showToast('❌ ' + (err?.message || 'Hiba'));
     }
@@ -783,7 +802,7 @@ export default function App() {
         body: JSON.stringify({ userId: currentUser.id })
       });
       showToast(lang === 'hu' ? '✅ Kilépés sikeres' : '✅ Left the group');
-      fetchData();
+      fetchGroups();
     } catch (err: any) {
       showToast('❌ ' + (err?.message || 'Hiba'));
     }
@@ -800,7 +819,7 @@ export default function App() {
         },
         body: JSON.stringify({ ...groupData, adminId: currentUser?.id })
       });
-      fetchData();
+      fetchGroups();
       setActiveTab('groups');
     } catch (err) {
       console.error("Failed to create group", err);
@@ -818,7 +837,7 @@ export default function App() {
         },
         body: JSON.stringify({ invitedUserId, invitedByUserId: currentUser?.id })
       });
-      fetchData();
+      fetchGroups();
     } catch (err) {
       console.error("Failed to invite to group", err);
     }
@@ -837,7 +856,6 @@ export default function App() {
       });
       const savedUser = data?.user || data?.data || data;
       if (savedUser?.id) updateUser(savedUser); else updateUser(updatedData);
-      fetchData();
       setIsEditingProfile(false);
       showToast('✅ ' + (lang === 'hu' ? 'Profil sikeresen mentve!' : 'Profile saved!'));
     } catch (err: any) {
@@ -1365,7 +1383,7 @@ export default function App() {
                 lang={lang}
                 gameToEdit={gameToEdit}
                 onSuccess={() => {
-                  fetchData();
+                  fetchGames();
                   setGameToEdit(null);
                   setActiveTab('games');
                 }} 
