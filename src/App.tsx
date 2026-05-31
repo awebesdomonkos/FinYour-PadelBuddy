@@ -7,12 +7,19 @@ import {
   User as UserIcon,
   TrendingUp,
   Edit2,
+  Edit,
   AlertCircle,
   History,
   Users,
   MessageSquare,
   ChevronDown,
   Calendar,
+  Clock,
+  ArrowLeft,
+  Heart,
+  Target,
+  X,
+  LogOut,
 } from 'lucide-react';
 import { useI18n } from './hooks/useI18n.ts';
 import { useAuth } from './context/AuthContext.tsx';
