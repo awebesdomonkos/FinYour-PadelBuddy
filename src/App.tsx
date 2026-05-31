@@ -12,6 +12,7 @@ import {
   Users,
   MessageSquare,
   ChevronDown,
+  Calendar,
 } from 'lucide-react';
 import { useI18n } from './hooks/useI18n.ts';
 import { useAuth } from './context/AuthContext.tsx';
