@@ -228,12 +228,16 @@ export default function App() {
   useEffect(() => {
     if (currentUser?.id) {
       fetchData();
-      const onboardingDone = localStorage.getItem(`onboarding_done_${currentUser.id}`);
-      if (!onboardingDoneRef.current && !onboardingDone) {
+      const onboardingDoneLocal = localStorage.getItem(`onboarding_done_${currentUser.id}`);
+      const onboardingDoneDB = currentUser.onboardingDone === true;
+      if (!onboardingDoneRef.current && !onboardingDoneLocal && !onboardingDoneDB) {
         setIsCompletingProfile(true);
         setOnboardingStep(1);
       } else {
         setIsCompletingProfile(false);
+        if (onboardingDoneDB && !onboardingDoneLocal) {
+          localStorage.setItem(`onboarding_done_${currentUser.id}`, '1');
+        }
       }
     } else if (!authLoading) {
       setAuthMode('landing');
@@ -310,11 +314,11 @@ export default function App() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ ...data, onboardingDone: true })
       });
       onboardingDoneRef.current = true;
       if (currentUser?.id) localStorage.setItem(`onboarding_done_${currentUser.id}`, '1');
-      updateUser(data);
+      updateUser({ ...data, onboardingDone: true });
       setIsCompletingProfile(false);
       setActiveTab('games');
       showToast('✅ ' + (lang === 'hu' ? 'Profil sikeresen mentve!' : 'Profile saved!'));
@@ -800,7 +804,13 @@ export default function App() {
         step={onboardingStep}
         setStep={setOnboardingStep}
         onComplete={handleProfileComplete}
-        onSkip={() => { if (currentUser?.id) localStorage.setItem(`onboarding_done_${currentUser.id}`, '1'); setIsCompletingProfile(false); setActiveTab('games'); }}
+        onSkip={() => {
+          if (currentUser?.id) localStorage.setItem(`onboarding_done_${currentUser.id}`, '1');
+          safeFetch(`/api/users/${currentUser.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ onboardingDone: true }) }).catch(() => {});
+          updateUser({ onboardingDone: true });
+          setIsCompletingProfile(false);
+          setActiveTab('games');
+        }}
         onLogout={() => { if (currentUser?.id) localStorage.setItem(`onboarding_done_${currentUser.id}`, '1'); logout(); setAuthMode('landing'); }}
         t={t}
         toastMsg={toastMsg}

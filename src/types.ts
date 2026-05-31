@@ -90,6 +90,7 @@ export interface User {
     showSocialLinks: boolean;
   };
   createdAt?: string;
+  onboardingDone?: boolean;
 }
 
 export interface Club {
