@@ -35,7 +35,6 @@ import {
   EyeOff,
   History,
   Smartphone,
-  Smartphone as Phone,
   ChevronDown,
   Share2
 } from 'lucide-react';
@@ -407,15 +406,12 @@ export default function App() {
     try {
       await safeFetch(`/api/users/${currentUser.id}`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(data)
       });
-    } catch (err) {
-      console.error('Profile save error:', err);
-    } finally {
       onboardingDoneRef.current = true;
       if (currentUser?.id) localStorage.setItem(`onboarding_done_${currentUser.id}`, '1');
       updateUser(data);
@@ -423,6 +419,9 @@ export default function App() {
       setActiveTab('games');
       showToast('✅ Profil sikeresen mentve!');
       fetchData();
+    } catch (err: any) {
+      console.error('Profile save error:', err);
+      showToast('❌ Hiba: ' + (err?.message || 'Mentés sikertelen'));
     }
   };
 
@@ -1264,49 +1263,36 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(players || [])
-                  .filter(p => !currentUser || p.id !== currentUser.id)
-                  .filter(p => !currentUser || !currentUser.blockedUserIds?.includes(p.id))
-                  .filter(p => {
-                    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                     (p.location?.city || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                     (p.username || '').toLowerCase().includes(searchQuery.toLowerCase());
-                    if (!matchSearch) return false;
-                    
-                    if (playerFilter === 'active') {
-                      if (!p.lastActive) return false;
-                      const lastActive = new Date(p.lastActive);
-                      const anHourAgo = new Date(Date.now() - 3600000);
-                      return lastActive > anHourAgo;
-                    }
-                    if (playerFilter === 'lfg') return p.lfgStatus && p.lfgStatus !== LFGStatus.None;
-                    if (playerFilter === 'friends') return currentUser?.friendIds?.includes(p.id);
-                    
-                    return true;
-                  })
-                  .map(player => (
-                    <PlayerCard 
-                      key={player.id} 
-                      player={player} 
-                      isFavorite={currentUser?.favoritePlayerIds?.includes(player.id)}
-                      onToggleFavorite={() => handleToggleFavorite(player.id)}
-                      onOpenProfile={(p) => setSelectedPlayer(p)}
-                    />
-                  ))}
-                {(players || [])
-                  .filter(p => !currentUser || p.id !== currentUser.id)
-                  .filter(p => !currentUser || !currentUser.blockedUserIds?.includes(p.id))
-                  .filter(p => {
-                    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      (p.location?.city || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      (p.username || '').toLowerCase().includes(searchQuery.toLowerCase());
-                    if (!matchSearch) return false;
-                    if (playerFilter === 'active') { if (!p.lastActive) return false; return new Date(p.lastActive) > new Date(Date.now() - 3600000); }
-                    if (playerFilter === 'lfg') return p.lfgStatus && p.lfgStatus !== LFGStatus.None;
-                    if (playerFilter === 'friends') return currentUser?.friendIds?.includes(p.id);
-                    return true;
-                  }).length === 0 && (
-                  <div className="col-span-full py-16 flex flex-col items-center text-center gap-4 bg-white border border-[#141414]/5 rounded-3xl shadow-sm">
+                {(() => {
+                  const filteredPlayers = (players || [])
+                    .filter(p => !currentUser || p.id !== currentUser.id)
+                    .filter(p => !currentUser || !currentUser.blockedUserIds?.includes(p.id))
+                    .filter(p => {
+                      const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (p.location?.city || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (p.username || '').toLowerCase().includes(searchQuery.toLowerCase());
+                      if (!matchSearch) return false;
+                      if (playerFilter === 'active') {
+                        if (!p.lastActive) return false;
+                        return new Date(p.lastActive) > new Date(Date.now() - 3600000);
+                      }
+                      if (playerFilter === 'lfg') return p.lfgStatus && p.lfgStatus !== LFGStatus.None;
+                      if (playerFilter === 'friends') return currentUser?.friendIds?.includes(p.id);
+                      return true;
+                    });
+
+                  return filteredPlayers.length > 0
+                    ? filteredPlayers.map(player => (
+                        <PlayerCard
+                          key={player.id}
+                          player={player}
+                          isFavorite={currentUser?.favoritePlayerIds?.includes(player.id)}
+                          onToggleFavorite={() => handleToggleFavorite(player.id)}
+                          onOpenProfile={(p) => setSelectedPlayer(p)}
+                        />
+                      ))
+                    : [(
+                  <div key="empty" className="col-span-full py-16 flex flex-col items-center text-center gap-4 bg-white border border-[#141414]/5 rounded-3xl shadow-sm">
                     <div className="w-20 h-20 bg-[#F8F8F5] rounded-3xl flex items-center justify-center text-4xl">
                       {playerFilter === 'friends' ? '👥' : playerFilter === 'lfg' ? '🔥' : '🔍'}
                     </div>
@@ -1332,7 +1318,8 @@ export default function App() {
                       )}
                     </div>
                   </div>
-                )}
+                )];
+                })()}
               </div>
             </motion.div>
           )}

@@ -149,8 +149,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const row = rows[0];
       if (!row || !(await bcrypt.compare(password, row.password_hash)))
         return jsonResponse(res, 401, { success: false, message: "Invalid credentials" });
+      const now = new Date().toISOString();
+      await db('users', `id=eq.${row.id}`, { method: 'PATCH', body: { data: { ...(row.data || {}), lastActive: now } } }).catch(() => {});
       const token = jwt.sign({ userId: row.id, email: row.email }, JWT_SECRET, { expiresIn: "7d" });
-      const user = safeUser(row);
+      const user = safeUser({ ...row, data: { ...(row.data || {}), lastActive: now } });
       return jsonResponse(res, 200, { success: true, token, user, data: user });
     }
 
@@ -179,7 +181,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const currentData = rows[0].data || {};
         const { email, password, password_hash, id, name, ...payloadRest } = payload;
         const nameUpdate = name ? { name } : {};
-        const updated = await db('users', `id=eq.${itemId}`, { method: 'PATCH', body: { ...nameUpdate, data: { ...currentData, ...payloadRest } } });
+        const updated = await db('users', `id=eq.${itemId}`, { method: 'PATCH', body: { ...nameUpdate, data: { ...currentData, ...payloadRest, lastActive: new Date().toISOString() } } });
         const user = safeUser(Array.isArray(updated) ? updated[0] : updated);
         return jsonResponse(res, 200, { success: true, data: user, user });
       }
