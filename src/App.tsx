@@ -240,6 +240,33 @@ export default function App() {
     }
   }, [currentUser, authLoading, fetchData]);
 
+  // Poll notifications every 30s when logged in
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [currentUser?.id, fetchNotifications]);
+
+  // Poll active game chat every 5s when chat is open
+  useEffect(() => {
+    if (!isChatOpen || !selectedGame) return;
+    const interval = setInterval(fetchGames, 5000);
+    return () => clearInterval(interval);
+  }, [isChatOpen, selectedGame?.id, fetchGames]);
+
+  // Poll group chat every 5s when group chat is open
+  useEffect(() => {
+    if (!isGroupChatOpen || !selectedGroup) return;
+    const fetchGroup = async () => {
+      try {
+        const data = await safeFetch(`/api/groups/${selectedGroup.id}`, { headers: authHeaders() });
+        if (data?.chat) setSelectedGroup(prev => prev ? { ...prev, chat: data.chat } : prev);
+      } catch { /* silent */ }
+    };
+    const interval = setInterval(fetchGroup, 5000);
+    return () => clearInterval(interval);
+  }, [isGroupChatOpen, selectedGroup?.id, authHeaders]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#F5F5F0] flex items-center justify-center">
