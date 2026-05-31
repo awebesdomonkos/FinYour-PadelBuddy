@@ -289,9 +289,9 @@ export default function App() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F0] flex items-center justify-center">
+      <div className="min-h-screen bg-[#080B0F] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#141414] border-t-[#E2FF3B] rounded-full animate-spin"></div>
+          <div className="w-12 h-12 border-4 border-[#FFFFFF]/10 border-t-[#00E676] rounded-full animate-spin"></div>
           <p className="font-black uppercase tracking-tighter italic text-sm opacity-50">Find Your Padel Buddy</p>
         </div>
       </div>
@@ -913,14 +913,14 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F0] text-[#141414] font-sans selection:bg-[#E2FF3B]">
+    <div className="min-h-screen bg-[#080B0F] text-[#141414] font-sans selection:bg-[#00E676]">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#141414]/10 px-4 py-3">
+      <header className="sticky top-0 z-40 bg-[#080B0F]/90 backdrop-blur-xl border-b border-[#FFFFFF]/6 px-4 py-3">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('games')}>
               <div className="w-8 h-8 bg-[#141414] rounded-full flex items-center justify-center">
-                <TrendingUp className="text-[#E2FF3B] w-5 h-5" />
+                <TrendingUp className="text-[#080B0F] w-5 h-5" />
               </div>
               <span className="font-bold text-xl tracking-tight">Find Your Padel Buddy</span>
             </div>
@@ -929,25 +929,25 @@ export default function App() {
             <nav className="hidden md:flex items-center gap-1">
               <button 
                 onClick={() => setActiveTab('games')}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'games' ? 'text-[#141414] bg-[#E2FF3B]' : 'text-[#141414]/40 hover:text-[#141414]'}`}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'games' ? 'text-[#141414] bg-[#00E676]' : 'text-[#4A5568] hover:text-[#141414]'}`}
               >
                 {t('nav.games')}
               </button>
               <button 
                 onClick={() => setActiveTab('players')}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'players' ? 'text-[#141414] bg-[#E2FF3B]' : 'text-[#141414]/40 hover:text-[#141414]'}`}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'players' ? 'text-[#141414] bg-[#00E676]' : 'text-[#4A5568] hover:text-[#141414]'}`}
               >
                 {t('nav.players')}
               </button>
               <button 
                 onClick={() => setActiveTab('groups')}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'groups' ? 'text-[#141414] bg-[#E2FF3B]' : 'text-[#141414]/40 hover:text-[#141414]'}`}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'groups' ? 'text-[#141414] bg-[#00E676]' : 'text-[#4A5568] hover:text-[#141414]'}`}
               >
                 {t('nav.groups')}
               </button>
               <button 
                 onClick={() => setActiveTab('mygames')}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'mygames' ? 'text-[#141414] bg-[#E2FF3B]' : 'text-[#141414]/40 hover:text-[#141414]'}`}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'mygames' ? 'text-[#141414] bg-[#00E676]' : 'text-[#4A5568] hover:text-[#141414]'}`}
               >
                 {t('nav.myGames') || 'Saját meccsek'}
               </button>
@@ -958,7 +958,7 @@ export default function App() {
             {/* Language switcher */}
             <button
               onClick={() => handleUpdateLanguage(lang === 'hu' ? 'en' : 'hu')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#141414]/5 hover:bg-[#E2FF3B] transition-colors text-xs font-black uppercase tracking-widest"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FFFFFF]/5 hover:bg-[#00E676] transition-colors text-xs font-black uppercase tracking-widest"
               title={lang === 'hu' ? 'Switch to English' : 'Váltás magyarra'}
             >
               <span className="text-base leading-none">{lang === 'hu' ? '🇭🇺' : '🇬🇧'}</span>
@@ -966,7 +966,7 @@ export default function App() {
             </button>
             <button
               onClick={() => setIsNotificationsOpen(true)}
-              className="w-10 h-10 rounded-full bg-[#141414]/5 flex items-center justify-center relative hover:bg-[#141414]/10 transition-colors"
+              className="w-10 h-10 rounded-full bg-[#FFFFFF]/5 flex items-center justify-center relative hover:bg-[#FFFFFF]/8 transition-colors"
             >
               <AlertCircle className="w-5 h-5 opacity-60" />
               {notifications.some(n => !n.read) && (
@@ -975,9 +975,9 @@ export default function App() {
             </button>
             <button 
               onClick={() => setActiveTab('profile')}
-              className={`flex items-center gap-2 p-1 pr-3 rounded-full border transition-all ${activeTab === 'profile' ? 'bg-[#E2FF3B] border-[#141414]/10' : 'bg-[#141414]/5 border-transparent hover:border-[#141414]/10'}`}
+              className={`flex items-center gap-2 p-1 pr-3 rounded-full border transition-all ${activeTab === 'profile' ? 'bg-[#00E676] border-[#FFFFFF]/8' : 'bg-[#FFFFFF]/5 border-transparent hover:border-[#FFFFFF]/8'}`}
             >
-              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden">
+              <div className="w-8 h-8 rounded-full bg-[#161D26] flex items-center justify-center overflow-hidden">
                 {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-4 h-4" />}
               </div>
               <span className="text-xs font-bold hidden sm:block">{currentUser?.name}</span>
@@ -1004,7 +1004,7 @@ export default function App() {
                 </div>
                 <button 
                   onClick={() => setActiveTab('create')}
-                  className="bg-[#141414] text-[#E2FF3B] p-3 rounded-full hover:rotate-90 transition-transform duration-300"
+                  className="bg-[#141414] text-[#080B0F] p-3 rounded-full hover:rotate-90 transition-transform duration-300"
                 >
                   <Plus className="w-6 h-6" />
                 </button>
@@ -1017,7 +1017,7 @@ export default function App() {
                     key={f}
                     onClick={() => setGameFilter(f)}
                     className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                      gameFilter === f ? 'bg-[#141414] text-[#E2FF3B]' : 'bg-[#141414]/5 text-[#141414]/40'
+                      gameFilter === f ? 'bg-[#141414] text-[#080B0F]' : 'bg-[#FFFFFF]/5 text-[#4A5568]'
                     }`}
                   >
                     {t(`games.filters.${f}`)}
@@ -1113,8 +1113,8 @@ export default function App() {
                         );
                       })
                     ) : (
-                      <div className="md:col-span-2 lg:col-span-3 py-16 flex flex-col items-center text-center gap-4 bg-white border border-[#141414]/5 rounded-3xl shadow-sm">
-                        <div className="w-20 h-20 bg-[#F8F8F5] rounded-3xl flex items-center justify-center text-4xl">🎾</div>
+                      <div className="md:col-span-2 lg:col-span-3 py-16 flex flex-col items-center text-center gap-4 bg-[#1A2233] border border-[#FFFFFF]/6 rounded-3xl shadow-sm">
+                        <div className="w-20 h-20 bg-[#0F1419] rounded-3xl flex items-center justify-center text-4xl">🎾</div>
                         <div>
                           <p className="font-black text-lg uppercase tracking-tight">{t('common.noMatchesFound')}</p>
                           <p className="text-xs opacity-40 mt-1">{lang === 'hu' ? 'Próbálj más szűrőt, vagy hozz létre egy meccset!' : 'Try different filters or create a match!'}</p>
@@ -1122,13 +1122,13 @@ export default function App() {
                         <div className="flex gap-2 flex-wrap justify-center">
                           <button
                             onClick={() => setGameFilter('all')}
-                            className="px-5 py-2.5 bg-[#141414]/5 text-[#141414] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#141414]/10 transition-colors"
+                            className="px-5 py-2.5 bg-[#FFFFFF]/5 text-[#141414] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#FFFFFF]/8 transition-colors"
                           >
                             {lang === 'hu' ? 'Szűrők törlése' : 'Clear filters'}
                           </button>
                           <button
                             onClick={() => setActiveTab('create')}
-                            className="px-5 py-2.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#252525] transition-colors"
+                            className="px-5 py-2.5 bg-[#141414] text-[#080B0F] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#00C853] transition-colors"
                           >
                             + {lang === 'hu' ? 'Meccs létrehozása' : 'Create match'}
                           </button>
@@ -1180,14 +1180,14 @@ export default function App() {
                         <h3 className="text-[11px] font-black uppercase tracking-widest">
                           {lang === 'hu' ? 'Most keresnek játékost' : 'Looking for a game'}
                         </h3>
-                        <span className="px-1.5 py-0.5 bg-[#141414] text-[#E2FF3B] rounded-md text-[9px] font-black">{lfgPlayers.length}</span>
+                        <span className="px-1.5 py-0.5 bg-[#141414] text-[#080B0F] rounded-md text-[9px] font-black">{lfgPlayers.length}</span>
                       </div>
                       {/* Quick LFG setter */}
                       <div className="relative group">
-                        <button className="flex items-center gap-1 px-3 py-1.5 bg-[#141414]/5 hover:bg-[#E2FF3B] rounded-xl transition-colors text-[10px] font-black uppercase tracking-widest">
+                        <button className="flex items-center gap-1 px-3 py-1.5 bg-[#FFFFFF]/5 hover:bg-[#00E676] rounded-xl transition-colors text-[10px] font-black uppercase tracking-widest">
                           {currentUser?.lfgStatus && currentUser.lfgStatus !== LFGStatus.None ? '🔥' : '+'} {lang === 'hu' ? 'Én is' : 'Join'}
                         </button>
-                        <div className="absolute right-0 top-full mt-1 z-50 hidden group-hover:flex flex-col bg-white border border-[#141414]/10 rounded-2xl shadow-xl overflow-hidden w-44">
+                        <div className="absolute right-0 top-full mt-1 z-50 hidden group-hover:flex flex-col bg-[#1A2233] border border-[#FFFFFF]/8 rounded-2xl shadow-xl overflow-hidden w-44">
                           {[
                             { key: LFGStatus.Now,   label: lang === 'hu' ? '🔥 Azonnal játszanék' : '🔥 Playing Now', },
                             { key: LFGStatus.Today, label: lang === 'hu' ? '📅 Ma játszanék' : '📅 Playing Today', },
@@ -1196,8 +1196,8 @@ export default function App() {
                             <button
                               key={opt.key}
                               onClick={() => handleUpdateUser({ lfgStatus: opt.key })}
-                              className={`px-4 py-3 text-left text-xs font-bold hover:bg-[#E2FF3B] transition-colors ${
-                                currentUser?.lfgStatus === opt.key ? 'bg-[#E2FF3B]/30 font-black' : ''
+                              className={`px-4 py-3 text-left text-xs font-bold hover:bg-[#00E676] transition-colors ${
+                                currentUser?.lfgStatus === opt.key ? 'bg-[#00E676]/30 font-black' : ''
                               }`}
                             >
                               {opt.label}
@@ -1215,7 +1215,7 @@ export default function App() {
                           <button
                             key={player.id}
                             onClick={() => setSelectedPlayer(player)}
-                            className="shrink-0 w-36 bg-white border border-[#141414]/5 rounded-2xl p-3 text-left hover:shadow-md hover:border-[#E2FF3B] transition-all group"
+                            className="shrink-0 w-36 bg-[#1A2233] border border-[#FFFFFF]/6 rounded-2xl p-3 text-left hover:shadow-md hover:border-[#00E676] transition-all group"
                           >
                             {/* Avatar */}
                             <div className="relative mb-2">
@@ -1253,7 +1253,7 @@ export default function App() {
                     placeholder={t('common.searchPlaceholder')}
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none"
+                    className="w-full bg-[#FFFFFF]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#00E676] outline-none"
                   />
                 </div>
 
@@ -1263,7 +1263,7 @@ export default function App() {
                       key={f}
                       onClick={() => setPlayerFilter(f)}
                       className={`whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                        playerFilter === f ? 'bg-[#141414] text-[#E2FF3B]' : 'bg-[#141414]/5 text-[#141414]/40'
+                        playerFilter === f ? 'bg-[#141414] text-[#080B0F]' : 'bg-[#FFFFFF]/5 text-[#4A5568]'
                       }`}
                     >
                       {f === 'lfg' ? '🔥 LFG' : f === 'friends' ? t('profile.friends') : f === 'active' ? t('common.active') : t('common.all')}
@@ -1302,8 +1302,8 @@ export default function App() {
                         />
                       ))
                     : [(
-                  <div key="empty" className="col-span-full py-16 flex flex-col items-center text-center gap-4 bg-white border border-[#141414]/5 rounded-3xl shadow-sm">
-                    <div className="w-20 h-20 bg-[#F8F8F5] rounded-3xl flex items-center justify-center text-4xl">
+                  <div key="empty" className="col-span-full py-16 flex flex-col items-center text-center gap-4 bg-[#1A2233] border border-[#FFFFFF]/6 rounded-3xl shadow-sm">
+                    <div className="w-20 h-20 bg-[#0F1419] rounded-3xl flex items-center justify-center text-4xl">
                       {playerFilter === 'friends' ? '👥' : playerFilter === 'lfg' ? '🔥' : '🔍'}
                     </div>
                     <div>
@@ -1321,7 +1321,7 @@ export default function App() {
                       {(searchQuery || playerFilter !== 'all') && (
                         <button
                           onClick={() => { setSearchQuery(''); setPlayerFilter('all'); }}
-                          className="px-5 py-2.5 bg-[#141414]/5 text-[#141414] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#141414]/10 transition-colors"
+                          className="px-5 py-2.5 bg-[#FFFFFF]/5 text-[#141414] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#FFFFFF]/8 transition-colors"
                         >
                           {lang === 'hu' ? 'Szűrők törlése' : 'Clear filters'}
                         </button>
@@ -1366,7 +1366,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-[40px] p-8 shadow-sm border border-[#141414]/5"
+              className="bg-[#1A2233] rounded-[40px] p-8 shadow-sm border border-[#FFFFFF]/6"
             >
               <h2 className="text-3xl font-black uppercase tracking-tight mb-8">{t('games.createGame')}</h2>
               <CreateGameForm 
@@ -1458,8 +1458,8 @@ export default function App() {
                       />
                     </div>
                   )) : (
-                  <div className="col-span-full py-16 flex flex-col items-center text-center gap-5 bg-white rounded-3xl border border-[#141414]/5 shadow-sm">
-                    <div className="w-20 h-20 bg-[#F8F8F5] rounded-3xl flex items-center justify-center text-4xl">📅</div>
+                  <div className="col-span-full py-16 flex flex-col items-center text-center gap-5 bg-[#1A2233] rounded-3xl border border-[#FFFFFF]/6 shadow-sm">
+                    <div className="w-20 h-20 bg-[#0F1419] rounded-3xl flex items-center justify-center text-4xl">📅</div>
                     <div>
                       <p className="font-black text-lg uppercase tracking-tight">{lang === 'hu' ? 'Még nincs meccsed' : 'No games yet'}</p>
                       <p className="text-xs opacity-40 mt-1 max-w-xs mx-auto">{lang === 'hu' ? 'Csatlakozz egy meglévő meccshez, vagy hozz létre sajátot!' : 'Join an existing game or create your own!'}</p>
@@ -1467,13 +1467,13 @@ export default function App() {
                     <div className="flex gap-3 flex-wrap justify-center">
                       <button
                         onClick={() => setActiveTab('games')}
-                        className="px-5 py-3 bg-[#141414]/5 text-[#141414] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#141414]/10 transition-colors flex items-center gap-2"
+                        className="px-5 py-3 bg-[#FFFFFF]/5 text-[#141414] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#FFFFFF]/8 transition-colors flex items-center gap-2"
                       >
                         <Search className="w-3.5 h-3.5" /> {t('games.findGame')}
                       </button>
                       <button
                         onClick={() => setActiveTab('create')}
-                        className="px-5 py-3 bg-[#141414] text-[#E2FF3B] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#252525] transition-colors flex items-center gap-2"
+                        className="px-5 py-3 bg-[#141414] text-[#080B0F] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#00C853] transition-colors flex items-center gap-2"
                       >
                         <Plus className="w-3.5 h-3.5" /> {t('games.createGame')}
                       </button>
@@ -1508,11 +1508,11 @@ export default function App() {
                   <div className="flex flex-col items-center py-6 text-center relative">
                     <button 
                       onClick={() => setIsEditingProfile(true)}
-                      className="absolute top-0 right-0 p-3 bg-white shadow-sm border border-[#141414]/5 rounded-2xl hover:scale-105 transition-transform"
+                      className="absolute top-0 right-0 p-3 bg-[#1A2233] border border-[#FFFFFF]/6 rounded-2xl hover:scale-105 transition-transform"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <div className="w-24 h-24 bg-[#141414] text-[#E2FF3B] rounded-full flex items-center justify-center mb-4 border-4 border-white shadow-xl overflow-hidden">
+                    <div className="w-24 h-24 bg-[#141414] text-[#080B0F] rounded-full flex items-center justify-center mb-4 border-4 border-white shadow-xl overflow-hidden">
                       {currentUser?.avatarUrl ? (
                          <img src={currentUser.avatarUrl} alt={currentUser?.name} className="w-full h-full object-cover" />
                       ) : (
@@ -1521,8 +1521,8 @@ export default function App() {
                     </div>
                     <h2 className="text-2xl font-black tracking-tight">{currentUser?.name}</h2>
                     <div className="flex gap-2 mt-2 flex-wrap justify-center">
-                      <span className="px-3 py-1 bg-[#141414] text-[#E2FF3B] rounded-full text-xs font-bold uppercase tracking-widest">{currentUser?.skillLevel}</span>
-                      <span className="px-3 py-1 bg-[#141414]/5 rounded-full text-xs font-medium uppercase tracking-widest flex items-center gap-1">
+                      <span className="px-3 py-1 bg-[#141414] text-[#080B0F] rounded-full text-xs font-bold uppercase tracking-widest">{currentUser?.skillLevel}</span>
+                      <span className="px-3 py-1 bg-[#FFFFFF]/5 rounded-full text-xs font-medium uppercase tracking-widest flex items-center gap-1">
                         <MapPin className="w-3 h-3" /> {currentUser?.location?.city || t('common.unknown')}
                       </span>
                       {currentUser?.lfgStatus && currentUser?.lfgStatus !== LFGStatus.None && (
@@ -1533,8 +1533,8 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="space-y-6 bg-white rounded-3xl p-6 shadow-sm border border-[#141414]/5">
-                    <div className="grid grid-cols-2 gap-4 pb-4 border-b border-[#141414]/5">
+                  <div className="space-y-6 bg-[#1A2233] rounded-3xl p-6 shadow-sm border border-[#FFFFFF]/6">
+                    <div className="grid grid-cols-2 gap-4 pb-4 border-b border-[#FFFFFF]/6">
                       <div>
                         <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-1">{t('profile.playStyle')}</h3>
                         <p className="text-sm font-bold">{currentUser?.playStyle ? t(`profile.playStyles.${currentUser.playStyle}`) : t('profile.playStyles.Casual')}</p>
@@ -1555,26 +1555,26 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2 py-4 border-b border-[#141414]/5">
-                      <div className="text-center p-2 bg-[#141414]/5 rounded-2xl">
+                    <div className="grid grid-cols-4 gap-2 py-4 border-b border-[#FFFFFF]/6">
+                      <div className="text-center p-2 bg-[#FFFFFF]/5 rounded-2xl">
                         <p className="text-[8px] font-black uppercase opacity-40">{t('profile.playedGames')}</p>
                         <p className="text-xl font-black">{currentUser?.attendedGamesCount || 0}</p>
                       </div>
-                      <div className="text-center p-2 bg-[#141414]/5 rounded-2xl">
+                      <div className="text-center p-2 bg-[#FFFFFF]/5 rounded-2xl">
                         <p className="text-[8px] font-black uppercase opacity-40">{t('nav.groups')}</p>
                         <p className="text-xl font-black">{(groups || []).filter(g => currentUser && (g.memberIds || []).includes(currentUser.id)).length}</p>
                       </div>
-                      <div className="text-center p-2 bg-[#141414]/5 rounded-2xl">
+                      <div className="text-center p-2 bg-[#FFFFFF]/5 rounded-2xl">
                         <p className="text-[8px] font-black uppercase opacity-40">{t('profile.friends')}</p>
                         <p className="text-xl font-black">{currentUser?.friendIds?.length || 0}</p>
                       </div>
-                      <div className="text-center p-2 bg-[#141414]/5 rounded-2xl">
+                      <div className="text-center p-2 bg-[#FFFFFF]/5 rounded-2xl">
                         <p className="text-[8px] font-black uppercase opacity-40">{t('profile.skillLevel')}</p>
                         <p className="text-xl font-black truncate">{currentUser?.skillLevel}</p>
                       </div>
                     </div>
 
-                    <div className="pt-6 border-t border-[#141414]/5">
+                    <div className="pt-6 border-t border-[#FFFFFF]/6">
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="text-xs font-black uppercase tracking-widest opacity-40 flex items-center gap-2">
                           <Users className="w-3 h-3" /> {t('profile.friends')}
@@ -1582,10 +1582,10 @@ export default function App() {
                       </div>
                       <div className="grid grid-cols-1 gap-2">
                         {(players || []).filter(p => currentUser?.friendIds?.includes(p.id)).map(friend => (
-                          <div key={friend.id} className="flex items-center justify-between p-3 bg-[#141414]/5 rounded-2xl">
+                          <div key={friend.id} className="flex items-center justify-between p-3 bg-[#FFFFFF]/5 rounded-2xl">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-[#141414] overflow-hidden flex items-center justify-center">
-                                {friend.avatarUrl ? <img src={friend.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-5 h-5 text-[#E2FF3B]" />}
+                                {friend.avatarUrl ? <img src={friend.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-5 h-5 text-[#080B0F]" />}
                               </div>
                               <div>
                                 <p className="text-sm font-bold">{friend.name}</p>
@@ -1607,7 +1607,7 @@ export default function App() {
                             <p className="text-xs font-black uppercase tracking-widest opacity-40">{t('profile.noFriends')}</p>
                             <button
                               onClick={() => setActiveTab('players')}
-                              className="px-4 py-2 bg-[#141414] text-[#E2FF3B] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#252525] transition-colors"
+                              className="px-4 py-2 bg-[#141414] text-[#080B0F] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#00C853] transition-colors"
                             >
                               {lang === 'hu' ? 'Játékosok keresése' : 'Find players'}
                             </button>
@@ -1618,7 +1618,7 @@ export default function App() {
 
                     {/* My Groups Section */}
                     {(groups || []).filter(g => currentUser && (g.memberIds || []).includes(currentUser.id)).length > 0 && (
-                      <div className="pt-4 pb-4 border-b border-[#141414]/5">
+                      <div className="pt-4 pb-4 border-b border-[#FFFFFF]/6">
                         <h3 className="text-xs font-black uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
                           <Users className="w-3 h-3" /> {t('nav.groups')}
                         </h3>
@@ -1627,7 +1627,7 @@ export default function App() {
                             const isAdmin = (group.adminIds || []).includes(currentUser?.id || '');
                             const isOnlyAdmin = isAdmin && (group.adminIds || []).length === 1;
                             return (
-                              <div key={group.id} className="flex items-center justify-between p-3 bg-[#141414]/5 rounded-2xl">
+                              <div key={group.id} className="flex items-center justify-between p-3 bg-[#FFFFFF]/5 rounded-2xl">
                                 <div>
                                   <p className="text-sm font-bold">{group.name}</p>
                                   <p className="text-[10px] opacity-40 font-bold uppercase">{group.city} • {(group.memberIds || []).length} {t('groups.members')}{isAdmin ? ' • 👑 Admin' : ''}</p>
@@ -1635,7 +1635,7 @@ export default function App() {
                                 <div className="flex gap-1.5">
                                   <button
                                     onClick={() => setActiveTab('groups')}
-                                    className="px-3 py-1.5 bg-[#141414] text-[#E2FF3B] rounded-lg text-[10px] font-black uppercase tracking-widest"
+                                    className="px-3 py-1.5 bg-[#141414] text-[#080B0F] rounded-lg text-[10px] font-black uppercase tracking-widest"
                                   >
                                     {t('games.chatShort')}
                                   </button>
@@ -1665,7 +1665,7 @@ export default function App() {
                       </div>
                     )}
 
-                    <div className="pb-4 border-b border-[#141414]/5">
+                    <div className="pb-4 border-b border-[#FFFFFF]/6">
                       <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-2">{t('profile.playTimes')}</h3>
                       <div className="flex flex-wrap gap-2">
                         {currentUser?.playTime && currentUser.playTime.length > 0 ? (
@@ -1684,13 +1684,13 @@ export default function App() {
                     </div>
 
                     {(currentUser?.interests && currentUser.interests.length > 0) && (
-                      <div className="pt-4 border-t border-[#141414]/5">
+                      <div className="pt-4 border-t border-[#FFFFFF]/6">
                         <h3 className="text-xs font-bold uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
                           <Target className="w-3 h-3" /> {t('profile.interests')}
                         </h3>
                         <div className="flex flex-wrap gap-2">
                           {currentUser.interests.map(interest => (
-                            <span key={interest} className="px-3 py-1.5 bg-[#141414]/5 rounded-xl text-[10px] font-bold uppercase tracking-wider">
+                            <span key={interest} className="px-3 py-1.5 bg-[#FFFFFF]/5 rounded-xl text-[10px] font-bold uppercase tracking-wider">
                               {t(`profile.interestsList.${interest}`) || interest}
                             </span>
                           ))}
@@ -1699,14 +1699,14 @@ export default function App() {
                     )}
 
                     {(currentUser?.favoriteClubs && currentUser.favoriteClubs.length > 0) && (
-                      <div className="pt-4 border-t border-[#141414]/5">
+                      <div className="pt-4 border-t border-[#FFFFFF]/6">
                         <h3 className="text-xs font-bold uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
                           <Heart className="w-3 h-3" /> {t('profile.favoriteClubs')}
                         </h3>
                         <div className="space-y-2">
                           {currentUser.favoriteClubs.map(club => (
                             <div key={club} className="flex items-center gap-2 text-sm font-medium">
-                              <div className="w-1.5 h-1.5 bg-[#E2FF3B] rounded-full" />
+                              <div className="w-1.5 h-1.5 bg-[#00E676] rounded-full" />
                               {club}
                             </div>
                           ))}
@@ -1714,7 +1714,7 @@ export default function App() {
                       </div>
                     )}
 
-                    <div className="pt-6 border-t border-[#141414]/5">
+                    <div className="pt-6 border-t border-[#FFFFFF]/6">
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="text-xs font-black uppercase tracking-widest opacity-40 flex items-center gap-2">
                           <History className="w-3 h-3" /> {t('profile.matchHistory')}
@@ -1741,7 +1741,7 @@ export default function App() {
                       />
                     </div>
 
-                    <div className="pt-6 border-t border-[#141414]/5">
+                    <div className="pt-6 border-t border-[#FFFFFF]/6">
                       <button 
                         onClick={handleLogout}
                         className="w-full flex items-center justify-center gap-2 py-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold hover:bg-red-100 transition-colors"
@@ -1782,7 +1782,7 @@ export default function App() {
 
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-[#141414]/5 pb-[env(safe-area-inset-bottom,24px)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#080B0F]/95 backdrop-blur-xl border-t border-[#FFFFFF]/6 pb-[env(safe-area-inset-bottom,24px)]">
         <div className="flex justify-around items-center px-2 pt-3 pb-1">
           <NavBtn 
             active={activeTab === 'games'} 
@@ -1806,7 +1806,7 @@ export default function App() {
             }} 
             isSpecial={true}
             icon={
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${activeTab === 'create' ? 'bg-[#E2FF3B] text-[#141414] shadow-lg shadow-[#E2FF3B]/30 scale-110' : 'bg-[#141414] text-white shadow-md hover:bg-[#252525]'}`}>
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${activeTab === 'create' ? 'bg-[#00E676] text-[#141414] shadow-lg shadow-[#00E676]/20 scale-110' : 'bg-[#1A2233] text-[#00E676] shadow-md hover:bg-[#00E676]/20'}`}>
                 {gameToEdit ? <Edit2 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
               </div>
             } 
@@ -1869,7 +1869,7 @@ export default function App() {
         {selectedGroupDetail && (
           <div className="fixed inset-0 z-[60] flex justify-end">
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSelectedGroupDetail(null)} />
-            <div className="relative w-full max-w-sm bg-[#F8F8F5] h-full shadow-2xl flex flex-col overflow-y-auto">
+            <div className="relative w-full max-w-sm bg-[#0F1419] h-full shadow-2xl flex flex-col overflow-y-auto">
               <div className="bg-[#141414] text-white p-5">
                 <div className="flex items-center gap-3">
                   <button onClick={() => setSelectedGroupDetail(null)} className="p-2 hover:bg-white/10 rounded-xl">
@@ -1882,13 +1882,13 @@ export default function App() {
                 </div>
                 <div className="flex gap-2 mt-3 flex-wrap">
                   <span className="px-2 py-1 bg-white/10 rounded-lg text-[10px] font-black uppercase">{(selectedGroupDetail.memberIds || []).length} {lang === 'hu' ? 'tag' : 'members'}</span>
-                  {selectedGroupDetail.recommendedLevel && <span className="px-2 py-1 bg-[#E2FF3B] text-[#141414] rounded-lg text-[10px] font-black uppercase">{t(`profile.levels.${selectedGroupDetail.recommendedLevel}`)}</span>}
+                  {selectedGroupDetail.recommendedLevel && <span className="px-2 py-1 bg-[#00E676] text-[#141414] rounded-lg text-[10px] font-black uppercase">{t(`profile.levels.${selectedGroupDetail.recommendedLevel}`)}</span>}
                   <span className="px-2 py-1 bg-white/10 rounded-lg text-[10px] font-black uppercase">{selectedGroupDetail.visibility === 'public' ? (lang === 'hu' ? 'Nyilvános' : 'Public') : (lang === 'hu' ? 'Privát' : 'Private')}</span>
                 </div>
               </div>
               <div className="flex-1 p-4 space-y-4">
                 {selectedGroupDetail.description && (
-                  <div className="bg-white p-4 rounded-2xl border border-[#141414]/5">
+                  <div className="bg-[#1A2233] p-4 rounded-2xl border border-[#FFFFFF]/6">
                     <p className="text-[10px] opacity-40 font-bold uppercase mb-1">{lang === 'hu' ? 'Leírás' : 'Description'}</p>
                     <p className="text-sm">{selectedGroupDetail.description}</p>
                   </div>
@@ -1900,15 +1900,15 @@ export default function App() {
                       const member = (players || []).find(p => p.id === mid);
                       const isAdmin = (selectedGroupDetail.adminIds || []).includes(mid);
                       return (
-                        <div key={mid} className="bg-white p-3 rounded-2xl border border-[#141414]/5 flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[#141414]/5 flex items-center justify-center overflow-hidden shrink-0">
+                        <div key={mid} className="bg-[#1A2233] p-3 rounded-2xl border border-[#FFFFFF]/6 flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#FFFFFF]/5 flex items-center justify-center overflow-hidden shrink-0">
                             {member?.avatarUrl ? <img src={member.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-4 h-4 opacity-40" />}
                           </div>
                           <div className="flex-1">
                             <p className="text-sm font-bold">{member?.name || 'Ismeretlen'}</p>
                             <p className="text-[10px] opacity-40 font-bold uppercase">{member ? t(`profile.levels.${member.skillLevel}`) : ''}</p>
                           </div>
-                          {isAdmin && <span className="px-2 py-0.5 bg-[#E2FF3B] text-[#141414] text-[9px] font-black rounded-lg uppercase">Admin</span>}
+                          {isAdmin && <span className="px-2 py-0.5 bg-[#00E676] text-[#141414] text-[9px] font-black rounded-lg uppercase">Admin</span>}
                         </div>
                       );
                     })}
@@ -1919,12 +1919,12 @@ export default function App() {
                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">{lang === 'hu' ? 'Barátok meghívása' : 'Invite Friends'}</p>
                     <div className="space-y-2">
                       {(players || []).filter(p => (currentUser?.friendIds || []).includes(p.id) && !(selectedGroupDetail.memberIds || []).includes(p.id)).map(friend => (
-                        <div key={friend.id} className="bg-white p-3 rounded-2xl border border-[#141414]/5 flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[#141414]/5 flex items-center justify-center overflow-hidden shrink-0">
+                        <div key={friend.id} className="bg-[#1A2233] p-3 rounded-2xl border border-[#FFFFFF]/6 flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#FFFFFF]/5 flex items-center justify-center overflow-hidden shrink-0">
                             {friend.avatarUrl ? <img src={friend.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-4 h-4 opacity-40" />}
                           </div>
                           <p className="flex-1 text-sm font-bold">{friend.name}</p>
-                          <button onClick={async () => { try { await safeFetch(`/api/groups/${selectedGroupDetail.id}/invite`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ invitedUserId: friend.id }) }); showToast('✅ ' + (lang === 'hu' ? 'Meghívó elküldve!' : 'Elküldve!')); } catch { showToast('❌'); } }} className="px-3 py-1.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-[10px] font-black uppercase hover:bg-[#252525] transition-colors">
+                          <button onClick={async () => { try { await safeFetch(`/api/groups/${selectedGroupDetail.id}/invite`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ invitedUserId: friend.id }) }); showToast('✅ ' + (lang === 'hu' ? 'Meghívó elküldve!' : 'Elküldve!')); } catch { showToast('❌'); } }} className="px-3 py-1.5 bg-[#141414] text-[#080B0F] rounded-xl text-[10px] font-black uppercase hover:bg-[#00C853] transition-colors">
                             {lang === 'hu' ? 'Meghív' : 'Meghív'}
                           </button>
                         </div>
@@ -1936,10 +1936,10 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <div className="p-4 border-t border-[#141414]/5 space-y-2">
+              <div className="p-4 border-t border-[#FFFFFF]/6 space-y-2">
                 {(selectedGroupDetail.memberIds || []).includes(currentUser?.id || '') ? (
                   <div className="flex gap-2">
-                    <button onClick={() => { setSelectedGroup(selectedGroupDetail); setIsGroupChatOpen(true); setSelectedGroupDetail(null); }} className="flex-1 py-3 bg-[#141414] text-[#E2FF3B] rounded-2xl font-black uppercase text-sm flex items-center justify-center gap-2 hover:bg-[#252525] transition-colors">
+                    <button onClick={() => { setSelectedGroup(selectedGroupDetail); setIsGroupChatOpen(true); setSelectedGroupDetail(null); }} className="flex-1 py-3 bg-[#141414] text-[#080B0F] rounded-2xl font-black uppercase text-sm flex items-center justify-center gap-2 hover:bg-[#00C853] transition-colors">
                       <MessageSquare className="w-4 h-4" /> Chat
                     </button>
                     {!(selectedGroupDetail.adminIds || []).includes(currentUser?.id || '') && (
@@ -1949,7 +1949,7 @@ export default function App() {
                     )}
                   </div>
                 ) : (
-                  <button onClick={() => { handleJoinGroup(selectedGroupDetail.id); setSelectedGroupDetail(null); }} className="w-full py-3 bg-[#E2FF3B] text-[#141414] rounded-2xl font-black uppercase text-sm hover:scale-[1.02] transition-all">
+                  <button onClick={() => { handleJoinGroup(selectedGroupDetail.id); setSelectedGroupDetail(null); }} className="w-full py-3 bg-[#00E676] text-[#141414] rounded-2xl font-black uppercase text-sm hover:scale-[1.02] transition-all">
                     {t('groups.joinGroup')}
                   </button>
                 )}
@@ -2026,17 +2026,17 @@ export default function App() {
       </AnimatePresence>
 
       {/* Bottom Nav (Mobile Only) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-lg border-t border-[#141414]/10 flex justify-around items-center px-4 py-3 md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#080B0F]/95 backdrop-blur-xl border-t border-[#FFFFFF]/6 flex justify-around items-center px-4 py-3 md:hidden">
         <button 
           onClick={() => setActiveTab('games')}
-          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'games' ? 'text-[#141414]' : 'text-[#141414]/30'}`}
+          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'games' ? 'text-[#141414]' : 'text-[#4A5568]'}`}
         >
           <TrendingUp className={`w-5 h-5 ${activeTab === 'games' ? 'text-[#141414]' : ''}`} />
           <span className="text-[10px] font-black uppercase tracking-widest">{t('nav.games')}</span>
         </button>
         <button 
           onClick={() => setActiveTab('players')}
-          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'players' ? 'text-[#141414]' : 'text-[#141414]/30'}`}
+          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'players' ? 'text-[#141414]' : 'text-[#4A5568]'}`}
         >
           <Users className={`w-5 h-5 ${activeTab === 'players' ? 'text-[#141414]' : ''}`} />
           <span className="text-[10px] font-black uppercase tracking-widest">{t('nav.players')}</span>
@@ -2048,20 +2048,20 @@ export default function App() {
           }}
           className="flex flex-col items-center -mt-8"
         >
-          <div className="w-12 h-12 bg-[#141414] rounded-[18px] flex items-center justify-center shadow-xl shadow-black/20 transform rotate-45 group active:scale-90 transition-all border border-[#E2FF3B]/20">
-            <Plus className="w-6 h-6 text-[#E2FF3B] -rotate-45" />
+          <div className="w-12 h-12 bg-[#141414] rounded-[18px] flex items-center justify-center shadow-xl shadow-black/20 transform rotate-45 group active:scale-90 transition-all border border-[#00E676]/20">
+            <Plus className="w-6 h-6 text-[#080B0F] -rotate-45" />
           </div>
         </button>
         <button 
           onClick={() => setActiveTab('groups')}
-          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'groups' ? 'text-[#141414]' : 'text-[#141414]/30'}`}
+          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'groups' ? 'text-[#141414]' : 'text-[#4A5568]'}`}
         >
           <MessageSquare className={`w-5 h-5 ${activeTab === 'groups' ? 'text-[#141414]' : ''}`} />
           <span className="text-[10px] font-black uppercase tracking-widest">{t('nav.groups')}</span>
         </button>
         <button 
           onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'profile' ? 'text-[#141414]' : 'text-[#141414]/30'}`}
+          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'profile' ? 'text-[#141414]' : 'text-[#4A5568]'}`}
         >
           <UserIcon className={`w-5 h-5 ${activeTab === 'profile' ? 'text-[#141414]' : ''}`} />
           <span className="text-[10px] font-black uppercase tracking-widest">{t('nav.profile')}</span>

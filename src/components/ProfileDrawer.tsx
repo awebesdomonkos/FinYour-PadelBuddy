@@ -37,20 +37,20 @@ export default function ProfileDrawer({
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose} className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
       <motion.div
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-        className="relative w-full max-w-sm bg-[#F5F5F0] h-full shadow-2xl flex flex-col overflow-hidden"
+        className="relative w-full max-w-sm bg-[#080B0F] h-full shadow-2xl flex flex-col overflow-hidden"
       >
         <div className="relative h-64">
           {user.avatarUrl ? (
             <img src={user.avatarUrl} className="w-full h-full object-cover" alt="" />
           ) : (
             <div className="w-full h-full bg-[#141414] flex items-center justify-center">
-              <UserIcon className="w-20 h-20 text-[#E2FF3B] opacity-20" />
+              <UserIcon className="w-20 h-20 text-[#080B0F] opacity-20" />
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-[#F5F5F0] via-[#F5F5F0]/80 to-transparent">
+          <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-[#080B0F] via-[#080B0F]/80 to-transparent">
             <div className="flex justify-between items-end flex-wrap gap-4">
               <div>
-                <span className="px-2 py-0.5 bg-[#E2FF3B] text-[#141414] rounded-lg text-[10px] font-black uppercase tracking-widest mb-2 inline-block shadow-sm">
+                <span className="px-2 py-0.5 bg-[#00E676] text-[#141414] rounded-lg text-[10px] font-black uppercase tracking-widest mb-2 inline-block shadow-sm">
                   {t(`profile.levels.${user.skillLevel}`)}
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black uppercase leading-none italic">{user.name}</h2>
@@ -62,20 +62,20 @@ export default function ProfileDrawer({
               <div className="flex gap-2">
                 <button
                   onClick={() => onFavorite(user.id)}
-                  className="w-10 h-10 bg-white shadow-sm rounded-xl flex items-center justify-center border border-[#141414]/5 hover:scale-110 active:scale-95 transition-all"
+                  className="w-10 h-10 bg-[#1A2233] shadow-sm rounded-xl flex items-center justify-center border border-[#FFFFFF]/6 hover:scale-110 active:scale-95 transition-all"
                 >
                   <Heart className={`w-5 h-5 ${currentUser.favoritePlayerIds?.includes(user.id) ? 'fill-red-500 text-red-500' : 'text-[#141414]/20'}`} />
                 </button>
                 {!isFriend && !isBlocked && (
                   <button
                     onClick={() => onSendFriendRequest(user.id)}
-                    className="px-4 py-2 bg-[#141414] text-[#E2FF3B] rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
+                    className="px-4 py-2 bg-[#141414] text-[#080B0F] rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
                   >
                     {t('profile.addFriend')}
                   </button>
                 )}
                 {isFriend && (
-                  <div className="px-4 py-2 bg-[#E2FF3B] text-[#141414] rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <div className="px-4 py-2 bg-[#00E676] text-[#141414] rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                     <Check className="w-3 h-3" /> {t('profile.friends')}
                   </div>
                 )}
@@ -93,7 +93,7 @@ export default function ProfileDrawer({
               className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
                 isBlocked
                 ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
-                : 'bg-white border border-[#141414]/5 text-[#141414]/40 hover:bg-red-50 hover:text-red-500'
+                : 'bg-[#1A2233] border border-[#FFFFFF]/6 text-[#4A5568] hover:bg-red-50 hover:text-red-500'
               }`}
             >
               {isBlocked ? (
@@ -117,7 +117,7 @@ export default function ProfileDrawer({
               { icon: Users, label: t('profile.friends'), value: user.friendIds?.length || 0 },
               { icon: Award, label: t('profile.skillLevel'), value: t(`profile.levels.${user.skillLevel}`) }
             ].map((stat, i) => (
-              <div key={i} className="bg-white p-3 rounded-2xl border border-[#141414]/5 text-center flex flex-col items-center justify-center shadow-sm min-h-[90px]">
+              <div key={i} className="bg-[#1A2233] p-3 rounded-2xl border border-[#FFFFFF]/6 text-center flex flex-col items-center justify-center shadow-sm min-h-[90px]">
                 <div className="text-[8px] font-black uppercase opacity-40 mb-1 leading-tight h-6 flex items-center justify-center text-center">
                   {stat.label}
                 </div>
@@ -127,14 +127,14 @@ export default function ProfileDrawer({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white p-4 rounded-2xl border border-[#141414]/5 shadow-sm">
+            <div className="bg-[#1A2233] p-4 rounded-2xl border border-[#FFFFFF]/6 shadow-sm">
               <p className="text-[10px] font-black uppercase opacity-40 mb-2">{t('profile.playStyle')}</p>
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4 text-[#141414]" />
                 <span className="text-sm font-black">{user.playStyle ? t(`profile.playStyles.${user.playStyle}`) : t('profile.playStyles.Casual')}</span>
               </div>
             </div>
-            <div className="bg-white p-4 rounded-2xl border border-[#141414]/5 shadow-sm">
+            <div className="bg-[#1A2233] p-4 rounded-2xl border border-[#FFFFFF]/6 shadow-sm">
               <p className="text-[10px] font-black uppercase opacity-40 mb-2">{t('profile.reliability')}</p>
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-blue-500" />
@@ -145,7 +145,7 @@ export default function ProfileDrawer({
 
           <div className="space-y-4">
             <h3 className="text-xs font-black uppercase tracking-widest opacity-40">{t('profile.bio')}</h3>
-            <p className="text-sm opacity-70 leading-relaxed font-medium bg-white/50 p-4 rounded-2xl italic border border-[#141414]/5">
+            <p className="text-sm opacity-70 leading-relaxed font-medium bg-[#1A2233]/50 p-4 rounded-2xl italic border border-[#FFFFFF]/6">
               "{user.bio || (lang === 'hu' ? 'Ez a játékos még nem írt bemutatkozást.' : 'This player hasn\'t written a bio yet.')}"
             </p>
           </div>
@@ -157,7 +157,7 @@ export default function ProfileDrawer({
               </h3>
               <div className="flex flex-wrap gap-2">
                 {user.languages?.length ? user.languages.map(lang_val => (
-                  <span key={lang_val} className="px-3 py-1 bg-white border border-[#141414]/5 rounded-xl text-[10px] font-bold">{t(`profile.languageList.${lang_val}`) || lang_val}</span>
+                  <span key={lang_val} className="px-3 py-1 bg-[#1A2233] border border-[#FFFFFF]/6 rounded-xl text-[10px] font-bold">{t(`profile.languageList.${lang_val}`) || lang_val}</span>
                 )) : <span className="text-[10px] opacity-30 italic">{t('common.noData')}</span>}
               </div>
             </div>
@@ -198,7 +198,7 @@ export default function ProfileDrawer({
             </h3>
             <div className="flex flex-wrap gap-2">
               {user.interests?.length ? user.interests.map(interest => (
-                <span key={interest} className="px-3 py-1.5 bg-white border border-[#141414]/5 rounded-xl text-[10px] font-bold uppercase tracking-wider">
+                <span key={interest} className="px-3 py-1.5 bg-[#1A2233] border border-[#FFFFFF]/6 rounded-xl text-[10px] font-bold uppercase tracking-wider">
                   {t(`profile.interestsList.${interest}`) || interest}
                 </span>
               )) : <span className="text-[10px] opacity-30 italic">{t('common.noData')}</span>}
@@ -213,7 +213,7 @@ export default function ProfileDrawer({
             {(!user.privacySettings || user.privacySettings.showMatchHistory) ? (
               <MatchHistory games={userGames} />
             ) : (
-              <div className="p-8 text-center bg-[#141414]/5 rounded-[32px] border border-dashed border-[#141414]/10">
+              <div className="p-8 text-center bg-[#FFFFFF]/5 rounded-[32px] border border-dashed border-[#FFFFFF]/8">
                 <EyeOff className="w-8 h-8 mx-auto mb-3 opacity-20" />
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-30">{lang === 'hu' ? 'Ez az előzmény privát' : 'Ez az előzmény privát'}</p>
               </div>

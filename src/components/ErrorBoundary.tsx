@@ -14,7 +14,7 @@ export default class ErrorBoundary extends React.Component<{children: React.Reac
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#F8F8F5] flex items-center justify-center p-8">
+        <div className="min-h-screen bg-[#0F1419] flex items-center justify-center p-8">
           <div className="max-w-sm w-full text-center space-y-6">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
               <span className="text-3xl">⚠️</span>
@@ -25,7 +25,7 @@ export default class ErrorBoundary extends React.Component<{children: React.Reac
             </div>
             <button
               onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
-              className="w-full py-4 bg-[#141414] text-[#E2FF3B] rounded-2xl font-black uppercase tracking-widest"
+              className="w-full py-4 bg-[#141414] text-[#080B0F] rounded-2xl font-black uppercase tracking-widest"
             >
               Újratöltés
             </button>

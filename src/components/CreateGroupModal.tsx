@@ -27,11 +27,11 @@ export default function CreateGroupModal({
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-        className="relative w-full max-w-md bg-[#F5F5F0] rounded-[40px] p-8 shadow-2xl overflow-hidden"
+        className="relative w-full max-w-md bg-[#080B0F] rounded-[40px] p-8 shadow-2xl overflow-hidden"
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-black uppercase italic tracking-tighter">{t('groups.createGroup')}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-[#141414]/5 rounded-xl"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-2 hover:bg-[#FFFFFF]/5 rounded-xl"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-4">
@@ -41,7 +41,7 @@ export default function CreateGroupModal({
               type="text"
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className="w-full bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-sm font-bold focus:ring-1 focus:ring-[#E2FF3B] outline-none"
+              className="w-full bg-[#FFFFFF]/5 border-none rounded-xl py-3 px-4 text-sm font-bold focus:ring-1 focus:ring-[#00E676] outline-none"
               placeholder={t('groups.namePlaceholder')}
             />
           </div>
@@ -51,7 +51,7 @@ export default function CreateGroupModal({
             <textarea
               value={formData.description}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
-              className="w-full bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-sm focus:ring-1 focus:ring-[#E2FF3B] outline-none min-h-[80px]"
+              className="w-full bg-[#FFFFFF]/5 border-none rounded-xl py-3 px-4 text-sm focus:ring-1 focus:ring-[#00E676] outline-none min-h-[80px]"
             />
           </div>
 
@@ -64,7 +64,7 @@ export default function CreateGroupModal({
                 value={formData.city}
                 onChange={e => setFormData({ ...formData, city: e.target.value })}
                 placeholder={t('profile.locationPlaceholder')}
-                className="w-full bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-sm font-bold focus:ring-1 focus:ring-[#E2FF3B] outline-none"
+                className="w-full bg-[#FFFFFF]/5 border-none rounded-xl py-3 px-4 text-sm font-bold focus:ring-1 focus:ring-[#00E676] outline-none"
               />
               <datalist id="hu-cities-group">
                 {["Budapest","Debrecen","Miskolc","Pécs","Győr","Nyíregyháza","Kecskemét","Székesfehérvár","Szombathely","Szolnok","Tatabánya","Kaposvár","Érd","Veszprém","Zalaegerszeg","Sopron","Eger","Szeged","Dunakeszi","Nagykanizsa","Békéscsaba","Dunaújváros","Gyula","Mosonmagyaróvár","Esztergom","Vác","Siófok","Paks"].map(c => (
@@ -77,7 +77,7 @@ export default function CreateGroupModal({
               <select
                 value={formData.recommendedLevel}
                 onChange={e => setFormData({ ...formData, recommendedLevel: e.target.value as SkillLevel })}
-                className="w-full bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-xs font-bold focus:ring-1 focus:ring-[#E2FF3B] outline-none appearance-none"
+                className="w-full bg-[#FFFFFF]/5 border-none rounded-xl py-3 px-4 text-xs font-bold focus:ring-1 focus:ring-[#00E676] outline-none appearance-none"
               >
                 {Object.values(SkillLevel).map(lvl => <option key={lvl} value={lvl}>{t(`profile.levels.${lvl}`)}</option>)}
               </select>
@@ -92,7 +92,7 @@ export default function CreateGroupModal({
                   key={v}
                   onClick={() => setFormData({ ...formData, visibility: v })}
                   className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                    formData.visibility === v ? 'bg-[#141414] text-[#E2FF3B]' : 'bg-[#141414]/5 text-[#141414]/30'
+                    formData.visibility === v ? 'bg-[#141414] text-[#080B0F]' : 'bg-[#FFFFFF]/5 text-[#4A5568]'
                   }`}
                 >
                   {v === 'public' ? t('games.public') : t('profile.privacy')}
@@ -107,7 +107,7 @@ export default function CreateGroupModal({
               onSave(formData);
               onClose();
             }}
-            className="w-full py-4 bg-[#141414] text-[#E2FF3B] rounded-2xl font-black uppercase tracking-widest text-sm hover:shadow-xl transition-all mt-4 disabled:opacity-30"
+            className="w-full py-4 bg-[#141414] text-[#080B0F] rounded-2xl font-black uppercase tracking-widest text-sm hover:shadow-xl transition-all mt-4 disabled:opacity-30"
           >
             {t('groups.createGroup')}
           </button>

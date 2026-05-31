@@ -77,13 +77,13 @@ export default function NotificationsDrawer({
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="relative w-full max-w-sm bg-[#F8F8F5] h-full shadow-2xl flex flex-col"
+        className="relative w-full max-w-sm bg-[#0F1419] h-full shadow-2xl flex flex-col"
       >
         {/* Header */}
         <div className="p-6 pb-4 bg-[#141414] text-white">
           <div className="flex justify-between items-center mb-1">
             <h2 className="text-xl font-black uppercase tracking-tight">{t('notifications.title')}</h2>
-            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+            <button onClick={onClose} className="p-2 hover:bg-[#1A2233]/10 rounded-full transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -111,15 +111,15 @@ export default function NotificationsDrawer({
                   onClick={() => onRead(n.id)}
                   className={`rounded-2xl border overflow-hidden transition-all cursor-pointer hover:shadow-md ${
                     n.read
-                      ? 'bg-white border-[#141414]/5'
-                      : 'bg-white border-[#E2FF3B]/50 shadow-sm shadow-[#E2FF3B]/20'
+                      ? 'bg-[#1A2233] border-[#FFFFFF]/6'
+                      : 'bg-[#1A2233] border-[#00E676]/50 shadow-sm shadow-[#00E676]/20'
                   }`}
                 >
                   <div className="p-4">
                     <div className="flex gap-3">
                       {/* Icon */}
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
-                        n.read ? 'bg-[#141414]/5' : 'bg-[#E2FF3B]'
+                        n.read ? 'bg-[#FFFFFF]/5' : 'bg-[#00E676]'
                       }`}>
                         {getIcon(n.type)}
                       </div>
@@ -127,10 +127,10 @@ export default function NotificationsDrawer({
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-2 mb-0.5">
                           <h4 className="font-bold text-sm leading-tight">{n.title}</h4>
-                          {!n.read && <div className="w-2 h-2 bg-[#E2FF3B] rounded-full border border-[#141414]/20 shrink-0 mt-1" />}
+                          {!n.read && <div className="w-2 h-2 bg-[#00E676] rounded-full border border-[#FFFFFF]/10 shrink-0 mt-1" />}
                         </div>
-                        <p className="text-xs text-[#141414]/60 leading-relaxed mb-1">{n.message}</p>
-                        <p className="text-[10px] font-bold text-[#141414]/30 uppercase tracking-widest">
+                        <p className="text-xs text-[#8A99AA] leading-relaxed mb-1">{n.message}</p>
+                        <p className="text-[10px] font-bold text-[#4A5568] uppercase tracking-widest">
                           {formatDate(n.createdAt || (n as any).created_at)}
                         </p>
                       </div>
@@ -139,25 +139,25 @@ export default function NotificationsDrawer({
 
                   {/* Action Buttons */}
                   {hasActions && (
-                    <div className="flex border-t border-[#141414]/5">
+                    <div className="flex border-t border-[#FFFFFF]/6">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           if (isFriendReq) handleFriendAccept(e, n);
                           else if (isGameInvite) { onGameInviteResponse?.(n.gameId!, 'accepted', n.id); onRead(n.id); }
                         }}
-                        className="flex-1 py-3 text-[11px] font-black uppercase tracking-widest bg-[#141414] text-[#E2FF3B] hover:bg-[#252525] transition-colors"
+                        className="flex-1 py-3 text-[11px] font-black uppercase tracking-widest bg-[#141414] text-[#080B0F] hover:bg-[#00C853] transition-colors"
                       >
                         {isFriendReq ? t('common.accept') : t('common.join')}
                       </button>
-                      <div className="w-px bg-[#141414]/10" />
+                      <div className="w-px bg-[#FFFFFF]/8" />
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           if (isFriendReq) handleFriendDecline(e, n);
                           else if (isGameInvite) { onGameInviteResponse?.(n.gameId!, 'rejected', n.id); onRead(n.id); }
                         }}
-                        className="flex-1 py-3 text-[11px] font-black uppercase tracking-widest text-[#141414]/40 hover:bg-[#141414]/5 transition-colors"
+                        className="flex-1 py-3 text-[11px] font-black uppercase tracking-widest text-[#4A5568] hover:bg-[#FFFFFF]/5 transition-colors"
                       >
                         {t('common.decline')}
                       </button>
@@ -171,10 +171,10 @@ export default function NotificationsDrawer({
 
         {/* Footer - mark all read */}
         {unreadCount > 0 && (
-          <div className="p-4 border-t border-[#141414]/5 bg-white">
+          <div className="p-4 border-t border-[#FFFFFF]/6 bg-[#1A2233]">
             <button
               onClick={() => notifications.filter(n => !n.read).forEach(n => onRead(n.id))}
-              className="w-full py-3 text-[11px] font-black uppercase tracking-widest text-[#141414]/40 hover:text-[#141414] transition-colors"
+              className="w-full py-3 text-[11px] font-black uppercase tracking-widest text-[#4A5568] hover:text-[#141414] transition-colors"
             >
               Összes megjelölése olvasottként
             </button>

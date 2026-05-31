@@ -19,7 +19,7 @@ class RootErrorBoundary extends React.Component<{children: React.ReactNode}, {ha
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
             <h2 style={{ fontWeight: 900, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Hiba történt</h2>
             <p style={{ opacity: 0.5, marginBottom: '1.5rem' }}>Kérjük frissítsd az oldalt</p>
-            <button onClick={() => window.location.reload()} style={{ background: '#141414', color: '#E2FF3B', border: 'none', padding: '1rem 2rem', borderRadius: '1rem', fontWeight: 900, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            <button onClick={() => window.location.reload()} style={{ background: '#0F1419', color: '#00E676', border: 'none', padding: '1rem 2rem', borderRadius: '1rem', fontWeight: 900, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Újratöltés
             </button>
           </div>

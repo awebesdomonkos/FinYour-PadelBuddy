@@ -46,9 +46,9 @@ export default function ProfileCompleteness({
     );
   }
 
-  const color = score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-[#E2FF3B]' : 'bg-orange-400';
+  const color = score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-[#00E676]' : 'bg-orange-400';
   const textColor = score >= 80 ? 'text-green-700' : score >= 50 ? 'text-[#141414]' : 'text-orange-700';
-  const bgColor = score >= 80 ? 'bg-green-50 border-green-200' : score >= 50 ? 'bg-[#E2FF3B]/10 border-[#E2FF3B]/40' : 'bg-orange-50 border-orange-200';
+  const bgColor = score >= 80 ? 'bg-[#00E676]/10 border-[#00E676]/30' : score >= 50 ? 'bg-[#00E676]/10 border-[#00E676]/40' : 'bg-orange-900/20 border-orange-700/30';
   const label = score >= 80
     ? (lang === 'hu' ? 'Szinte teljes! ✨' : 'Almost there! ✨')
     : score >= 50
@@ -72,7 +72,7 @@ export default function ProfileCompleteness({
       </button>
 
       {/* Progress bar */}
-      <div className="w-full h-2 bg-[#141414]/10 rounded-full overflow-hidden">
+      <div className="w-full h-2 bg-[#FFFFFF]/8 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-700 ${color}`}
           style={{ width: score + '%' }}
@@ -90,7 +90,7 @@ export default function ProfileCompleteness({
               <button
                 key={item.key}
                 onClick={() => item.action === 'edit' ? onEdit() : onNavigate(item.action)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-xl border border-[#141414]/10 hover:border-[#141414]/30 transition-colors group"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1A2233] rounded-xl border border-[#FFFFFF]/8 hover:border-[#141414]/30 transition-colors group"
               >
                 <span className="text-sm">{item.icon}</span>
                 <span className="text-[10px] font-bold">{item.label}</span>

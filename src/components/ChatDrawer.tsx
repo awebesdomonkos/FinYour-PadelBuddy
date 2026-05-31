@@ -59,12 +59,12 @@ export default function ChatDrawer({
       animate={{ x: 0 }}
       exit={{ x: '100%' }}
       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-      className="fixed inset-y-0 right-0 w-full max-w-sm bg-[#F8F8F5] z-[60] shadow-2xl border-l border-[#141414]/10 flex flex-col"
+      className="fixed inset-y-0 right-0 w-full max-w-sm bg-[#0F1419] z-[60] shadow-2xl border-l border-[#FFFFFF]/8 flex flex-col"
     >
       {/* Header */}
       <div className="p-4 bg-[#141414] text-white">
         <div className="flex items-center gap-3 mb-3">
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-[#1A2233]/10 rounded-xl transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 min-w-0">
@@ -91,13 +91,13 @@ export default function ChatDrawer({
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors ${
-                activeTab === tab.key ? 'bg-[#E2FF3B] text-[#141414]' : 'bg-white/10 text-white/60 hover:bg-white/20'
+                activeTab === tab.key ? 'bg-[#00E676] text-[#141414]' : 'bg-[#1A2233]/10 text-white/60 hover:bg-[#1A2233]/20'
               }`}
             >
               {tab.label}
               {tab.count > 0 && (
                 <span className={`w-4 h-4 rounded-full text-[9px] flex items-center justify-center ${
-                  activeTab === tab.key ? 'bg-[#141414] text-[#E2FF3B]' : 'bg-white/20 text-white'
+                  activeTab === tab.key ? 'bg-[#141414] text-[#080B0F]' : 'bg-[#1A2233]/20 text-white'
                 }`}>{tab.count}</span>
               )}
             </button>
@@ -127,7 +127,7 @@ export default function ChatDrawer({
                     <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
                       isMine
                         ? 'bg-[#141414] text-white rounded-tr-sm'
-                        : 'bg-white rounded-tl-sm border border-[#141414]/5'
+                        : 'bg-[#1A2233] rounded-tl-sm border border-[#141414]/5'
                     }`}>
                       {c.text}
                     </div>
@@ -146,8 +146,8 @@ export default function ChatDrawer({
               {joinedUsers.length} / {Number(game.requiredPlayers || 4)} {t('games.players')}
             </p>
             {joinedUsers.map(user => (
-              <div key={user.id} className="bg-white p-3 rounded-2xl border border-[#141414]/5 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#141414]/5 flex items-center justify-center overflow-hidden">
+              <div key={user.id} className="bg-[#1A2233] p-3 rounded-2xl border border-[#141414]/5 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#FFFFFF]/5 flex items-center justify-center overflow-hidden">
                   {user.avatarUrl ? (
                     <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
                   ) : (
@@ -159,14 +159,14 @@ export default function ChatDrawer({
                   <p className="text-[10px] opacity-40 font-bold uppercase">{t(`profile.levels.${user.skillLevel}`)}</p>
                 </div>
                 {user.id === game.creatorId && (
-                  <span className="px-2 py-0.5 bg-[#E2FF3B] text-[#141414] text-[8px] font-black uppercase rounded">Host</span>
+                  <span className="px-2 py-0.5 bg-[#00E676] text-[#141414] text-[8px] font-black uppercase rounded">Host</span>
                 )}
               </div>
             ))}
             {/* Empty slots */}
             {Array.from({ length: Math.max(0, Number(game.requiredPlayers || 4) - joinedUsers.length) }).map((_, i) => (
-              <div key={i} className="bg-[#141414]/5 border border-dashed border-[#141414]/10 rounded-2xl p-3 flex items-center gap-3 opacity-40">
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+              <div key={i} className="bg-[#FFFFFF]/5 border border-dashed border-[#FFFFFF]/8 rounded-2xl p-3 flex items-center gap-3 opacity-40">
+                <div className="w-10 h-10 rounded-full bg-[#1A2233] flex items-center justify-center">
                   <Plus className="w-4 h-4" />
                 </div>
                 <span className="text-xs font-bold uppercase tracking-widest">Szabad hely</span>
@@ -185,7 +185,7 @@ export default function ChatDrawer({
               </div>
             ) : (
               pendingRequests.map(req => (
-                <div key={req.userId} className="bg-white p-4 rounded-2xl border border-[#141414]/5 shadow-sm">
+                <div key={req.userId} className="bg-[#1A2233] p-4 rounded-2xl border border-[#141414]/5 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-bold">{req.userName}</p>
@@ -215,14 +215,14 @@ export default function ChatDrawer({
 
       {/* Message Input (only in chat tab) */}
       {activeTab === 'chat' && (
-        <div className="p-4 bg-white border-t border-[#141414]/10">
+        <div className="p-4 bg-[#1A2233] border-t border-[#FFFFFF]/8">
           {/* Quick messages */}
           <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
             {quickMessages.map(txt => (
               <button
                 key={txt}
                 onClick={() => onSendMessage(txt)}
-                className="shrink-0 px-3 py-1.5 bg-[#141414]/5 text-[10px] font-bold uppercase tracking-wider rounded-xl hover:bg-[#E2FF3B] transition-colors"
+                className="shrink-0 px-3 py-1.5 bg-[#FFFFFF]/5 text-[10px] font-bold uppercase tracking-wider rounded-xl hover:bg-[#00E676] transition-colors"
               >
                 {txt}
               </button>
@@ -236,12 +236,12 @@ export default function ChatDrawer({
               value={msg}
               onChange={e => setMsg(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (send(), e.preventDefault())}
-              className="flex-1 bg-[#141414]/5 border-none rounded-2xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none"
+              className="flex-1 bg-[#FFFFFF]/5 border-none rounded-2xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#00E676] outline-none"
             />
             <button
               disabled={!msg.trim()}
               onClick={send}
-              className="w-12 h-12 bg-[#141414] text-[#E2FF3B] rounded-2xl flex items-center justify-center disabled:opacity-30 hover:bg-[#252525] transition-colors"
+              className="w-12 h-12 bg-[#141414] text-[#080B0F] rounded-2xl flex items-center justify-center disabled:opacity-30 hover:bg-[#00C853] transition-colors"
             >
               <Send className="w-5 h-5" />
             </button>
