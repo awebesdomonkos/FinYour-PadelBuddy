@@ -373,19 +373,17 @@ export default function App() {
   };
 
   const handleDeleteGame = async (gameId: string) => {
+    setGameIdToDelete(null);
     try {
       await safeFetch(`/api/games/${gameId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       fetchGames();
-      setGameIdToDelete(null);
-      if (selectedGame?.id === gameId) {
-        setSelectedGame(null);
-        setIsChatOpen(false);
-      }
-    } catch (err) {
+      showToast('✅ ' + (lang === 'hu' ? 'Meccs törölve' : 'Game deleted'));
+    } catch (err: any) {
       console.error("Failed to delete game", err);
+      showToast('❌ ' + (err?.message || (lang === 'hu' ? 'Törlés sikertelen' : 'Delete failed')));
     }
   };
 
