@@ -107,15 +107,28 @@ export default function GroupsTab({
                       <MessageSquare className="w-3.5 h-3.5" />
                       {t('games.chatShort') || 'Chat'}
                     </button>
-                    {group.adminIds && !group.adminIds.includes(currentUser?.id || '') && (
-                      <button
-                        onClick={() => onLeaveGroup(group.id)}
-                        className="px-3 py-2.5 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all"
-                        title={t('groups.leaveGroup')}
-                      >
-                        <LogOut className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                    {(() => {
+                      const isAdmin = (group.adminIds || []).includes(currentUser?.id || '');
+                      const isOnlyAdmin = isAdmin && (group.adminIds || []).length === 1;
+                      if (isOnlyAdmin) return (
+                        <button
+                          onClick={() => alert(lang === 'hu' ? 'Te vagy az egyetlen admin. Előbb adj admin jogot másnak, vagy töröld a csoportot.' : 'You are the only admin. Assign another admin first, or delete the group.')}
+                          className="px-3 py-2.5 bg-gray-50 text-gray-300 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed"
+                          title={lang === 'hu' ? 'Egyetlen admin' : 'Only admin'}
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                        </button>
+                      );
+                      return (
+                        <button
+                          onClick={() => onLeaveGroup(group.id)}
+                          className="px-3 py-2.5 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all"
+                          title={t('groups.leaveGroup')}
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                        </button>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <button
