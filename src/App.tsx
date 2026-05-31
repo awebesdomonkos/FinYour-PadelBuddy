@@ -49,7 +49,6 @@ import GroupsTab from './components/GroupsTab.tsx';
 import MatchHistory from './components/MatchHistory.tsx';
 import ResultModal from './components/ResultModal.tsx';
 import ProfileDrawer from './components/ProfileDrawer.tsx';
-import ConfirmDialog from './components/ConfirmDialog.tsx';
 import NavBtn from './components/NavBtn.tsx';
 import LevelTutorial from './components/LevelTutorial.tsx';
 import CreateGroupModal from './components/CreateGroupModal.tsx';
@@ -86,7 +85,6 @@ export default function App() {
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [isLevelTutorialOpen, setIsLevelTutorialOpen] = useState(false);
   const [gameToEdit, setGameToEdit] = useState<Game | null>(null);
-  const [gameIdToDelete, setGameIdToDelete] = useState<string | null>(null);
   const { t, lang, setLang } = useI18n('hu');
 
   // Registration/Auth state
@@ -373,7 +371,8 @@ export default function App() {
   };
 
   const handleDeleteGame = async (gameId: string) => {
-    setGameIdToDelete(null);
+    const confirmed = window.confirm(lang === 'hu' ? 'Biztosan törlöd ezt a meccset?' : 'Are you sure you want to delete this game?');
+    if (!confirmed) return;
     try {
       await safeFetch(`/api/games/${gameId}`, {
         method: 'DELETE',
@@ -1042,7 +1041,7 @@ export default function App() {
                             }}
                             isOwner={game.creatorId === currentUser?.id}
                             onLeave={() => handleLeaveGame(game.id)}
-                            onDelete={() => setGameIdToDelete(game.id)}
+                            onDelete={() => handleDeleteGame(game.id)}
                             onRepeat={() => handleRepeatGame(game)}
                             onConfirmAttendance={(e?: React.MouseEvent) => {
                               e?.stopPropagation?.();
@@ -1374,7 +1373,7 @@ export default function App() {
                           setGameToEdit(game);
                           setActiveTab('create');
                         }}
-                        onDelete={() => setGameIdToDelete(game.id)}
+                        onDelete={() => handleDeleteGame(game.id)}
                         onLeave={() => handleLeaveGame(game.id)}
                         onRepeat={() => handleRepeatGame(game)}
                         onConfirmAttendance={(e?: React.MouseEvent) => {
@@ -1700,16 +1699,6 @@ export default function App() {
           ) : null;
         })()}
 
-        {gameIdToDelete && (
-          <ConfirmDialog 
-            title={t('games.deleteConfirmTitle') || 'Játék törlése?'}
-            message={t('games.deleteConfirmMessage') || 'Biztosan törölni szeretnéd ezt a játékot? Ez a művelet nem vonható vissza.'}
-            confirmLabel={t('common.delete') || 'Törlés'}
-            cancelLabel={t('common.cancel') || 'Mégse'}
-            onConfirm={() => handleDeleteGame(gameIdToDelete)}
-            onCancel={() => setGameIdToDelete(null)}
-          />
-        )}
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-[#141414]/5 pb-[env(safe-area-inset-bottom,24px)]">
