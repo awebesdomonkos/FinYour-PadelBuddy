@@ -171,14 +171,16 @@ export default function GameCard({
             </button>
 
             {/* Owner edit/delete */}
-            {isOwner && !isPast && (
+            {isOwner && (
               <>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
-                  className="w-8 h-8 rounded-xl bg-[#141414]/5 flex items-center justify-center hover:bg-[#E2FF3B] transition-colors shrink-0"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
+                {!isPast && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
+                    className="w-8 h-8 rounded-xl bg-[#141414]/5 flex items-center justify-center hover:bg-[#E2FF3B] transition-colors shrink-0"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <button
                   onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
                   className="w-8 h-8 rounded-xl bg-[#141414]/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors shrink-0"
