@@ -13,7 +13,7 @@ export default function CreateGroupModal({
   onClose: () => void,
   onSave: (data: Partial<Group>) => void
 }) {
-  const { t } = useI18n(currentUser.languagePreference || 'hu');
+  const { t, lang } = useI18n(currentUser.languagePreference || 'hu');
   const [formData, setFormData] = useState<Partial<Group>>({
     name: '',
     description: '',
@@ -95,7 +95,7 @@ export default function CreateGroupModal({
                     formData.visibility === v ? 'bg-[#141414] text-[#E2FF3B]' : 'bg-[#141414]/5 text-[#141414]/30'
                   }`}
                 >
-                  {v === 'public' ? t('games.public') : t('profile.privacy')}
+                  {v === 'public' ? t('games.public') : (lang === 'hu' ? 'Privát' : 'Private')}
                 </button>
               ))}
             </div>
