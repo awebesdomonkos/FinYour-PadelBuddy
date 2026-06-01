@@ -73,19 +73,8 @@ export default function GameCard({
           🔥 Last Minute
         </div>
       )}
-      {requestStatus === 'pending' && !isJoined && (
-        <div className="absolute top-3 right-3 bg-yellow-400 text-[#141414] text-[9px] font-black uppercase px-2 py-1 rounded-xl z-20">
-          {t('common.requested')}
-        </div>
-      )}
-      {isJoined && (
-        <div className="absolute top-3 right-3 bg-[#E2FF3B] text-[#141414] text-[9px] font-black uppercase px-2 py-1 rounded-xl z-20">
-          {t('common.joined')}
-        </div>
-      )}
-
       <div className="p-4">
-        {/* Header row: creator + date */}
+        {/* Header row: creator + date + status badge */}
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-7 h-7 bg-[#141414]/5 rounded-full flex items-center justify-center shrink-0">
@@ -95,13 +84,25 @@ export default function GameCard({
               {creatorName || game.creatorName || (lang === 'hu' ? 'Játékos' : 'Player')}
             </span>
           </div>
-          <div className="text-right shrink-0 mr-14">
-            <p className="text-[10px] font-bold uppercase tracking-tighter opacity-40">
-              {date.toLocaleDateString(lang === 'hu' ? 'hu-HU' : 'en-US', { month: 'short', day: 'numeric' })}
-            </p>
-            <p className="text-base font-black leading-none">
-              {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </p>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            {requestStatus === 'pending' && !isJoined && (
+              <span className="bg-yellow-400 text-[#141414] text-[9px] font-black uppercase px-2 py-0.5 rounded-lg">
+                {t('common.requested')}
+              </span>
+            )}
+            {isJoined && (
+              <span className="bg-[#E2FF3B] text-[#141414] text-[9px] font-black uppercase px-2 py-0.5 rounded-lg">
+                {t('common.joined')}
+              </span>
+            )}
+            <div className="text-right">
+              <p className="text-[10px] font-bold uppercase tracking-tighter opacity-40">
+                {date.toLocaleDateString(lang === 'hu' ? 'hu-HU' : 'en-US', { month: 'short', day: 'numeric' })}
+              </p>
+              <p className="text-base font-black leading-none">
+                {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
           </div>
         </div>
 

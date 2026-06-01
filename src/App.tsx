@@ -383,6 +383,16 @@ export default function App() {
         },
         body: JSON.stringify({ userId: currentUser?.id, userName: currentUser?.name })
       });
+      // Remove from hiddenFromHistory so it appears in Saját meccsek
+      const updatedHidden = (currentUser.hiddenFromHistory || []).filter((id: string) => id !== gameId);
+      if (updatedHidden.length !== (currentUser.hiddenFromHistory || []).length) {
+        updateUser({ hiddenFromHistory: updatedHidden });
+        await safeFetch(`/api/users/${currentUser.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ hiddenFromHistory: updatedHidden })
+        }).catch(() => {});
+      }
       fetchGames();
       showToast('✅ ' + (lang === 'hu' ? 'Csatlakoztál a meccshez!' : 'Joined the game!'));
     } catch (err: any) {

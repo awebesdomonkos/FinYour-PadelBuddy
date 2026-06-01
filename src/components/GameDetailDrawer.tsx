@@ -166,8 +166,8 @@ export default function GameDetailDrawer({
             </div>
           </div>
 
-          {/* Recent Activity */}
-          {(game.chat && game.chat.length > 0) && (
+          {/* Recent Activity — only visible to joined players and owner */}
+          {(isJoined || isOwner) && (game.chat && game.chat.length > 0) && (
             <div className="space-y-4">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{t('notifications.title') || 'Recent Activity'}</h4>
               <div className="bg-[#141414] rounded-3xl p-6 shadow-xl space-y-4">
