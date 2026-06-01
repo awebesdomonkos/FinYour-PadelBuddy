@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Target, ShieldCheck, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Target, ShieldCheck, ArrowLeft, Eye, EyeOff, Mail, CheckCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export function AuthScreen({ onSelectMode, t, lang, onLangChange }: { onSelectMode: (mode: 'login' | 'register') => void, t: any, lang: string, onLangChange: (l: 'hu' | 'en') => void }) {
   return (
@@ -259,7 +260,26 @@ export function LoginForm({
 }) {
   const [showPass, setShowPass] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const { resetPassword } = useAuth();
   const lang = formData.lang || 'hu';
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetError(null);
+    try {
+      await resetPassword(resetEmail || formData.email);
+      setResetSent(true);
+    } catch (err: any) {
+      setResetError(err.message);
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8F8F5] flex flex-col p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] font-sans overflow-y-auto">
@@ -345,12 +365,41 @@ export function LoginForm({
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="bg-[#E2FF3B]/20 rounded-2xl p-4 text-xs text-[#141414]/70 leading-relaxed"
+                className="overflow-hidden"
               >
-                {lang === 'hu'
-                  ? <>Jelszó visszaállításhoz írj a <span className="font-black text-[#141414]">padelbuddy.app@gmail.com</span> email címre a regisztrált email fiókodból, és küldünk egy új jelszót.</>
-                  : <>To reset your password, email <span className="font-black text-[#141414]">padelbuddy.app@gmail.com</span> from your registered email and we'll send you a new password.</>
-                }
+                {resetSent ? (
+                  <div className="bg-green-50 border border-green-100 rounded-2xl p-4 flex items-start gap-3">
+                    <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                    <p className="text-xs text-green-700 font-bold">
+                      {lang === 'hu' ? 'Elküldtük a visszaállító linket! Ellenőrizd a postaládád.' : 'Reset link sent! Check your inbox.'}
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleReset} className="bg-[#E2FF3B]/20 rounded-2xl p-4 space-y-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#141414]/50">
+                      {lang === 'hu' ? 'Jelszó visszaállítás' : 'Password reset'}
+                    </p>
+                    {resetError && <p className="text-xs text-red-600 font-bold">{resetError}</p>}
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#141414]/40" />
+                      <input
+                        type="email"
+                        required
+                        placeholder={formData.email || (lang === 'hu' ? 'email@példa.hu' : 'your@email.com')}
+                        value={resetEmail}
+                        onChange={e => setResetEmail(e.target.value)}
+                        className="w-full bg-white/60 rounded-xl py-3 pl-9 pr-4 text-sm outline-none font-bold text-[#141414] placeholder:opacity-40"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={resetLoading}
+                      className="w-full bg-[#141414] text-[#E2FF3B] py-3 rounded-xl text-xs font-black uppercase tracking-widest disabled:opacity-50 transition-all"
+                    >
+                      {resetLoading ? '...' : (lang === 'hu' ? 'Link küldése' : 'Send link')}
+                    </button>
+                  </form>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -363,6 +412,36 @@ export function LoginForm({
           </button>
         </motion.form>
       </div>
+    </div>
+  );
+}
+
+export function EmailConfirmationScreen({ onBack, lang }: { onBack: () => void; lang: 'hu' | 'en' }) {
+  return (
+    <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-sm w-full text-center space-y-6"
+      >
+        <div className="w-20 h-20 bg-[#E2FF3B] rounded-[28px] flex items-center justify-center mx-auto shadow-[0_0_40px_rgba(226,255,59,0.2)]">
+          <Mail className="w-10 h-10 text-[#141414]" />
+        </div>
+        <h2 className="text-3xl font-black uppercase italic tracking-tighter">
+          {lang === 'hu' ? 'Erősítsd meg az email-címed!' : 'Confirm your email!'}
+        </h2>
+        <p className="text-white/60 text-sm font-bold leading-relaxed">
+          {lang === 'hu'
+            ? 'Küldtünk egy megerősítő emailt. Kattints a benne lévő linkre, majd lépj be.'
+            : 'We sent you a confirmation email. Click the link inside, then log in.'}
+        </p>
+        <button
+          onClick={onBack}
+          className="w-full bg-white/10 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-white/20 transition-all border border-white/10"
+        >
+          {lang === 'hu' ? 'Vissza a bejelentkezéshez' : 'Back to login'}
+        </button>
+      </motion.div>
     </div>
   );
 }

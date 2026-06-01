@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
   X, MapPin, Award, Image as ImageIcon, Upload, Target, Heart,
-  AlertCircle, Shield, Instagram, Facebook, Smartphone, Plus
+  AlertCircle, Shield, Instagram, Facebook, Smartphone, Plus, Loader2
 } from 'lucide-react';
 import { User, SkillLevel, LFGStatus, PlayTime, PadelExperience, Language } from '../types.ts';
 import { useI18n } from '../hooks/useI18n.ts';
+import { useAuth } from '../context/AuthContext.tsx';
+import { supabase } from '../lib/supabase.ts';
 
 export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: { user: User, onSave: (data: Partial<User>) => void, onCancel: () => void, onShowTutorial?: () => void }) {
   const { t, lang } = useI18n(user?.languagePreference || 'hu');
+  const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     name: user?.name || '',
     skillLevel: user?.skillLevel || 'Bronze',
@@ -35,24 +38,45 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
 
   const [newClub, setNewClub] = useState('');
   const [customInterest, setCustomInterest] = useState('');
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const PREDEFINED_INTERESTS = ['Competitive', 'Social Padel', 'Morning Matches', 'Evening Matches', 'Mixed Matches', 'Tournaments', 'Coaching'];
 
-  const onDrop = React.useCallback((acceptedFiles: File[]) => {
+  const onDrop = React.useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFormData(prev => ({ ...prev, avatarUrl: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+    if (!file || !currentUser) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError(lang === 'hu' ? 'A fájl max 2MB lehet.' : 'File must be under 2MB.');
+      return;
     }
-  }, []);
+
+    setAvatarUploading(true);
+    setAvatarError(null);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${currentUser.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadError) throw uploadError;
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+      // Append cache-buster so browser refreshes the image
+      const publicUrl = data.publicUrl + '?t=' + Date.now();
+      setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
+    } catch (err: any) {
+      setAvatarError(err.message || 'Upload failed');
+    } finally {
+      setAvatarUploading(false);
+    }
+  }, [currentUser, lang]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'image/*': [] },
-    multiple: false
+    accept: { 'image/jpeg': [], 'image/png': [], 'image/webp': [] },
+    multiple: false,
+    maxSize: 2 * 1024 * 1024,
   } as any);
 
   const toggleInterest = (interest: string) => {
@@ -152,14 +176,24 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                 )}
               </div>
 
-              <div {...getRootProps()} className={`flex-1 border-2 border-dashed rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors ${isDragActive ? 'border-[#E2FF3B] bg-[#E2FF3B]/5' : 'border-[#141414]/10 hover:border-[#141414]/20'}`}>
+              <div {...getRootProps()} className={`flex-1 border-2 border-dashed rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors ${avatarUploading ? 'opacity-50 pointer-events-none' : ''} ${isDragActive ? 'border-[#E2FF3B] bg-[#E2FF3B]/5' : 'border-[#141414]/10 hover:border-[#141414]/20'}`}>
                 <input {...getInputProps()} />
-                <Upload className="w-4 h-4 mb-2 opacity-40" />
-                <p className="text-[10px] font-bold uppercase tracking-wider opacity-40 text-center">
-                  {isDragActive ? 'Engedd el!' : 'Kattints vagy húzd ide a képet'}
-                </p>
+                {avatarUploading ? (
+                  <Loader2 className="w-5 h-5 animate-spin opacity-40" />
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mb-2 opacity-40" />
+                    <p className="text-[10px] font-bold uppercase tracking-wider opacity-40 text-center">
+                      {isDragActive ? (lang === 'hu' ? 'Engedd el!' : 'Drop it!') : (lang === 'hu' ? 'Kattints vagy húzd ide' : 'Click or drop here')}
+                    </p>
+                    <p className="text-[9px] opacity-30 mt-1">JPG, PNG, WebP · max 2 MB</p>
+                  </>
+                )}
               </div>
             </div>
+            {avatarError && (
+              <p className="text-[10px] font-bold text-red-500">{avatarError}</p>
+            )}
             {formData.avatarUrl && (
               <button
                 onClick={() => setFormData({ ...formData, avatarUrl: '' })}

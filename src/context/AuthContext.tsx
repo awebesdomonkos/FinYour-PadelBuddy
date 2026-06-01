@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -11,111 +13,141 @@ interface AuthContextType {
   updateUser: (data: Partial<User>) => void;
   authError: string | null;
   setAuthError: (error: string | null) => void;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
+  emailConfirmationPending: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function fetchUserProfile(userId: string): Promise<User | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  if (error || !data) return null;
+  const row = data as any;
+  return { id: row.id, email: row.email, name: row.name, ...(row.data || {}) } as User;
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [emailConfirmationPending, setEmailConfirmationPending] = useState(false);
 
-  const logout = useCallback(() => {
-    setToken(null);
-    setCurrentUser(null);
-    localStorage.removeItem('token');
+  const hydrateUser = useCallback(async (session: Session | null) => {
+    if (!session) {
+      setCurrentUser(null);
+      setToken(null);
+      return;
+    }
+    setToken(session.access_token);
+    const profile = await fetchUserProfile(session.user.id);
+    if (profile) {
+      setCurrentUser(profile);
+    } else {
+      // Profile row doesn't exist yet — build minimal user from auth metadata
+      const meta = session.user.user_metadata || {};
+      setCurrentUser({
+        id: session.user.id,
+        email: session.user.email || '',
+        name: meta.name || meta.full_name || session.user.email || '',
+      } as User);
+    }
   }, []);
 
-  const safeFetch = useCallback(async (url: string, options: RequestInit = {}) => {
-    try {
-      const response = await fetch(url, options);
-      const text = await response.text();
-      let data: any;
-      try { data = JSON.parse(text); } catch { throw new Error('Server error'); }
-      if (!response.ok) {
-        if (response.status === 401) logout();
-        throw new Error(data?.message || data?.error || 'Request failed');
-      }
-      return data;
-    } catch (err: any) {
-      if (err.message === 'Failed to fetch' || err.message === 'NetworkError') {
-        throw new Error('Hálózati hiba. Ellenőrizd az internetkapcsolatot.');
-      }
-      throw err;
-    }
-  }, [logout]);
-
-  const fetchMe = useCallback(async (authToken: string) => {
-    try {
-      const data = await safeFetch('/api/me', {
-        headers: { 'Authorization': `Bearer ${authToken}` }
-      });
-      const user = data?.user || data?.data || data;
-      if (user?.id) setCurrentUser(user);
-      else logout();
-    } catch (err) {
-      console.error('Auth verify error:', err);
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  }, [safeFetch, logout]);
-
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      fetchMe(storedToken);
-    } else {
-      setLoading(false);
-    }
-  }, [fetchMe]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      hydrateUser(session).finally(() => setLoading(false));
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      hydrateUser(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [hydrateUser]);
+
+  const logout = useCallback(() => {
+    supabase.auth.signOut();
+    setCurrentUser(null);
+    setToken(null);
+  }, []);
 
   const login = async (email: string, password: string) => {
     setAuthError(null);
-    try {
-      const data = await safeFetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.toLowerCase().trim(), password })
-      });
-      if (!data.token || !data.user) throw new Error('Invalid server response');
-      setToken(data.token);
-      setCurrentUser(data.user);
-      localStorage.setItem('token', data.token);
-    } catch (err: any) {
-      setAuthError(err.message || 'Login failed');
-      throw err;
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.toLowerCase().trim(), password });
+    if (error) {
+      const msg = error.message === 'Email not confirmed'
+        ? (email.includes('@') ? 'Erősítsd meg az email-címed! Ellenőrizd a postaládád.' : error.message)
+        : error.message;
+      setAuthError(msg);
+      throw new Error(msg);
+    }
+    if (data.session) {
+      setToken(data.session.access_token);
+      await hydrateUser(data.session);
     }
   };
 
   const register = async (userData: any) => {
     setAuthError(null);
-    try {
-      const data = await safeFetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      });
-      if (!data.token || !data.user) throw new Error('Invalid server response');
-      setToken(data.token);
-      setCurrentUser(data.user);
-      localStorage.setItem('token', data.token);
-    } catch (err: any) {
-      setAuthError(err.message || 'Registration failed');
-      throw err;
+    const { data, error } = await supabase.auth.signUp({
+      email: userData.email.toLowerCase().trim(),
+      password: userData.password,
+      options: {
+        data: { name: userData.name, username: userData.username },
+      },
+    });
+    if (error) {
+      setAuthError(error.message);
+      throw new Error(error.message);
     }
+
+    // If session is null the user needs to confirm their email
+    if (!data.session) {
+      setEmailConfirmationPending(true);
+      return;
+    }
+
+    // Insert profile row
+    const userId = data.user!.id;
+    const { name, username, phone, ...rest } = userData;
+    const { password: _pw, ...profileRest } = rest;
+    await supabase.from('users').upsert({
+      id: userId,
+      email: userData.email.toLowerCase().trim(),
+      name,
+      data: { username, phone, ...profileRest },
+    });
+
+    setToken(data.session.access_token);
+    await hydrateUser(data.session);
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
+      redirectTo: window.location.origin + '/reset-password',
+    });
+    if (error) throw new Error(error.message);
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw new Error(error.message);
   };
 
   const updateUser = (data: Partial<User>) => {
-    if (currentUser) {
-      setCurrentUser(prev => prev ? { ...prev, ...data } : prev);
-    }
+    setCurrentUser(prev => prev ? { ...prev, ...data } : prev);
   };
 
   return (
     <AuthContext.Provider value={{
-      currentUser, token, loading, login, register, logout, updateUser, authError, setAuthError
+      currentUser, token, loading, login, register, logout, updateUser,
+      authError, setAuthError, resetPassword, updatePassword, emailConfirmationPending,
     }}>
       {children}
     </AuthContext.Provider>

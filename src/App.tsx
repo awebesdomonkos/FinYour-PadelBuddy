@@ -40,7 +40,7 @@ import GameCard from './components/GameCard.tsx';
 import AttendanceModal from './components/AttendanceModal.tsx';
 import PlayerCard from './components/PlayerCard.tsx';
 import CreateGameForm from './components/CreateGameForm.tsx';
-import { AuthScreen, RegistrationForm, LoginForm } from './components/AuthScreens.tsx';
+import { AuthScreen, RegistrationForm, LoginForm, EmailConfirmationScreen } from './components/AuthScreens.tsx';
 import ProfileEdit from './components/ProfileEdit.tsx';
 import ChatDrawer from './components/ChatDrawer.tsx';
 import NotificationsDrawer from './components/NotificationsDrawer.tsx';
@@ -55,9 +55,10 @@ import CreateGroupModal from './components/CreateGroupModal.tsx';
 import GameDetailDrawer from './components/GameDetailDrawer.tsx';
 import RatingModal from './components/RatingModal.tsx';
 import { OnboardingWizard } from './OnboardingWizard.tsx';
+import { supabase } from './lib/supabase.ts';
 
 export default function App() {
-  const { currentUser, token, login, register, logout, updateUser, authError, setAuthError, loading: authLoading } = useAuth();
+  const { currentUser, token, login, register, logout, updateUser, authError, setAuthError, loading: authLoading, emailConfirmationPending } = useAuth();
   const [activeTab, setActiveTab] = useState<'games' | 'players' | 'profile' | 'create' | 'groups' | 'mygames'>('games');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [games, setGames] = useState<Game[]>([]);
@@ -260,12 +261,25 @@ export default function App() {
     }
   }, [currentUser, authLoading, fetchData]);
 
-  // Poll notifications every 30s when logged in
+  // Realtime notifications via Supabase channel
   useEffect(() => {
     if (!currentUser?.id) return;
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, [currentUser?.id, fetchNotifications]);
+    const channel = supabase
+      .channel('notifications:' + currentUser.id)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${currentUser.id}`,
+      }, (payload) => {
+        const row = payload.new as any;
+        if (row) {
+          setNotifications(prev => [{ id: row.id, ...(row.data || {}), createdAt: row.created_at } as any, ...prev]);
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [currentUser?.id]);
 
   // Poll active game chat every 5s when chat is open
   useEffect(() => {
@@ -848,6 +862,9 @@ export default function App() {
   };
 
   if (!currentUser) {
+    if (emailConfirmationPending) {
+      return <EmailConfirmationScreen onBack={() => setAuthMode('login')} lang={lang as 'hu' | 'en'} />;
+    }
     if (authMode === 'register') {
       return (
         <RegistrationForm 

@@ -1,11 +1,5 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-
 type VercelRequest = { method?: string; url?: string; headers: Record<string, any>; body?: any; query?: Record<string, string> };
 type VercelResponse = { status: (code: number) => VercelResponse; setHeader: (k: string, v: string) => VercelResponse; json: (data: any) => void; end: (data?: any) => void };
-
-// C-1: No hardcoded fallback — read from env only
-const JWT_SECRET = process.env.JWT_SECRET;
 
 // C-3: Supabase URL from env var
 const SB_URL = process.env.SUPABASE_URL || "https://hzykbqyeulkxnwynzhkl.supabase.co";
@@ -77,12 +71,6 @@ const ALLOWED_REG_FIELDS = ['username', 'phone', 'skillLevel', 'languagePreferen
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return jsonResponse(res, 200, { message: "OK" });
 
-  // C-1: Fail loudly at request time if secret is missing
-  if (!JWT_SECRET) {
-    console.error("FATAL: JWT_SECRET environment variable is not set");
-    return jsonResponse(res, 500, { success: false, message: "Server configuration error" });
-  }
-
   try {
     const method = req.method || 'GET';
     const rawPath = req.url || '';
@@ -108,14 +96,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // C-4: /debug endpoint removed entirely
 
-    // H-6: verifyAuth — fail closed, no fallback on DB error
+    // verifyAuth — validates Supabase access token, then loads user row
     const verifyAuth = async (tokenStr?: string) => {
       if (!tokenStr) return null;
       try {
-        const decoded: any = jwt.verify(tokenStr, JWT_SECRET!);
-        const rows = await db('users', `id=eq.${decoded.userId}&select=*`);
+        // Ask Supabase Auth to validate the token and return the user
+        const resp = await fetch(`${SB_URL}/auth/v1/user`, {
+          headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${tokenStr}` },
+        });
+        if (!resp.ok) return null;
+        const authUser = await resp.json();
+        const userId = authUser?.id;
+        if (!userId) return null;
+        const rows = await db('users', `id=eq.${userId}&select=*`);
         if (rows && rows.length > 0) return rows[0];
-        return null; // user deleted/banned
+        // User authenticated but no profile row yet — return minimal row
+        return { id: userId, email: authUser.email || '', name: authUser.user_metadata?.name || '', data: {} };
       } catch {
         return null;
       }
@@ -126,81 +122,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const authRow = await verifyAuth(tokenStr);
     const authUser = authRow ? rowToUser(authRow) : null;
 
-    // REGISTER
-    if (path === "/register" && method === "POST") {
-      const userData = JSON.parse(body);
-      const { name, email, password } = userData;
-
-      // H-1, H-2: Input validation with length limits
-      if (!name || !email || !password)
-        return jsonResponse(res, 400, { success: false, message: "Hiányzó kötelező mezők" });
-      if (name.length > 100)
-        return jsonResponse(res, 400, { success: false, message: "A név túl hosszú (max 100 karakter)" });
-      if (email.length > 254)
-        return jsonResponse(res, 400, { success: false, message: "Az email cím túl hosszú" });
-      if (password.length < 6)
-        return jsonResponse(res, 400, { success: false, message: "A jelszó legalább 6 karakter legyen" });
-      if (password.length > 128)
-        return jsonResponse(res, 400, { success: false, message: "A jelszó túl hosszú (max 128 karakter)" });
-      if (!EMAIL_RE.test(email))
-        return jsonResponse(res, 400, { success: false, message: "Érvénytelen email cím formátum" });
-
-      const normalizedEmail = email.toLowerCase().trim();
-      const existing = await db('users', `email=eq.${encodeURIComponent(normalizedEmail)}&select=id`);
-      if (existing.length > 0) return jsonResponse(res, 400, { success: false, message: "Ez az email cím már foglalt" });
-
-      const id = crypto.randomUUID();
-      const password_hash = await bcrypt.hash(password, 10);
-
-      // M-8: Allowlist registration fields
-      const safeRestData: Record<string, any> = {};
-      for (const field of ALLOWED_REG_FIELDS) {
-        if (userData[field] !== undefined) safeRestData[field] = userData[field];
-      }
-
-      const row = {
-        id, email: normalizedEmail, name, password_hash,
-        data: {
-          ...safeRestData,
-          username: userData.username || name.toLowerCase().replace(/\s+/g, '_'),
-          skillLevel: userData.skillLevel || 'Bronze',
-          languagePreference: userData.languagePreference || 'hu',
-          location: userData.location || { lat: 0, lng: 0, city: '' },
-          friendIds: [], blockedUserIds: [], favoritePlayerIds: [],
-          notificationSettings: { nearGames: true, reminders: true, groups: true, friends: true, requests: true },
-          privacySettings: { publicProfile: true, showMatchHistory: true, showSocialLinks: true },
-          createdAt: new Date().toISOString(),
-        }
-      };
-      const created = await db('users', '', { method: 'POST', body: row });
-      const newRow = Array.isArray(created) ? created[0] : created;
-      const token = jwt.sign({ userId: id, email: normalizedEmail }, JWT_SECRET!, { expiresIn: "7d" });
-      const user = safeUser(newRow);
-      return jsonResponse(res, 201, { success: true, token, user, data: user });
-    }
-
-    // LOGIN
-    if (path === "/login" && method === "POST") {
-      const { email, password } = JSON.parse(body);
-      if (!email || !password)
-        return jsonResponse(res, 400, { success: false, message: "Email és jelszó kötelező" });
-
-      const normalizedEmail = (email || '').toLowerCase().trim();
-      const rows = await db('users', `email=eq.${encodeURIComponent(normalizedEmail)}&select=*`);
-      const row = rows[0];
-
-      // H-3: Timing-safe — always run bcrypt even if user not found
-      const hashToCheck = row ? row.password_hash : DUMMY_HASH;
-      const valid = await bcrypt.compare(password, hashToCheck);
-
-      if (!row || !valid)
-        return jsonResponse(res, 401, { success: false, message: "Hibás email vagy jelszó" });
-
-      const now = new Date().toISOString();
-      await db('users', `id=eq.${row.id}`, { method: 'PATCH', body: { data: { ...(row.data || {}), lastActive: now } } }).catch(() => {});
-      const token = jwt.sign({ userId: row.id, email: row.email }, JWT_SECRET!, { expiresIn: "7d" });
-      const user = safeUser({ ...row, data: { ...(row.data || {}), lastActive: now } });
-      return jsonResponse(res, 200, { success: true, token, user, data: user });
+    // REGISTER and LOGIN are now handled client-side via Supabase Auth
+    if (path === "/register" || path === "/login") {
+      return jsonResponse(res, 410, { success: false, message: "Auth is now handled via Supabase Auth client-side" });
     }
 
     // ME
