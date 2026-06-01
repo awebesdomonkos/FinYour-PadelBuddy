@@ -19,7 +19,7 @@ export default function CreateGroupModal({
     description: '',
     city: currentUser.location?.city || '',
     recommendedLevel: SkillLevel.Bronze,
-    visibility: 'public'
+    visibility: 'private'
   });
 
   return (
