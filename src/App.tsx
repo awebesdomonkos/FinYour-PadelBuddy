@@ -261,6 +261,13 @@ export default function App() {
     }
   }, [currentUser, authLoading, fetchData]);
 
+  // Refresh game data when switching to Saját meccsek so the list is always fresh
+  useEffect(() => {
+    if (activeTab === 'mygames' && currentUser?.id) {
+      fetchGames();
+    }
+  }, [activeTab, currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Realtime notifications via Supabase channel
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -1386,7 +1393,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl sm:rounded-[40px] p-4 sm:p-8 shadow-sm border border-[#141414]/5"
+              className="bg-white rounded-2xl sm:rounded-[40px] p-4 sm:p-8 shadow-sm border border-[#141414]/5 min-w-0 overflow-hidden"
             >
               <h2 className="text-xl sm:text-3xl font-black uppercase tracking-tight mb-4 sm:mb-8">{t('games.createGame')}</h2>
               <CreateGameForm 
@@ -1431,10 +1438,18 @@ export default function App() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {(() => {
-                  const hidden = currentUser?.hiddenFromHistory || [];
+                  const hidden: string[] = currentUser?.hiddenFromHistory || [];
+                  const uid = currentUser?.id || '';
                   const myGames = (games || [])
                     .filter(g => !hidden.includes(g.id))
-                    .filter(g => g.creatorId === currentUser?.id || (g.joinedPlayers || []).includes(currentUser?.id || ''))
+                    .filter(g =>
+                      uid &&
+                      (
+                        g.creatorId === uid ||
+                        g.creator_id === uid ||
+                        (g.joinedPlayers || []).includes(uid)
+                      )
+                    )
                     .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
 
                   return myGames.length > 0 ? myGames.map(game => (

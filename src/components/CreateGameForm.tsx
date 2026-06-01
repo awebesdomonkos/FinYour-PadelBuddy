@@ -115,8 +115,8 @@ export default function CreateGameForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-1 gap-4">
+    <form onSubmit={handleSubmit} className="space-y-5 w-full min-w-0">
+      <div className="grid grid-cols-1 gap-4 w-full">
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-widest opacity-40 px-1">{t('games.location')}</label>
           <div className="relative">
@@ -159,7 +159,8 @@ export default function CreateGameForm({
               required
               value={formData.datetime}
               onChange={e => setFormData({ ...formData, datetime: e.target.value })}
-              className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none"
+              className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none box-border"
+              style={{ maxWidth: '100%' }}
             />
           </div>
         </div>

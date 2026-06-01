@@ -224,23 +224,43 @@ export default function GameCard({
               </button>
             )}
 
-            {/* Future game join */}
-            {!isPast && (
+            {/* Future game: leave button for non-owner joined players */}
+            {!isPast && isJoined && !isOwner && (
               <button
-                disabled={isFull && !isJoined}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const lang = (currentUser as any)?.languagePreference || 'hu';
+                  const msg = lang === 'hu' ? 'Biztosan ki akarsz lépni ebből a meccsből?' : 'Are you sure you want to leave this game?';
+                  if (window.confirm(msg)) onLeave();
+                }}
+                className="px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap bg-red-50 text-red-500 hover:bg-red-100 active:scale-95 border border-red-100"
+              >
+                {(currentUser as any)?.languagePreference === 'en' ? 'Leave' : 'Kilépés'}
+              </button>
+            )}
+
+            {/* Future game join (owner or not-yet-joined) */}
+            {!isPast && !isJoined && (
+              <button
+                disabled={isFull}
                 onClick={(e) => { e.stopPropagation(); onJoin(); }}
                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${
-                  isJoined
-                    ? 'bg-[#141414] text-[#E2FF3B] cursor-default'
-                    : requestStatus === 'pending'
-                      ? 'bg-yellow-100 text-yellow-700 cursor-default'
-                      : isFull
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-[#E2FF3B] text-[#141414] hover:scale-105 active:scale-95 shadow-md shadow-[#E2FF3B]/20'
+                  requestStatus === 'pending'
+                    ? 'bg-yellow-100 text-yellow-700 cursor-default'
+                    : isFull
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-[#E2FF3B] text-[#141414] hover:scale-105 active:scale-95 shadow-md shadow-[#E2FF3B]/20'
                 }`}
               >
-                {isJoined ? t('common.joined') : requestStatus === 'pending' ? t('common.requested') : isFull ? t('common.full') : t('common.joinMatch')}
+                {requestStatus === 'pending' ? t('common.requested') : isFull ? t('common.full') : t('common.joinMatch')}
               </button>
+            )}
+
+            {/* Owner: show joined badge */}
+            {!isPast && isOwner && isJoined && (
+              <span className="px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-[#141414] text-[#E2FF3B] whitespace-nowrap">
+                {t('common.joined')}
+              </span>
             )}
           </div>
         </div>

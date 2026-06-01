@@ -9,19 +9,26 @@ export function AuthScreen({ onSelectMode, t, lang, onLangChange }: { onSelectMo
       <div className="absolute top-[10%] right-[-10%] w-[80%] h-[50%] bg-[#E2FF3B]/10 blur-[120px] rounded-full" />
       <div className="absolute bottom-[20%] left-[-5%] w-[60%] h-[40%] bg-[#E2FF3B]/5 blur-[100px] rounded-full" />
 
-      {/* Language selector - top right */}
-      <div className="absolute top-6 right-6 z-20 flex gap-2">
+      {/* Language selector - top right, safe-area aware, 44px touch targets */}
+      <div className="absolute z-30 flex gap-2"
+        style={{
+          top: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
+          right: 'calc(0.75rem + env(safe-area-inset-right, 0px))',
+        }}
+      >
         <button
           onClick={() => onLangChange('hu')}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center text-xl transition-all ${lang === 'hu' ? 'bg-[#E2FF3B] shadow-lg scale-110' : 'bg-white/10 hover:bg-white/20 opacity-50 hover:opacity-100'}`}
+          className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl transition-all ${lang === 'hu' ? 'bg-[#E2FF3B] shadow-lg scale-110' : 'bg-white/10 hover:bg-white/20 opacity-50 hover:opacity-100'}`}
           title="Magyar"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           🇭🇺
         </button>
         <button
           onClick={() => onLangChange('en')}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center text-xl transition-all ${lang === 'en' ? 'bg-[#E2FF3B] shadow-lg scale-110' : 'bg-white/10 hover:bg-white/20 opacity-50 hover:opacity-100'}`}
+          className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl transition-all ${lang === 'en' ? 'bg-[#E2FF3B] shadow-lg scale-110' : 'bg-white/10 hover:bg-white/20 opacity-50 hover:opacity-100'}`}
           title="English"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           🇬🇧
         </button>
