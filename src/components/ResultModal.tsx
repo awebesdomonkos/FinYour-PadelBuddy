@@ -17,7 +17,7 @@ export default function ResultModal({ game, onSave, onClose }: { game: Game, onS
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="relative bg-white w-full max-w-sm rounded-[32px] p-8 shadow-2xl overflow-hidden"
+        className="relative bg-white w-full max-w-sm rounded-2xl sm:rounded-[32px] p-4 sm:p-8 shadow-2xl overflow-hidden"
       >
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-black uppercase tracking-tight italic">Record Result</h3>

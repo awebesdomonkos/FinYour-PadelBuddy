@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS safe-area for PWA standalone mode */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 24px);
+}

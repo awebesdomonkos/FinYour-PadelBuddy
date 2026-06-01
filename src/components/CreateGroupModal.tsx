@@ -27,7 +27,7 @@ export default function CreateGroupModal({
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-        className="relative w-full max-w-md bg-[#F5F5F0] rounded-[40px] p-8 shadow-2xl overflow-hidden"
+        className="relative w-full max-w-md bg-[#F5F5F0] rounded-2xl sm:rounded-[40px] p-4 sm:p-8 shadow-2xl overflow-hidden"
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-black uppercase italic tracking-tighter">{t('groups.createGroup')}</h2>

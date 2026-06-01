@@ -25,7 +25,7 @@ export default function AttendanceModal({
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-[40px] w-full max-w-sm p-8 space-y-6 shadow-2xl"
+        className="bg-white rounded-2xl sm:rounded-[40px] w-full max-w-sm p-4 sm:p-8 space-y-6 shadow-2xl"
       >
         <div className="text-center space-y-2">
           <ShieldCheck className="w-12 h-12 text-orange-500 mx-auto" />

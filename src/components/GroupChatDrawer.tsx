@@ -61,7 +61,7 @@ export default function GroupChatDrawer({
         </div>
       </div>
 
-      <div className="p-4 bg-white border-t border-[#141414]/10">
+      <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-white border-t border-[#141414]/10">
         <div className="flex gap-2">
           <input
             type="text"

@@ -919,10 +919,13 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('games')}>
-              <div className="w-8 h-8 bg-[#141414] rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-[#141414] rounded-full flex items-center justify-center shrink-0">
                 <TrendingUp className="text-[#E2FF3B] w-5 h-5" />
               </div>
-              <span className="font-bold text-xl tracking-tight">Find Your Padel Buddy</span>
+              <span className="font-bold text-lg sm:text-xl tracking-tight">
+                <span className="sm:hidden">Padel Buddy</span>
+                <span className="hidden sm:block">Find Your Padel Buddy</span>
+              </span>
             </div>
 
             {/* Desktop Nav */}
@@ -987,7 +990,7 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 pb-32 md:pb-12 pt-6">
+      <main className="max-w-7xl mx-auto px-4 pb-[calc(8rem+env(safe-area-inset-bottom,0px))] md:pb-12 pt-6">
         <AnimatePresence mode="wait">
           {activeTab === 'games' && (
             <motion.div
@@ -1366,7 +1369,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-[40px] p-8 shadow-sm border border-[#141414]/5"
+              className="bg-white rounded-2xl sm:rounded-[40px] p-4 sm:p-8 shadow-sm border border-[#141414]/5"
             >
               <h2 className="text-3xl font-black uppercase tracking-tight mb-8">{t('games.createGame')}</h2>
               <CreateGameForm 
@@ -1409,7 +1412,7 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {(() => {
                   const hidden = currentUser?.hiddenFromHistory || [];
                   const myGames = (games || [])
@@ -2025,48 +2028,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Bottom Nav (Mobile Only) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-lg border-t border-[#141414]/10 flex justify-around items-center px-4 py-3 md:hidden">
-        <button 
-          onClick={() => setActiveTab('games')}
-          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'games' ? 'text-[#141414]' : 'text-[#141414]/30'}`}
-        >
-          <TrendingUp className={`w-5 h-5 ${activeTab === 'games' ? 'text-[#141414]' : ''}`} />
-          <span className="text-[10px] font-black uppercase tracking-widest">{t('nav.games')}</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('players')}
-          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'players' ? 'text-[#141414]' : 'text-[#141414]/30'}`}
-        >
-          <Users className={`w-5 h-5 ${activeTab === 'players' ? 'text-[#141414]' : ''}`} />
-          <span className="text-[10px] font-black uppercase tracking-widest">{t('nav.players')}</span>
-        </button>
-        <button 
-          onClick={() => {
-            setGameToEdit(null);
-            setActiveTab('create');
-          }}
-          className="flex flex-col items-center -mt-8"
-        >
-          <div className="w-12 h-12 bg-[#141414] rounded-[18px] flex items-center justify-center shadow-xl shadow-black/20 transform rotate-45 group active:scale-90 transition-all border border-[#E2FF3B]/20">
-            <Plus className="w-6 h-6 text-[#E2FF3B] -rotate-45" />
-          </div>
-        </button>
-        <button 
-          onClick={() => setActiveTab('groups')}
-          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'groups' ? 'text-[#141414]' : 'text-[#141414]/30'}`}
-        >
-          <MessageSquare className={`w-5 h-5 ${activeTab === 'groups' ? 'text-[#141414]' : ''}`} />
-          <span className="text-[10px] font-black uppercase tracking-widest">{t('nav.groups')}</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'profile' ? 'text-[#141414]' : 'text-[#141414]/30'}`}
-        >
-          <UserIcon className={`w-5 h-5 ${activeTab === 'profile' ? 'text-[#141414]' : ''}`} />
-          <span className="text-[10px] font-black uppercase tracking-widest">{t('nav.profile')}</span>
-        </button>
-      </nav>
     </div>
   );
 }
