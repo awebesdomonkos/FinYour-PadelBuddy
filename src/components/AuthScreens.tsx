@@ -260,7 +260,7 @@ export function LoginForm({
 }) {
   const [showPass, setShowPass] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
+  const [resetEmail, setResetEmail] = useState(formData.email || '');
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
@@ -384,7 +384,6 @@ export function LoginForm({
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#141414]/40" />
                       <input
                         type="email"
-                        required
                         placeholder={formData.email || (lang === 'hu' ? 'email@példa.hu' : 'your@email.com')}
                         value={resetEmail}
                         onChange={e => setResetEmail(e.target.value)}
