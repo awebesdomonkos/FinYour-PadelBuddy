@@ -256,7 +256,7 @@ export default function App() {
       }
     } else if (!authLoading) {
       setAuthMode('landing');
-      fetchData();
+      // Don't fetch data without auth — all endpoints now require authentication
     }
   }, [currentUser, authLoading, fetchData]);
 

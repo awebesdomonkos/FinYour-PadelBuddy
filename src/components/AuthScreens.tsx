@@ -1,6 +1,6 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Target, ShieldCheck, ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Target, ShieldCheck, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 export function AuthScreen({ onSelectMode, t, lang, onLangChange }: { onSelectMode: (mode: 'login' | 'register') => void, t: any, lang: string, onLangChange: (l: 'hu' | 'en') => void }) {
   return (
@@ -89,6 +89,19 @@ export function RegistrationForm({
   error: string | null,
   t: any
 }) {
+  const [showPass, setShowPass] = useState(false);
+  const [gdprAccepted, setGdprAccepted] = useState(false);
+  const lang = formData.lang || 'hu';
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!gdprAccepted) {
+      alert(lang === 'hu' ? 'Az adatvédelmi nyilatkozat elfogadása kötelező.' : 'You must accept the privacy policy.');
+      return;
+    }
+    onSubmit(e);
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F8F5] flex flex-col p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] font-sans overflow-y-auto">
       <div className="max-w-sm mx-auto w-full flex-1 flex flex-col py-8">
@@ -126,14 +139,15 @@ export function RegistrationForm({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          onSubmit={onSubmit}
-          className="bg-white p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] space-y-6"
+          onSubmit={handleSubmit}
+          className="bg-white p-4 sm:p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] space-y-5"
         >
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest px-1 opacity-40 text-[#141414]">{t('auth.usernameLabel')}</label>
             <input
               required
               type="text"
+              autoComplete="username"
               placeholder={t('auth.usernamePlaceholder')}
               value={formData.username}
               onChange={e => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/\s+/g, '') })}
@@ -146,6 +160,7 @@ export function RegistrationForm({
             <input
               required
               type="text"
+              autoComplete="name"
               placeholder={t('auth.namePlaceholder')}
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -158,6 +173,7 @@ export function RegistrationForm({
             <input
               required
               type="email"
+              autoComplete="email"
               placeholder={t('auth.emailPlaceholder')}
               value={formData.email}
               onChange={e => setFormData({ ...formData, email: e.target.value.toLowerCase().trim() })}
@@ -166,10 +182,12 @@ export function RegistrationForm({
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest px-1 opacity-40 text-[#141414]">{t('auth.phoneLabel')}</label>
+            <label className="text-[10px] font-black uppercase tracking-widest px-1 opacity-40 text-[#141414]">
+              {t('auth.phoneLabel')} <span className="normal-case font-normal opacity-60">({lang === 'hu' ? 'opcionális' : 'optional'})</span>
+            </label>
             <input
-              required
               type="tel"
+              autoComplete="tel"
               placeholder={t('auth.phonePlaceholder')}
               value={formData.phone}
               onChange={e => setFormData({ ...formData, phone: e.target.value })}
@@ -179,20 +197,42 @@ export function RegistrationForm({
 
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest px-1 opacity-40 text-[#141414]">{t('auth.passwordLabel')}</label>
-            <input
-              required
-              minLength={6}
-              type="password"
-              placeholder={t('auth.passwordPlaceholder')}
-              value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
-              className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 px-6 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none font-bold text-[#141414]"
-            />
+            <div className="relative">
+              <input
+                required
+                minLength={6}
+                type={showPass ? 'text' : 'password'}
+                autoComplete="new-password"
+                placeholder={t('auth.passwordPlaceholder')}
+                value={formData.password}
+                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-6 pr-14 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none font-bold text-[#141414]"
+              />
+              <button type="button" onClick={() => setShowPass(v => !v)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 opacity-40 hover:opacity-70">
+                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
+
+          {/* GDPR checkbox */}
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${gdprAccepted ? 'bg-[#141414] border-[#141414]' : 'border-[#141414]/20 group-hover:border-[#141414]/50'}`}
+              onClick={() => setGdprAccepted(v => !v)}>
+              {gdprAccepted && <svg className="w-3 h-3 text-[#E2FF3B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+            </div>
+            <span className="text-xs text-[#141414]/60 leading-relaxed" onClick={() => setGdprAccepted(v => !v)}>
+              {lang === 'hu'
+                ? <>Elolvastam és elfogadom az <a href="/privacy" target="_blank" className="underline font-bold text-[#141414]" onClick={e => e.stopPropagation()}>Adatvédelmi nyilatkozatot</a>. Az adatkezelés célja a szolgáltatás nyújtása.</>
+                : <>I have read and accept the <a href="/privacy" target="_blank" className="underline font-bold text-[#141414]" onClick={e => e.stopPropagation()}>Privacy Policy</a>. Data is processed to provide the service.</>
+              }
+            </span>
+          </label>
 
           <button
             type="submit"
-            className="w-full bg-[#141414] text-[#E2FF3B] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10 mt-4"
+            disabled={!gdprAccepted}
+            className="w-full bg-[#141414] text-[#E2FF3B] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10 disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed"
           >
             {t('auth.register')}
           </button>
@@ -217,6 +257,10 @@ export function LoginForm({
   error: string | null,
   t: any
 }) {
+  const [showPass, setShowPass] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const lang = formData.lang || 'hu';
+
   return (
     <div className="min-h-screen bg-[#F8F8F5] flex flex-col p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] font-sans overflow-y-auto">
       <div className="max-w-sm mx-auto w-full flex-1 flex flex-col py-8 justify-center">
@@ -255,13 +299,14 @@ export function LoginForm({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           onSubmit={onSubmit}
-          className="bg-white p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] space-y-6"
+          className="bg-white p-4 sm:p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] space-y-6"
         >
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest px-1 opacity-40 text-[#141414]">{t('auth.emailLabel')}</label>
             <input
               required
               type="email"
+              autoComplete="email"
               placeholder={t('auth.emailPlaceholder')}
               value={formData.email}
               onChange={e => setFormData({ ...formData, email: e.target.value.toLowerCase().trim() })}
@@ -270,20 +315,49 @@ export function LoginForm({
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest px-1 opacity-40 text-[#141414]">{t('auth.passwordLabel')}</label>
-            <input
-              required
-              type="password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
-              className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 px-6 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none font-bold text-[#141414]"
-            />
+            <div className="flex justify-between items-center px-1">
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[#141414]">{t('auth.passwordLabel')}</label>
+              <button type="button" onClick={() => setShowForgot(v => !v)}
+                className="text-[10px] font-black uppercase tracking-widest text-[#141414]/40 hover:text-[#141414] transition-colors">
+                {lang === 'hu' ? 'Elfelejtett jelszó?' : 'Forgot password?'}
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                required
+                type={showPass ? 'text' : 'password'}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-6 pr-14 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none font-bold text-[#141414]"
+              />
+              <button type="button" onClick={() => setShowPass(v => !v)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 opacity-40 hover:opacity-70">
+                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
+
+          <AnimatePresence>
+            {showForgot && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-[#E2FF3B]/20 rounded-2xl p-4 text-xs text-[#141414]/70 leading-relaxed"
+              >
+                {lang === 'hu'
+                  ? <>Jelszó visszaállításhoz írj a <span className="font-black text-[#141414]">padelbuddy.app@gmail.com</span> email címre a regisztrált email fiókodból, és küldünk egy új jelszót.</>
+                  : <>To reset your password, email <span className="font-black text-[#141414]">padelbuddy.app@gmail.com</span> from your registered email and we'll send you a new password.</>
+                }
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <button
             type="submit"
-            className="w-full bg-[#141414] text-[#E2FF3B] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10 mt-4"
+            className="w-full bg-[#141414] text-[#E2FF3B] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10"
           >
             {t('auth.login')}
           </button>

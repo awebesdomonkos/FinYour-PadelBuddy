@@ -1,6 +1,7 @@
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
+import PrivacyPolicy from './components/PrivacyPolicy.tsx';
 import './index.css';
 import { AuthProvider } from './context/AuthContext.tsx';
 
@@ -30,10 +31,16 @@ class RootErrorBoundary extends React.Component<{children: React.ReactNode}, {ha
   }
 }
 
+const isPrivacyPage = window.location.pathname === '/privacy';
+
 createRoot(document.getElementById('root')!).render(
   <RootErrorBoundary>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    {isPrivacyPage ? (
+      <PrivacyPolicy onBack={() => window.history.back()} />
+    ) : (
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    )}
   </RootErrorBoundary>
 );
