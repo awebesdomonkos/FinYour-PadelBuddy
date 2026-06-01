@@ -167,10 +167,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!authUser || authUser.id !== itemId) return jsonResponse(res, 403, { success: false, message: "Forbidden" });
         const payload = JSON.parse(body);
         const rows = await db('users', `id=eq.${itemId}&select=*`);
-        if (!rows[0]) return jsonResponse(res, 404, { success: false, message: "User not found" });
-        const currentData = rows[0].data || {};
+        const currentData = rows[0]?.data || {};
         const { email, password, password_hash, id, name, ...payloadRest } = payload;
         const nameUpdate = name ? { name } : {};
+        if (!rows[0]) {
+          // Profile row doesn't exist yet (email-confirm registration flow) — create it
+          const upserted = await db('users', '', {
+            method: 'POST',
+            body: {
+              id: itemId,
+              email: authUser.email || '',
+              name: name || authUser.name || '',
+              data: { ...payloadRest, lastActive: new Date().toISOString() },
+            },
+          });
+          const user = safeUser(Array.isArray(upserted) ? upserted[0] : upserted);
+          return jsonResponse(res, 200, { success: true, data: user, user });
+        }
         const updated = await db('users', `id=eq.${itemId}`, { method: 'PATCH', body: { ...nameUpdate, data: { ...currentData, ...payloadRest, lastActive: new Date().toISOString() } } });
         const user = safeUser(Array.isArray(updated) ? updated[0] : updated);
         return jsonResponse(res, 200, { success: true, data: user, user });
