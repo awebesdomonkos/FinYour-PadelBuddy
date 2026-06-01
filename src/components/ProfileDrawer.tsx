@@ -82,7 +82,7 @@ export default function ProfileDrawer({
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="absolute top-4 right-4 w-10 h-10 bg-black/20 backdrop-blur-md text-white rounded-full flex items-center justify-center"><X className="w-5 h-5"/></button>
+          <button onClick={onClose} className="absolute top-[calc(1rem+env(safe-area-inset-top,0px))] right-4 w-10 h-10 bg-black/20 backdrop-blur-md text-white rounded-full flex items-center justify-center"><X className="w-5 h-5"/></button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-12">

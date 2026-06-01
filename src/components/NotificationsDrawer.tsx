@@ -80,7 +80,7 @@ export default function NotificationsDrawer({
         className="relative w-full max-w-sm bg-[#F8F8F5] h-full shadow-2xl flex flex-col"
       >
         {/* Header */}
-        <div className="p-6 pb-4 bg-[#141414] text-white">
+        <div className="p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-4 bg-[#141414] text-white">
           <div className="flex justify-between items-center mb-1">
             <h2 className="text-xl font-black uppercase tracking-tight">{t('notifications.title')}</h2>
             <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">

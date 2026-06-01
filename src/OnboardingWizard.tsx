@@ -90,7 +90,7 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
   return (
     <div className="min-h-screen bg-[#141414] flex flex-col">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 pt-10 pb-4">
+      <div className="flex items-center justify-between px-6 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] pb-4">
         <button onClick={onLogout} className="text-white/30 hover:text-white/60 transition-colors p-2">
           <LogOut className="w-4 h-4" />
         </button>

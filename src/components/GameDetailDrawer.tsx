@@ -49,7 +49,7 @@ export default function GameDetailDrawer({
         exit={{ x: '100%' }}
         className="relative w-full max-w-md bg-[#F5F5F0] h-full shadow-2xl flex flex-col overflow-hidden"
       >
-        <div className="p-6 flex justify-between items-center bg-white border-b border-[#141414]/5">
+        <div className="p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] flex justify-between items-center bg-white border-b border-[#141414]/5">
           <button onClick={onClose} className="p-2 -ml-2 hover:bg-[#141414]/5 rounded-full"><ArrowLeft className="w-5 h-5"/></button>
           <h3 className="text-xl font-black uppercase tracking-tight italic">{t('games.title')}</h3>
           {onDelete ? (

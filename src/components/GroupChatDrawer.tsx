@@ -25,7 +25,7 @@ export default function GroupChatDrawer({
       exit={{ x: '100%' }}
       className="fixed inset-y-0 right-0 w-full max-w-sm bg-[#F5F5F0] z-[110] shadow-2xl border-l border-[#141414]/10 flex flex-col"
     >
-      <div className="p-4 bg-white border-b border-[#141414]/10 flex items-center gap-4">
+      <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] bg-white border-b border-[#141414]/10 flex items-center gap-4">
         <button onClick={onClose} className="p-2 hover:bg-[#141414]/5 rounded-xl">
           <ArrowLeft className="w-5 h-5" />
         </button>

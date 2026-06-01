@@ -915,7 +915,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#F5F5F0] text-[#141414] font-sans selection:bg-[#E2FF3B]">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#141414]/10 px-4 py-3">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#141414]/10 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('games')}>
@@ -1873,7 +1873,7 @@ export default function App() {
           <div className="fixed inset-0 z-[60] flex justify-end">
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSelectedGroupDetail(null)} />
             <div className="relative w-full max-w-sm bg-[#F8F8F5] h-full shadow-2xl flex flex-col overflow-y-auto">
-              <div className="bg-[#141414] text-white p-5">
+              <div className="bg-[#141414] text-white p-5 pt-[calc(1.25rem+env(safe-area-inset-top,0px))]">
                 <div className="flex items-center gap-3">
                   <button onClick={() => setSelectedGroupDetail(null)} className="p-2 hover:bg-white/10 rounded-xl">
                     <ArrowLeft className="w-5 h-5" />

@@ -62,7 +62,7 @@ export default function ChatDrawer({
       className="fixed inset-y-0 right-0 w-full max-w-sm bg-[#F8F8F5] z-[60] shadow-2xl border-l border-[#141414]/10 flex flex-col"
     >
       {/* Header */}
-      <div className="p-4 bg-[#141414] text-white">
+      <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] bg-[#141414] text-white">
         <div className="flex items-center gap-3 mb-3">
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
             <ArrowLeft className="w-5 h-5" />

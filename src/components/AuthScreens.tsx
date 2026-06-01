@@ -4,7 +4,7 @@ import { Target, ShieldCheck, ArrowLeft } from 'lucide-react';
 
 export function AuthScreen({ onSelectMode, t, lang, onLangChange }: { onSelectMode: (mode: 'login' | 'register') => void, t: any, lang: string, onLangChange: (l: 'hu' | 'en') => void }) {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col p-6 overflow-hidden relative">
+    <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] overflow-hidden relative">
       <div className="absolute top-[10%] right-[-10%] w-[80%] h-[50%] bg-[#E2FF3B]/10 blur-[120px] rounded-full" />
       <div className="absolute bottom-[20%] left-[-5%] w-[60%] h-[40%] bg-[#E2FF3B]/5 blur-[100px] rounded-full" />
 
@@ -90,7 +90,7 @@ export function RegistrationForm({
   t: any
 }) {
   return (
-    <div className="min-h-screen bg-[#F8F8F5] flex flex-col p-6 font-sans overflow-y-auto">
+    <div className="min-h-screen bg-[#F8F8F5] flex flex-col p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] font-sans overflow-y-auto">
       <div className="max-w-sm mx-auto w-full flex-1 flex flex-col py-8">
         <motion.button
           initial={{ opacity: 0, x: -10 }}
@@ -218,7 +218,7 @@ export function LoginForm({
   t: any
 }) {
   return (
-    <div className="min-h-screen bg-[#F8F8F5] flex flex-col p-6 font-sans overflow-y-auto">
+    <div className="min-h-screen bg-[#F8F8F5] flex flex-col p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] font-sans overflow-y-auto">
       <div className="max-w-sm mx-auto w-full flex-1 flex flex-col py-8 justify-center">
         <motion.button
           initial={{ opacity: 0, x: -10 }}
