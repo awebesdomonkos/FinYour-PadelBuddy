@@ -5,6 +5,7 @@ import PrivacyPolicy from './components/PrivacyPolicy.tsx';
 import ResetPasswordPage from './components/ResetPasswordPage.tsx';
 import './index.css';
 import { AuthProvider } from './context/AuthContext.tsx';
+import { initSupabaseClient } from './lib/supabase.ts';
 
 class RootErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
   constructor(props: any) {
@@ -34,18 +35,37 @@ class RootErrorBoundary extends React.Component<{children: React.ReactNode}, {ha
 
 const pathname = window.location.pathname;
 
-createRoot(document.getElementById('root')!).render(
-  <RootErrorBoundary>
-    {pathname === '/privacy' ? (
-      <PrivacyPolicy onBack={() => window.history.back()} />
-    ) : pathname === '/reset-password' ? (
-      <AuthProvider>
-        <ResetPasswordPage />
-      </AuthProvider>
-    ) : (
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    )}
-  </RootErrorBoundary>
-);
+// Init Supabase client (fetches config from /api/config if VITE_ vars not set)
+// then mount the React tree
+initSupabaseClient()
+  .then(() => {
+    createRoot(document.getElementById('root')!).render(
+      <RootErrorBoundary>
+        {pathname === '/privacy' ? (
+          <PrivacyPolicy onBack={() => window.history.back()} />
+        ) : pathname === '/reset-password' ? (
+          <AuthProvider>
+            <ResetPasswordPage />
+          </AuthProvider>
+        ) : (
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        )}
+      </RootErrorBoundary>
+    );
+  })
+  .catch((err) => {
+    console.error('Failed to initialize Supabase:', err);
+    document.getElementById('root')!.innerHTML = `
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif;background:#F8F8F5;">
+        <div style="text-align:center;padding:2rem;">
+          <div style="font-size:3rem;margin-bottom:1rem">⚠️</div>
+          <h2 style="font-weight:900;text-transform:uppercase;margin-bottom:.5rem">Konfigurációs hiba</h2>
+          <p style="opacity:.5;margin-bottom:1.5rem">Nem sikerült betölteni a szerver konfigurációt. Kérjük próbáld újra.</p>
+          <button onclick="location.reload()" style="background:#141414;color:#E2FF3B;border:none;padding:1rem 2rem;border-radius:1rem;font-weight:900;cursor:pointer;text-transform:uppercase;letter-spacing:.1em">
+            Újratöltés
+          </button>
+        </div>
+      </div>`;
+  });

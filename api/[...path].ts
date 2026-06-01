@@ -127,6 +127,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return jsonResponse(res, 410, { success: false, message: "Auth is now handled via Supabase Auth client-side" });
     }
 
+    // Public config for frontend Supabase client init (exposes only public/anon values)
+    if (path === "/config" && method === "GET") {
+      return jsonResponse(res, 200, {
+        supabaseUrl: SB_URL,
+        supabaseAnonKey: process.env.SUPABASE_ANON_KEY || SB_KEY,
+      });
+    }
+
     // ME
     if (path === "/me" && method === "GET") {
       if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
