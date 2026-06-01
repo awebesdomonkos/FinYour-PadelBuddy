@@ -1371,7 +1371,7 @@ export default function App() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-white rounded-2xl sm:rounded-[40px] p-4 sm:p-8 shadow-sm border border-[#141414]/5"
             >
-              <h2 className="text-3xl font-black uppercase tracking-tight mb-8">{t('games.createGame')}</h2>
+              <h2 className="text-xl sm:text-3xl font-black uppercase tracking-tight mb-4 sm:mb-8">{t('games.createGame')}</h2>
               <CreateGameForm 
                 creatorId={currentUser?.id || ''} 
                 token={token || ''}
@@ -1508,7 +1508,7 @@ export default function App() {
                     lang={lang}
                   />
 
-                  <div className="flex flex-col items-center py-6 text-center relative">
+                  <div className="flex flex-col items-center py-4 text-center relative">
                     <button 
                       onClick={() => setIsEditingProfile(true)}
                       className="absolute top-0 right-0 p-3 bg-white shadow-sm border border-[#141414]/5 rounded-2xl hover:scale-105 transition-transform"
@@ -1558,22 +1558,22 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2 py-4 border-b border-[#141414]/5">
-                      <div className="text-center p-2 bg-[#141414]/5 rounded-2xl">
-                        <p className="text-[8px] font-black uppercase opacity-40">{t('profile.playedGames')}</p>
-                        <p className="text-xl font-black">{currentUser?.attendedGamesCount || 0}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4 border-b border-[#141414]/5">
+                      <div className="text-center p-3 bg-[#141414]/5 rounded-2xl">
+                        <p className="text-[10px] font-black uppercase opacity-40 leading-tight mb-1">{t('profile.playedGames')}</p>
+                        <p className="text-2xl font-black">{currentUser?.attendedGamesCount || 0}</p>
                       </div>
-                      <div className="text-center p-2 bg-[#141414]/5 rounded-2xl">
-                        <p className="text-[8px] font-black uppercase opacity-40">{t('nav.groups')}</p>
-                        <p className="text-xl font-black">{(groups || []).filter(g => currentUser && (g.memberIds || []).includes(currentUser.id)).length}</p>
+                      <div className="text-center p-3 bg-[#141414]/5 rounded-2xl">
+                        <p className="text-[10px] font-black uppercase opacity-40 leading-tight mb-1">{t('nav.groups')}</p>
+                        <p className="text-2xl font-black">{(groups || []).filter(g => currentUser && (g.memberIds || []).includes(currentUser.id)).length}</p>
                       </div>
-                      <div className="text-center p-2 bg-[#141414]/5 rounded-2xl">
-                        <p className="text-[8px] font-black uppercase opacity-40">{t('profile.friends')}</p>
-                        <p className="text-xl font-black">{currentUser?.friendIds?.length || 0}</p>
+                      <div className="text-center p-3 bg-[#141414]/5 rounded-2xl">
+                        <p className="text-[10px] font-black uppercase opacity-40 leading-tight mb-1">{t('profile.friends')}</p>
+                        <p className="text-2xl font-black">{currentUser?.friendIds?.length || 0}</p>
                       </div>
-                      <div className="text-center p-2 bg-[#141414]/5 rounded-2xl">
-                        <p className="text-[8px] font-black uppercase opacity-40">{t('profile.skillLevel')}</p>
-                        <p className="text-xl font-black truncate">{currentUser?.skillLevel}</p>
+                      <div className="text-center p-3 bg-[#141414]/5 rounded-2xl">
+                        <p className="text-[10px] font-black uppercase opacity-40 leading-tight mb-1">{t('profile.skillLevel')}</p>
+                        <p className="text-2xl font-black">{currentUser?.skillLevel}</p>
                       </div>
                     </div>
 

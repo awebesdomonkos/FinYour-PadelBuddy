@@ -115,8 +115,8 @@ export default function CreateGameForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-3xl border border-[#141414]/5">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-widest opacity-40 px-1">{t('games.location')}</label>
           <div className="relative">
@@ -149,7 +149,7 @@ export default function CreateGameForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-widest opacity-40 px-1">{t('common.datetime')}</label>
           <div className="relative">
@@ -180,7 +180,7 @@ export default function CreateGameForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
           <div className="flex justify-between items-center px-1">
             <label className="text-xs font-bold uppercase tracking-widest opacity-40">{t('games.level')}</label>
