@@ -127,12 +127,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return jsonResponse(res, 410, { success: false, message: "Auth is now handled via Supabase Auth client-side" });
     }
 
-    // Public config for frontend Supabase client init (exposes only public/anon values)
+    // Public config for frontend Supabase client init — ONLY exposes anon key
     if (path === "/config" && method === "GET") {
-      return jsonResponse(res, 200, {
-        supabaseUrl: SB_URL,
-        supabaseAnonKey: process.env.SUPABASE_ANON_KEY || SB_KEY,
-      });
+      const anonKey = process.env.SUPABASE_ANON_KEY || '';
+      // Safety check: never expose service_role key. Decode JWT role claim (no sig needed).
+      let isSafe = true;
+      try {
+        const payload = JSON.parse(Buffer.from((anonKey.split('.')[1] || ''), 'base64').toString());
+        if (payload.role === 'service_role') isSafe = false;
+      } catch { isSafe = false; }
+      if (!isSafe || !anonKey) {
+        return jsonResponse(res, 503, { error: 'SUPABASE_ANON_KEY not configured. Add it to Vercel env vars.' });
+      }
+      return jsonResponse(res, 200, { supabaseUrl: SB_URL, supabaseAnonKey: anonKey });
     }
 
     // ME
