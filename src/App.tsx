@@ -1467,9 +1467,9 @@ export default function App() {
                       {/* Swipe/hover delete overlay for non-owners */}
                       {game.creatorId !== currentUser?.id && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleHideFromHistory(game.id); }}
+                          onClick={(e) => { e.stopPropagation(); handleLeaveGame(game.id); }}
                           className="absolute top-2 left-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 bg-red-500 text-white rounded-lg flex items-center justify-center shadow-md"
-                          title={lang === 'hu' ? 'Eltávolítás az előzményekből' : 'Remove from history'}
+                          title={lang === 'hu' ? 'Kilépés a meccsből' : 'Leave game'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
