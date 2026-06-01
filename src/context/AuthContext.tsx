@@ -16,6 +16,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
   emailConfirmationPending: boolean;
+  clearEmailConfirmationPending: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -144,10 +145,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setCurrentUser(prev => prev ? { ...prev, ...data } : prev);
   };
 
+  const clearEmailConfirmationPending = () => setEmailConfirmationPending(false);
+
   return (
     <AuthContext.Provider value={{
       currentUser, token, loading, login, register, logout, updateUser,
-      authError, setAuthError, resetPassword, updatePassword, emailConfirmationPending,
+      authError, setAuthError, resetPassword, updatePassword,
+      emailConfirmationPending, clearEmailConfirmationPending,
     }}>
       {children}
     </AuthContext.Provider>

@@ -58,7 +58,7 @@ import { OnboardingWizard } from './OnboardingWizard.tsx';
 import { supabase } from './lib/supabase.ts';
 
 export default function App() {
-  const { currentUser, token, login, register, logout, updateUser, authError, setAuthError, loading: authLoading, emailConfirmationPending } = useAuth();
+  const { currentUser, token, login, register, logout, updateUser, authError, setAuthError, loading: authLoading, emailConfirmationPending, clearEmailConfirmationPending } = useAuth();
   const [activeTab, setActiveTab] = useState<'games' | 'players' | 'profile' | 'create' | 'groups' | 'mygames'>('games');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [games, setGames] = useState<Game[]>([]);
@@ -863,7 +863,7 @@ export default function App() {
 
   if (!currentUser) {
     if (emailConfirmationPending) {
-      return <EmailConfirmationScreen onBack={() => setAuthMode('login')} lang={lang as 'hu' | 'en'} />;
+      return <EmailConfirmationScreen onBack={() => { clearEmailConfirmationPending(); setAuthMode('login'); }} lang={lang as 'hu' | 'en'} />;
     }
     if (authMode === 'register') {
       return (
