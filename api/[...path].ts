@@ -24,6 +24,20 @@ const jsonResponse = (res: VercelResponse, statusCode: number, body: any) => {
   return res.status(statusCode).json(body);
 };
 
+// Supabase unreachable or erroring (e.g. project paused) — surfaced to the client as 503.
+class UpstreamError extends Error {}
+
+async function upstreamFetch(url: string, init: RequestInit): Promise<Response> {
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch (err) {
+    throw new UpstreamError(`Upstream unreachable: ${url.split('?')[0]} (${(err as Error)?.message})`);
+  }
+  if (res.status >= 500) throw new UpstreamError(`Upstream ${res.status}: ${url.split('?')[0]}`);
+  return res;
+}
+
 async function db(table: string, query: string = '', options: { method?: string; body?: any } = {}) {
   const { method = 'GET', body } = options;
   const url = `${SB_URL}/rest/v1/${table}${query ? '?' + query : ''}`;
@@ -33,7 +47,7 @@ async function db(table: string, query: string = '', options: { method?: string;
     'Content-Type': 'application/json',
     'Prefer': 'return=representation',
   };
-  const res = await fetch(url, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+  const res = await upstreamFetch(url, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`DB ${method} /${table}: ${res.status} ${err}`);
@@ -93,25 +107,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // C-4: /debug endpoint removed entirely
 
-    // verifyAuth — validates Supabase access token, then loads user row
+    // verifyAuth — validates Supabase access token, then loads user row.
+    // An invalid token yields null (→ 401); an unreachable Supabase throws UpstreamError (→ 503),
+    // so clients can tell "logged out" apart from "backend down".
     const verifyAuth = async (tokenStr?: string) => {
       if (!tokenStr) return null;
-      try {
-        // Ask Supabase Auth to validate the token and return the user
-        const resp = await fetch(`${SB_URL}/auth/v1/user`, {
-          headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${tokenStr}` },
-        });
-        if (!resp.ok) return null;
-        const authUser = await resp.json();
-        const userId = authUser?.id;
-        if (!userId) return null;
-        const rows = await db('users', `id=eq.${userId}&select=*`);
-        if (rows && rows.length > 0) return rows[0];
-        // User authenticated but no profile row yet — return minimal row
-        return { id: userId, email: authUser.email || '', name: authUser.user_metadata?.name || '', data: {} };
-      } catch {
-        return null;
-      }
+      const resp = await upstreamFetch(`${SB_URL}/auth/v1/user`, {
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${tokenStr}` },
+      });
+      if (!resp.ok) return null;
+      const authUser = await resp.json().catch(() => null);
+      const userId = authUser?.id;
+      if (!userId) return null;
+      const rows = await db('users', `id=eq.${userId}&select=*`);
+      if (rows && rows.length > 0) return rows[0];
+      // User authenticated but no profile row yet — return minimal row
+      return { id: userId, email: authUser.email || '', name: authUser.user_metadata?.name || '', data: {} };
     };
 
     const authHeader = (req.headers.authorization || req.headers.Authorization || '') as string;
@@ -589,6 +600,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     console.error('API Error:', error);
     // C-5: Never expose error details to client
+    if (error instanceof UpstreamError) {
+      return jsonResponse(res, 503, { success: false, message: 'Service temporarily unavailable' });
+    }
     return jsonResponse(res, 500, { success: false, message: 'Internal server error' });
   }
 }

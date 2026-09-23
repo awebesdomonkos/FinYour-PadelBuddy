@@ -56,6 +56,7 @@ import GameDetailDrawer from './components/GameDetailDrawer.tsx';
 import RatingModal from './components/RatingModal.tsx';
 import { OnboardingWizard } from './OnboardingWizard.tsx';
 import { supabase } from './lib/supabase.ts';
+import { trackedFetch, registerRetry } from './lib/connectivityStore.ts';
 
 export default function App() {
   const { currentUser, token, login, register, logout, updateUser, authError, setAuthError, loading: authLoading, emailConfirmationPending, clearEmailConfirmationPending } = useAuth();
@@ -98,14 +99,16 @@ export default function App() {
   const [selectedGroupDetail, setSelectedGroupDetail] = useState<Group | null>(null);
   const [reminderGame, setReminderGame] = useState<Game | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (msg: string, duration = 2500) => {
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), duration);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToastMsg(null), duration);
   };
 
   const safeFetch = async (url: string, options: RequestInit = {}) => {
-    const response = await fetch(url, options);
+    const response = await trackedFetch(url, options);
     const text = await response.text();
     let data;
     try {
@@ -175,8 +178,8 @@ export default function App() {
     } catch (err) { console.error("Failed to fetch notifications", err); }
   }, [authHeaders]);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
+  const fetchData = useCallback(async (opts: { silent?: boolean } = {}) => {
+    if (!opts.silent) setIsLoading(true);
     try {
       const headers = authHeaders();
       const [gamesData, playersData, groupsData, clubsData, notifsData] = await Promise.all([
@@ -207,6 +210,15 @@ export default function App() {
       setLang('hu');
     }
   }, [currentUser?.languagePreference, setLang]);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    return registerRetry(() => fetchData({ silent: true }));
+  }, [currentUser?.id, fetchData]);
 
   // Keep selectedGame in sync with games array; close modals if game was deleted
   useEffect(() => {
@@ -2012,7 +2024,7 @@ export default function App() {
             onRead={async (id) => {
               setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
               try {
-                await fetch(`/api/notifications/${id}/read`, {
+                await trackedFetch(`/api/notifications/${id}/read`, {
                   method: 'POST',
                   headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -2070,6 +2082,13 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      <div role="status" aria-live="polite" className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] w-max max-w-[calc(100vw-2rem)] pointer-events-none">
+        {toastMsg && (
+          <div className="bg-[#141414] text-white text-sm font-bold px-6 py-3 rounded-2xl shadow-xl text-center">
+            {toastMsg}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

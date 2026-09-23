@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Clock, Calendar, Target, TrendingUp, Users, Award, Search, User as UserIcon, Check } from 'lucide-react';
 import { Game, Group, User, GameType, SkillLevel } from '../types.ts';
+import { trackedFetch } from '../lib/connectivityStore.ts';
 
 export default function CreateGameForm({
   creatorId,
@@ -87,7 +88,7 @@ export default function CreateGameForm({
     try {
       const url = gameToEdit ? `/api/games/${gameToEdit.id}` : '/api/games';
       const method = gameToEdit ? 'PUT' : 'POST';
-      const res = await fetch(url, {
+      const res = await trackedFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ ...formData, creator_id: creatorId })

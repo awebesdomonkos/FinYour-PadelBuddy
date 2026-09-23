@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { Session } from '@supabase/supabase-js';
+import { Session, isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { reportFailure, reportSuccess, registerRetry } from '../lib/connectivityStore';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -21,12 +22,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const UNREACHABLE_MSG = 'A szerver jelenleg nem érhető el. Próbáld újra pár perc múlva.';
+const SLOW_START_MS = 8_000;
+
+class BackendUnreachableError extends Error {}
+
+// Plain boolean (not a type guard): the guard would narrow AuthError to `never` in the else branch.
+const isUnreachable = (error: unknown): boolean => isAuthRetryableFetchError(error);
+
+// null = the profile row doesn't exist yet (legitimate, e.g. right after email-confirm signup).
+// Throws BackendUnreachableError when Supabase can't be reached, so callers don't mistake an outage for a missing profile.
 async function fetchUserProfile(userId: string): Promise<User | null> {
-  const { data, error } = await supabase
+  const { data, error, status } = await supabase
     .from('users')
     .select('*')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
+  if (error && (status === 0 || status >= 500)) {
+    reportFailure();
+    throw new BackendUnreachableError(error.message);
+  }
+  reportSuccess();
   if (error || !data) return null;
   const row = data as any;
   return { id: row.id, email: row.email, name: row.name, ...(row.data || {}) } as User;
@@ -46,30 +62,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     setToken(session.access_token);
-    const profile = await fetchUserProfile(session.user.id);
-    if (profile) {
-      setCurrentUser(profile);
-    } else {
-      // Profile row doesn't exist yet — build minimal user from auth metadata
-      const meta = session.user.user_metadata || {};
-      setCurrentUser({
-        id: session.user.id,
-        email: session.user.email || '',
-        name: meta.name || meta.full_name || session.user.email || '',
-      } as User);
+    const meta = session.user.user_metadata || {};
+    const minimalUser = {
+      id: session.user.id,
+      email: session.user.email || '',
+      name: meta.name || meta.full_name || session.user.email || '',
+    } as User;
+    try {
+      const profile = await fetchUserProfile(session.user.id);
+      // No profile row yet — fall back to auth metadata
+      setCurrentUser(profile || minimalUser);
+    } catch (err) {
+      if (!(err instanceof BackendUnreachableError)) throw err;
+      // Keep the already-loaded profile during an outage instead of degrading it
+      setCurrentUser(prev => (prev?.id === session.user.id ? prev : minimalUser));
     }
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      hydrateUser(session).finally(() => setLoading(false));
-    });
+    let unregisterRetry: (() => void) | null = null;
+
+    const loadSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      // A retryable error means Supabase is unreachable; the stored session is kept,
+      // so the user is NOT logged out — retry instead of showing the login screen as if they were.
+      if (error && isUnreachable(error)) {
+        reportFailure({ definite: true });
+        if (!unregisterRetry) unregisterRetry = registerRetry(loadSession);
+        return;
+      }
+      unregisterRetry?.();
+      unregisterRetry = null;
+      await hydrateUser(session);
+    };
+
+    // supabase-js retries a failing token refresh for ~25s before giving up; don't hold the
+    // user on a spinner that long — surface the outage and let the refresh continue in the background.
+    const slowStartTimer = setTimeout(() => {
+      reportFailure({ definite: true });
+      if (!unregisterRetry) unregisterRetry = registerRetry(loadSession);
+      setLoading(false);
+    }, SLOW_START_MS);
+
+    loadSession()
+      .catch(err => console.error('Session load failed', err))
+      .finally(() => {
+        clearTimeout(slowStartTimer);
+        setLoading(false);
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      hydrateUser(session);
+      hydrateUser(session).catch(err => console.error('Session hydrate failed', err));
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      unregisterRetry?.();
+    };
   }, [hydrateUser]);
 
   const logout = useCallback(() => {
@@ -82,7 +131,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setAuthError(null);
     const { data, error } = await supabase.auth.signInWithPassword({ email: email.toLowerCase().trim(), password });
     if (error) {
-      const msg = error.message === 'Email not confirmed'
+      const unreachable = isUnreachable(error);
+      if (unreachable) reportFailure({ definite: true });
+      const msg = unreachable
+        ? UNREACHABLE_MSG
+        : error.message === 'Email not confirmed'
         ? (email.includes('@') ? 'Erősítsd meg az email-címed! Ellenőrizd a postaládád.' : error.message)
         : error.message;
       setAuthError(msg);
@@ -104,8 +157,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       },
     });
     if (error) {
-      setAuthError(error.message);
-      throw new Error(error.message);
+      const unreachable = isUnreachable(error);
+      if (unreachable) reportFailure({ definite: true });
+      const msg = unreachable ? UNREACHABLE_MSG : error.message;
+      setAuthError(msg);
+      throw new Error(msg);
     }
 
     // If session is null the user needs to confirm their email
