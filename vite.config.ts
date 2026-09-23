@@ -22,6 +22,8 @@ export default defineConfig(() => {
         injectManifest: {
           globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         },
+        // PWA_DEV=1 npm run dev → service worker in dev, for testing push locally.
+        devOptions: { enabled: process.env.PWA_DEV === '1', type: 'module' },
       }),
       {
         name: 'netlify-functions-emulator',

@@ -120,6 +120,15 @@ export const translations: Record<Language, any> = {
       lastMinute: "Last minute hívások", newFriendRequest: "Új barátkérés",
       friendRequestAccepted: "Barátkérés elfogadva", groupInvite: "Csoportmeghívás",
       gameInvite: "Játékmeghívás", newGroupGame: "Új játék a csoportban"
+    },
+    push: {
+      label: "Push-értesítések ezen az eszközön",
+      hint: "Szólunk meghívóknál, csatlakozási kérelmeknél és értékeléseknél — akkor is, ha az app zárva van.",
+      denied: "A böngésző letiltotta az értesítéseket. Az oldal beállításaiban tudod újra engedélyezni.",
+      iosInstall: "iPhone-on és iPaden a push-értesítésekhez add hozzá az appot a Főképernyőhöz (Megosztás → Főképernyőhöz adás), majd onnan nyisd meg.",
+      error: "Nem sikerült bekapcsolni az értesítéseket. Próbáld újra.",
+      enabled: "Push-értesítések bekapcsolva",
+      disabled: "Push-értesítések kikapcsolva"
     }
   },
   en: {
@@ -241,6 +250,15 @@ export const translations: Record<Language, any> = {
       lastMinute: "Last Minute Calls", newFriendRequest: "New friend request",
       friendRequestAccepted: "Friend request accepted", groupInvite: "Group invitation",
       gameInvite: "Game invitation", newGroupGame: "New game in group"
+    },
+    push: {
+      label: "Push notifications on this device",
+      hint: "We'll let you know about invites, join requests and ratings — even when the app is closed.",
+      denied: "Notifications are blocked by your browser. You can re-enable them in the site settings.",
+      iosInstall: "On iPhone and iPad, add the app to your Home Screen (Share → Add to Home Screen) and open it from there to enable push notifications.",
+      error: "Couldn't turn on notifications. Please try again.",
+      enabled: "Push notifications turned on",
+      disabled: "Push notifications turned off"
     }
   }
 };

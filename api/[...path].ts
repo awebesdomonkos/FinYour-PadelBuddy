@@ -1,3 +1,5 @@
+import webpush from 'web-push';
+
 type VercelRequest = { method?: string; url?: string; headers: Record<string, any>; body?: any; query?: Record<string, string> };
 type VercelResponse = { status: (code: number) => VercelResponse; setHeader: (k: string, v: string) => VercelResponse; json: (data: any) => void; end: (data?: any) => void };
 
@@ -54,6 +56,66 @@ async function db(table: string, query: string = '', options: { method?: string;
   }
   const text = await res.text();
   return text ? JSON.parse(text) : [];
+}
+
+// ---------------------------------------------------------------- Web push
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:info@awebes.hu';
+const pushEnabled = Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY);
+
+// The server POSTs to the subscription endpoint, so only real browser push services are accepted (SSRF guard).
+const PUSH_HOST_RE = /^(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|[a-z0-9-]+\.notify\.windows\.com|web\.push\.apple\.com)$/i;
+const PUSH_KEY_RE = /^[A-Za-z0-9_-]{1,200}={0,2}$/;
+
+function isValidPushEndpoint(endpoint: unknown): endpoint is string {
+  if (typeof endpoint !== 'string' || endpoint.length > 1000) return false;
+  try {
+    const u = new URL(endpoint);
+    return u.protocol === 'https:' && PUSH_HOST_RE.test(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
+type PushPayload = { title: string; body: string; url: string; tag: string };
+
+async function sendPushToUser(userId: string, payload: PushPayload) {
+  if (!pushEnabled) return;
+  const subs = await db('push_subscriptions', `user_id=eq.${userId}&select=id,endpoint,p256dh,auth`).catch(() => []);
+  await Promise.allSettled(subs.map(async (s: any) => {
+    try {
+      await webpush.sendNotification(
+        { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+        JSON.stringify(payload),
+        { TTL: 60 * 60 * 24, timeout: 5000, vapidDetails: { subject: VAPID_SUBJECT, publicKey: VAPID_PUBLIC_KEY, privateKey: VAPID_PRIVATE_KEY } },
+      );
+    } catch (err: any) {
+      // 404/410: the browser dropped the subscription (app uninstalled, permission revoked)
+      if (err?.statusCode === 404 || err?.statusCode === 410) {
+        await db('push_subscriptions', `id=eq.${s.id}`, { method: 'DELETE' }).catch(() => {});
+      } else {
+        console.error('Push send failed', err?.statusCode, err?.body || err?.message);
+      }
+    }
+  }));
+}
+
+type NotificationData = { type: string; title: string; message: string; gameId?: string; fromUserId?: string; requestId?: string };
+
+// Every in-app notification goes through here, so each one is also delivered as a push.
+async function notifyUser(userId: string, data: NotificationData) {
+  await db('notifications', '', { method: 'POST', body: {
+    id: crypto.randomUUID(), user_id: userId,
+    data: { ...data, read: false },
+    created_at: new Date().toISOString(),
+  }});
+  await sendPushToUser(userId, {
+    title: data.title,
+    body: data.message,
+    url: data.gameId ? `/?game=${encodeURIComponent(data.gameId)}` : '/',
+    tag: `${data.type}:${data.gameId || data.requestId || data.fromUserId || ''}`,
+  });
 }
 
 function rowToUser(row: any): any {
@@ -147,7 +209,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!isSafe || !anonKey) {
         return jsonResponse(res, 503, { error: 'SUPABASE_ANON_KEY not configured. Add it to Vercel env vars.' });
       }
-      return jsonResponse(res, 200, { supabaseUrl: SB_URL, supabaseAnonKey: anonKey });
+      return jsonResponse(res, 200, { supabaseUrl: SB_URL, supabaseAnonKey: anonKey, vapidPublicKey: pushEnabled ? VAPID_PUBLIC_KEY : '' });
     }
 
     // ME
@@ -235,12 +297,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const reqId = crypto.randomUUID();
         const created = await db('friend_requests', '', { method: 'POST', body: { id: reqId, from_user_id: authUser.id, to_user_id: toUserId, status: 'pending', created_at: new Date().toISOString() } });
         const req = Array.isArray(created) ? created[0] : created;
-        const notifId = crypto.randomUUID();
-        await db('notifications', '', { method: 'POST', body: {
-          id: notifId, user_id: toUserId,
-          data: { type: 'new_request', title: 'Új barátkérés', message: `${authUser.name} barátnak jelölt`, fromUserId: authUser.id, requestId: reqId, read: false },
-          created_at: new Date().toISOString()
-        }}).catch(() => {});
+        await notifyUser(toUserId, { type: 'new_request', title: 'Új barátkérés', message: `${authUser.name} barátnak jelölt`, fromUserId: authUser.id, requestId: reqId }).catch(() => {});
         return jsonResponse(res, 201, { success: true, data: { id: req.id, fromUserId: req.from_user_id, toUserId: req.to_user_id, status: req.status, createdAt: req.created_at } });
       }
       if (itemId === "remove" && method === "POST") {
@@ -286,12 +343,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               db('users', `id=eq.${req.to_user_id}`, { method: 'PATCH', body: { data: { ...d2, friendIds: f2 } } })
             ]);
           }
-          const notifId = crypto.randomUUID();
-          await db('notifications', '', { method: 'POST', body: {
-            id: notifId, user_id: req.from_user_id,
-            data: { type: 'request_status', title: 'Barátkérés elfogadva', message: `${authUser.name} elfogadta a barátkérésedet`, fromUserId: authUser.id, read: false },
-            created_at: new Date().toISOString()
-          }}).catch(() => {});
+          await notifyUser(req.from_user_id, { type: 'request_status', title: 'Barátkérés elfogadva', message: `${authUser.name} elfogadta a barátkérésedet`, fromUserId: authUser.id }).catch(() => {});
         }
         const updated = await db('users', `id=eq.${authUser.id}&select=*`);
         return jsonResponse(res, 200, { success: true, data: safeUser(updated[0]), user: safeUser(updated[0]) });
@@ -338,12 +390,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             })
             .slice(0, 20)
             .map(async (u: any) => {
-              const nid = crypto.randomUUID();
-              return db('notifications', '', { method: 'POST', body: {
-                id: nid, user_id: u.id,
-                data: { type: 'game_near', title: 'Új meccs a közeledben!', message: `${authUser.name} új ${gameData.recommendedLevel} szintű meccset hirdetett: ${gameData.location}`, gameId: id, fromUserId: authUser.id, read: false },
-                created_at: new Date().toISOString()
-              }}).catch(() => {});
+              return notifyUser(u.id, { type: 'game_near', title: 'Új meccs a közeledben!', message: `${authUser.name} új ${gameData.recommendedLevel} szintű meccset hirdetett: ${gameData.location}`, gameId: id, fromUserId: authUser.id }).catch(() => {});
             });
           await Promise.all(notifPromises).catch(() => {});
         }
@@ -352,12 +399,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (invitedUserIds.length > 0) {
           await Promise.all(invitedUserIds.map(async (uid: string) => {
             if (!isSafeId(uid)) return;
-            const notifId = crypto.randomUUID();
-            await db('notifications', '', { method: 'POST', body: {
-              id: notifId, user_id: uid,
-              data: { type: 'gameInvite', title: 'Játékmeghívás', message: `${authUser.name} meghívott egy meccsre: ${payload.location}`, gameId: id, fromUserId: authUser.id, read: false },
-              created_at: new Date().toISOString()
-            }}).catch(() => {});
+            await notifyUser(uid, { type: 'gameInvite', title: 'Játékmeghívás', message: `${authUser.name} meghívott egy meccsre: ${payload.location}`, gameId: id, fromUserId: authUser.id }).catch(() => {});
           }));
         }
         return jsonResponse(res, 201, { success: true, data: rowToObj(Array.isArray(created) ? created[0] : created) });
@@ -387,24 +429,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               if (!gameData.joinedPlayers.includes(authUser.id)) {
                 gameData.joinedPlayers.push(authUser.id);
                 if (gameData.creatorId !== authUser.id) {
-                  const nid = crypto.randomUUID();
-                  await db('notifications', '', { method: 'POST', body: {
-                    id: nid, user_id: gameData.creatorId,
-                    data: { type: 'new_request', title: 'Új résztvevő', message: `${authUser.name} csatlakozott a meccsedhez: ${gameData.location}`, gameId: itemId, fromUserId: authUser.id, read: false },
-                    created_at: new Date().toISOString()
-                  }}).catch(() => {});
+                  await notifyUser(gameData.creatorId, { type: 'new_request', title: 'Új résztvevő', message: `${authUser.name} csatlakozott a meccsedhez: ${gameData.location}`, gameId: itemId, fromUserId: authUser.id }).catch(() => {});
                 }
               }
             } else {
               if (!gameData.requests) gameData.requests = [];
               if (!gameData.requests.find((r: any) => r.userId === authUser.id)) {
                 gameData.requests.push({ userId: authUser.id, userName: authUser.name, status: 'pending', timestamp: new Date().toISOString() });
-                const notifId = crypto.randomUUID();
-                await db('notifications', '', { method: 'POST', body: {
-                  id: notifId, user_id: gameData.creatorId,
-                  data: { type: 'new_request', title: 'Csatlakozási kérelem', message: `${authUser.name} csatlakozni szeretne a meccsedhez`, gameId: itemId, fromUserId: authUser.id, read: false },
-                  created_at: new Date().toISOString()
-                }}).catch(() => {});
+                await notifyUser(gameData.creatorId, { type: 'new_request', title: 'Csatlakozási kérelem', message: `${authUser.name} csatlakozni szeretne a meccsedhez`, gameId: itemId, fromUserId: authUser.id }).catch(() => {});
               }
             }
           } else if (subAction === "approve") {
@@ -418,19 +450,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               gameData.requests[rIdx].status = approve ? 'approved' : 'rejected';
               if (approve && !gameData.joinedPlayers.includes(userId)) {
                 gameData.joinedPlayers.push(userId);
-                const notifId = crypto.randomUUID();
-                await db('notifications', '', { method: 'POST', body: {
-                  id: notifId, user_id: userId,
-                  data: { type: 'request_status', title: 'Kérelem elfogadva', message: `Csatlakozhatsz a meccshez: ${gameData.location}`, gameId: itemId, read: false },
-                  created_at: new Date().toISOString()
-                }}).catch(() => {});
+                await notifyUser(userId, { type: 'request_status', title: 'Kérelem elfogadva', message: `Csatlakozhatsz a meccshez: ${gameData.location}`, gameId: itemId }).catch(() => {});
               } else if (!approve) {
-                const notifId = crypto.randomUUID();
-                await db('notifications', '', { method: 'POST', body: {
-                  id: notifId, user_id: userId,
-                  data: { type: 'request_status', title: 'Kérelem elutasítva', message: `A meccsre való csatlakozási kérelmed elutasításra került: ${gameData.location}`, gameId: itemId, read: false },
-                  created_at: new Date().toISOString()
-                }}).catch(() => {});
+                await notifyUser(userId, { type: 'request_status', title: 'Kérelem elutasítva', message: `A meccsre való csatlakozási kérelmed elutasításra került: ${gameData.location}`, gameId: itemId }).catch(() => {});
               }
             }
           } else if (subAction === "rate") {
@@ -453,23 +475,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               else if (totalRatings >= 3 && posRatio >= 0.7) reliabilityStatus = 'Regularly Appears';
               else if (totalRatings >= 1 && posRatio < 0.4) reliabilityStatus = 'Unreliable';
               await db('users', `id=eq.${r.userId}`, { method: 'PATCH', body: { data: { ...uData, reliabilityScore, goodPlayerScore, totalRatings, reliabilityStatus } } });
-              const nid = crypto.randomUUID();
               const badges = [r.reliable ? '👍' : '', r.goodPlayer ? '🎾' : ''].filter(Boolean).join(' ');
-              await db('notifications', '', { method: 'POST', body: {
-                id: nid, user_id: r.userId,
-                data: { type: 'request_status', title: 'Új értékelés érkezett!', message: `${authUser.name} értékelt téged: ${badges}`, read: false },
-                created_at: new Date().toISOString()
-              }}).catch(() => {});
+              await notifyUser(r.userId, { type: 'request_status', title: 'Új értékelés érkezett!', message: `${authUser.name} értékelt téged: ${badges}` }).catch(() => {});
             }));
           } else if (subAction === "leave") {
             gameData.joinedPlayers = (gameData.joinedPlayers || []).filter((id: string) => id !== authUser.id);
             if (gameData.creatorId !== authUser.id) {
-              const nid = crypto.randomUUID();
-              await db('notifications', '', { method: 'POST', body: {
-                id: nid, user_id: gameData.creatorId,
-                data: { type: 'request_status', title: 'Játékos kilépett', message: `${authUser.name} kilépett a meccsedből: ${gameData.location}`, gameId: itemId, read: false },
-                created_at: new Date().toISOString()
-              }}).catch(() => {});
+              await notifyUser(gameData.creatorId, { type: 'request_status', title: 'Játékos kilépett', message: `${authUser.name} kilépett a meccsedből: ${gameData.location}`, gameId: itemId }).catch(() => {});
             }
           } else if (subAction === "join") {
             if (!gameData.joinedPlayers.includes(authUser.id)) gameData.joinedPlayers.push(authUser.id);
@@ -585,6 +597,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       } catch { /* silent */ }
       return jsonResponse(res, 200, { success: true });
+    }
+
+    // PUSH SUBSCRIPTIONS
+    if (action === "push" && itemId === "subscribe") {
+      if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
+      if (!pushEnabled) return jsonResponse(res, 503, { success: false, message: "Push notifications are not configured" });
+      const payload = JSON.parse(body);
+      const endpoint = payload?.endpoint;
+      if (!isValidPushEndpoint(endpoint)) return jsonResponse(res, 400, { success: false, message: "Invalid push endpoint" });
+      const endpointFilter = `endpoint=eq.${encodeURIComponent(endpoint)}`;
+      if (method === "DELETE") {
+        await db('push_subscriptions', `${endpointFilter}&user_id=eq.${authUser.id}`, { method: 'DELETE' });
+        return jsonResponse(res, 200, { success: true });
+      }
+      if (method === "POST") {
+        const p256dh = payload?.keys?.p256dh, auth = payload?.keys?.auth;
+        if (typeof p256dh !== 'string' || typeof auth !== 'string' || !PUSH_KEY_RE.test(p256dh) || !PUSH_KEY_RE.test(auth))
+          return jsonResponse(res, 400, { success: false, message: "Invalid subscription keys" });
+        const existing = await db('push_subscriptions', `${endpointFilter}&select=id`);
+        if (existing[0]) {
+          // Same browser, possibly a different account now (shared device): the endpoint follows the logged-in user.
+          await db('push_subscriptions', `id=eq.${existing[0].id}`, { method: 'PATCH', body: { user_id: authUser.id, p256dh, auth } });
+        } else {
+          await db('push_subscriptions', '', { method: 'POST', body: { user_id: authUser.id, endpoint, p256dh, auth } });
+        }
+        return jsonResponse(res, 201, { success: true });
+      }
     }
 
     // CLUBS

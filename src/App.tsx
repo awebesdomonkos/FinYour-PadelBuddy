@@ -57,6 +57,7 @@ import RatingModal from './components/RatingModal.tsx';
 import { OnboardingWizard } from './OnboardingWizard.tsx';
 import { supabase } from './lib/supabase.ts';
 import { trackedFetch, registerRetry } from './lib/connectivityStore.ts';
+import { syncExistingSubscription } from './lib/push.ts';
 
 export default function App() {
   const { currentUser, token, login, register, logout, updateUser, authError, setAuthError, loading: authLoading, emailConfirmationPending, clearEmailConfirmationPending } = useAuth();
@@ -219,6 +220,29 @@ export default function App() {
     if (!currentUser?.id) return;
     return registerRetry(() => fetchData({ silent: true }));
   }, [currentUser?.id, fetchData]);
+
+  useEffect(() => {
+    if (currentUser?.id && token) void syncExistingSubscription(token);
+  }, [currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Push notification clicked while the app is already open: route in place instead of reloading.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.type !== 'NOTIFICATION_CLICK') return;
+      const target = new URL(event.data.url, window.location.origin);
+      if (target.searchParams.get('game')) {
+        // The ?game= deep-link effect opens the game once the refreshed list arrives.
+        window.history.replaceState({}, '', target.pathname + target.search);
+        fetchGames();
+      } else {
+        fetchNotifications();
+        setIsNotificationsOpen(true);
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage);
+  }, [fetchGames, fetchNotifications]);
 
   // Keep selectedGame in sync with games array; close modals if game was deleted
   useEffect(() => {

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { Session, isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { reportFailure, reportSuccess, registerRetry } from '../lib/connectivityStore';
+import { disablePush } from '../lib/push';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -122,10 +123,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [hydrateUser]);
 
   const logout = useCallback(() => {
-    supabase.auth.signOut();
+    // Drop this device's push subscription first (needs the still-valid token), so the next
+    // person to log in on a shared device doesn't receive the previous user's notifications.
+    void disablePush(token).finally(() => supabase.auth.signOut());
     setCurrentUser(null);
     setToken(null);
-  }, []);
+  }, [token]);
 
   const login = async (email: string, password: string) => {
     setAuthError(null);

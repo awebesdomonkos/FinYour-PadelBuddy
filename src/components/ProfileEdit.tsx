@@ -8,6 +8,7 @@ import { User, SkillLevel, LFGStatus, PlayTime, PadelExperience, Language } from
 import { useI18n } from '../hooks/useI18n.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { supabase } from '../lib/supabase.ts';
+import PushToggle from './PushToggle.tsx';
 
 export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: { user: User, onSave: (data: Partial<User>) => void, onCancel: () => void, onShowTutorial?: () => void }) {
   const { t, lang } = useI18n(user?.languagePreference || 'hu');
@@ -582,6 +583,8 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
             <AlertCircle className="w-4 h-4 opacity-40" />
             <h3 className="text-xs font-bold uppercase tracking-widest opacity-40">{t('profile.notifications')}</h3>
           </div>
+
+          <PushToggle t={t} />
 
           <div className="space-y-3">
             {[
