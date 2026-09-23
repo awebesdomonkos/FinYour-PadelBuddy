@@ -16,9 +16,6 @@ function isSafeId(id: string): boolean { return SAFE_ID_RE.test(id); }
 // H-2: Email validation
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Pre-generated dummy hash for timing-safe login (H-3)
-const DUMMY_HASH = "$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012345";
-
 const jsonResponse = (res: VercelResponse, statusCode: number, body: any) => {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
