@@ -36,6 +36,9 @@ class RootErrorBoundary extends React.Component<{children: React.ReactNode}, {ha
 }
 
 const pathname = window.location.pathname;
+// /privacy is opened in a new tab without app state, so the language comes from ?lang= (or the browser).
+const privacyLang = new URLSearchParams(window.location.search).get('lang')
+  || (navigator.language?.toLowerCase().startsWith('hu') ? 'hu' : 'en');
 
 // Init Supabase client (fetches config from /api/config if VITE_ vars not set)
 // then mount the React tree
@@ -44,7 +47,7 @@ initSupabaseClient()
     createRoot(document.getElementById('root')!).render(
       <RootErrorBoundary>
         {pathname === '/privacy' ? (
-          <PrivacyPolicy onBack={() => window.history.back()} />
+          <PrivacyPolicy lang={privacyLang} onBack={() => (window.history.length > 1 ? window.history.back() : window.location.assign('/'))} />
         ) : pathname === '/reset-password' ? (
           <AuthProvider>
             <ConnectivityBanner />
