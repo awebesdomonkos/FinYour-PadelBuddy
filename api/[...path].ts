@@ -22,7 +22,7 @@ const jsonResponse = (res: VercelResponse, statusCode: number, body: any) => {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   return res.status(statusCode).json(body);
 };
 
@@ -116,6 +116,16 @@ async function notifyUser(userId: string, data: NotificationData) {
     url: data.gameId ? `/?game=${encodeURIComponent(data.gameId)}` : '/',
     tag: `${data.type}:${data.gameId || data.requestId || data.fromUserId || ''}`,
   });
+}
+
+// ---------------------------------------------------------------- Feedback
+const FEEDBACK_CATEGORIES = ['bug', 'suggestion', 'other'];
+const FEEDBACK_STATUSES = ['new', 'reviewed', 'resolved'];
+const FEEDBACK_HOURLY_LIMIT = 5;
+
+async function isAppAdmin(userId: string): Promise<boolean> {
+  const rows = await db('app_admins', `user_id=eq.${userId}&select=user_id`);
+  return rows.length > 0;
 }
 
 function rowToUser(row: any): any {
@@ -623,6 +633,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           await db('push_subscriptions', '', { method: 'POST', body: { user_id: authUser.id, endpoint, p256dh, auth } });
         }
         return jsonResponse(res, 201, { success: true });
+      }
+    }
+
+    // ADMIN STATUS — admins live in app_admins, which only the service_role key can read
+    if (path === "/admin/status" && method === "GET") {
+      if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
+      return jsonResponse(res, 200, { success: true, data: { isAdmin: await isAppAdmin(authUser.id) } });
+    }
+
+    // FEEDBACK
+    if (action === "feedback") {
+      if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
+      if (method === "POST" && !itemId) {
+        const payload = JSON.parse(body);
+        const category = payload?.category;
+        const message = typeof payload?.message === 'string' ? payload.message.trim() : '';
+        if (!FEEDBACK_CATEGORIES.includes(category)) return jsonResponse(res, 400, { success: false, message: "Invalid category" });
+        if (!message || message.length > 2000) return jsonResponse(res, 400, { success: false, message: "Message must be 1–2000 characters" });
+        const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const recent = await db('feedback', `user_id=eq.${authUser.id}&created_at=gte.${encodeURIComponent(since)}&select=id`);
+        if (recent.length >= FEEDBACK_HOURLY_LIMIT) return jsonResponse(res, 429, { success: false, message: "Too many feedback messages, please try again later" });
+        const page = typeof payload?.page === 'string' ? payload.page.slice(0, 200) : null;
+        const userAgent = String(req.headers['user-agent'] || '').slice(0, 300) || null;
+        const created = await db('feedback', '', { method: 'POST', body: { user_id: authUser.id, category, message, page, user_agent: userAgent } });
+        const row = Array.isArray(created) ? created[0] : created;
+        return jsonResponse(res, 201, { success: true, data: { id: row?.id } });
+      }
+      if (!(await isAppAdmin(authUser.id))) return jsonResponse(res, 403, { success: false, message: "Forbidden" });
+      if (method === "GET" && !itemId) {
+        const rows = await db('feedback', 'select=*&order=created_at.desc&limit=200');
+        const userIds = [...new Set(rows.map((r: any) => r.user_id).filter(Boolean))] as string[];
+        const users = userIds.length ? await db('users', `id=in.(${userIds.join(',')})&select=id,name,email`) : [];
+        const byId = new Map(users.map((u: any) => [u.id, u]));
+        return jsonResponse(res, 200, { success: true, data: rows.map((r: any) => ({
+          id: r.id, category: r.category, message: r.message, page: r.page, userAgent: r.user_agent,
+          status: r.status, createdAt: r.created_at, userId: r.user_id,
+          userName: (byId.get(r.user_id) as any)?.name || null, userEmail: (byId.get(r.user_id) as any)?.email || null,
+        })) });
+      }
+      if (itemId && method === "PATCH") {
+        if (!UUID_RE.test(itemId)) return jsonResponse(res, 400, { success: false, message: "Invalid ID format" });
+        const { status } = JSON.parse(body);
+        if (!FEEDBACK_STATUSES.includes(status)) return jsonResponse(res, 400, { success: false, message: "Invalid status" });
+        const updated = await db('feedback', `id=eq.${itemId}`, { method: 'PATCH', body: { status } });
+        if (!updated[0]) return jsonResponse(res, 404, { success: false, message: "Feedback not found" });
+        return jsonResponse(res, 200, { success: true, data: { id: itemId, status } });
       }
     }
 

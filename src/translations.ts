@@ -11,8 +11,28 @@ export const translations: Record<Language, any> = {
       joinMatch: "Jelentkezés", typeMessage: "Írj üzenetet...", noMessages: "Még nincsenek üzenetek.",
       signOut: "Kijelentkezés", scanning: "Pályák keresése...", noMatchesFound: "Nincs találat a szűrők alapján.",
       enter: "Belépés a körbe", all: "Mind", active: "Aktív", datetime: "Dátum és idő",
-      gotIt: "Értem", accept: "Elfogadás", decline: "Elutasítás", unknown: "Ismeretlen"
+      gotIt: "Értem", accept: "Elfogadás", decline: "Elutasítás", unknown: "Ismeretlen",
+      close: "Bezárás", confirm: "Megerősítés", saving: "Mentés...", saveError: "Nem sikerült menteni. Próbáld újra.",
+      networkError: "Hálózati hiba. Ellenőrizd az internetkapcsolatot.", genericError: "Hiba történt, próbáld újra!"
     },
+    feedback: {
+      entry: "Visszajelzés küldése", entrySub: "Hibát találtál vagy ötleted van? Írd meg!",
+      title: "Visszajelzés", subtitle: "Minden üzenetet elolvasunk.",
+      categoryLabel: "Téma", categories: { bug: "Hiba", suggestion: "Ötlet", other: "Egyéb" },
+      messageLabel: "Üzenet", messagePlaceholder: "Mi történt, vagy min változtatnál?",
+      privacyNote: "Az üzenettel együtt elmentjük a fiókodat, az aktuális oldalt és a böngésződ típusát, hogy utána tudjunk járni a hibának.",
+      submit: "Küldés", sending: "Küldés...",
+      thanksTitle: "Köszönjük!", thanksBody: "Megkaptuk a visszajelzésedet.",
+      errorEmpty: "Írj pár szót, mielőtt elküldöd.", errorRateLimit: "Túl sok üzenetet küldtél az elmúlt órában. Próbáld később.",
+      errorGeneric: "Nem sikerült elküldeni. Próbáld újra.", errorNetwork: "Hálózati hiba. Ellenőrizd az internetkapcsolatot.",
+      statuses: { new: "Új", reviewed: "Átnézve", resolved: "Megoldva" },
+      admin: {
+        entry: "Beérkezett visszajelzések", title: "Visszajelzések", refresh: "Frissítés", filterLabel: "Szűrés státusz szerint",
+        statusLabel: "Státusz", empty: "Nincs ilyen visszajelzés.", deletedUser: "Törölt felhasználó",
+        loadError: "Nem sikerült betölteni a visszajelzéseket.", saveError: "Nem sikerült menteni a státuszt."
+      }
+    },
+    legal: { privacyPolicy: "Adatvédelmi nyilatkozat", section: "Súgó és jogi információk" },
     nav: { games: "Játékok", players: "Játékosok", groups: "Csoportok", profile: "Profil", myGames: "Saját meccsek" },
     players: { subTitle: "Találj partnereket a közeledben." },
     auth: {
@@ -141,8 +161,28 @@ export const translations: Record<Language, any> = {
       joinMatch: "Join Match", typeMessage: "Type a message...", noMessages: "No messages yet.",
       signOut: "Sign Out", scanning: "Scanning courts...", noMatchesFound: "No results found.",
       enter: "Enter", all: "All", active: "Active", datetime: "Date & Time",
-      gotIt: "Got it", accept: "Accept", decline: "Decline", unknown: "Unknown"
+      gotIt: "Got it", accept: "Accept", decline: "Decline", unknown: "Unknown",
+      close: "Close", confirm: "Confirm", saving: "Saving...", saveError: "Couldn't save. Please try again.",
+      networkError: "Network error. Check your internet connection.", genericError: "Something went wrong, please try again!"
     },
+    feedback: {
+      entry: "Send feedback", entrySub: "Found a bug or have an idea? Tell us!",
+      title: "Feedback", subtitle: "We read every message.",
+      categoryLabel: "Topic", categories: { bug: "Bug", suggestion: "Idea", other: "Other" },
+      messageLabel: "Message", messagePlaceholder: "What happened, or what would you change?",
+      privacyNote: "Along with your message we store your account, the current page and your browser type so we can look into the issue.",
+      submit: "Send", sending: "Sending...",
+      thanksTitle: "Thank you!", thanksBody: "We've received your feedback.",
+      errorEmpty: "Write a few words before sending.", errorRateLimit: "You've sent too many messages in the last hour. Please try later.",
+      errorGeneric: "Couldn't send it. Please try again.", errorNetwork: "Network error. Check your internet connection.",
+      statuses: { new: "New", reviewed: "Reviewed", resolved: "Resolved" },
+      admin: {
+        entry: "Incoming feedback", title: "Feedback", refresh: "Refresh", filterLabel: "Filter by status",
+        statusLabel: "Status", empty: "No feedback here.", deletedUser: "Deleted user",
+        loadError: "Couldn't load feedback.", saveError: "Couldn't save the status."
+      }
+    },
+    legal: { privacyPolicy: "Privacy Policy", section: "Help & legal" },
     nav: { games: "Games", players: "Players", groups: "Groups", profile: "Profile", myGames: "My Games" },
     players: { subTitle: "Find partners near you." },
     auth: {

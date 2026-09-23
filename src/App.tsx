@@ -21,6 +21,10 @@ import {
   X,
   LogOut,
   Trash2,
+  MessageSquareHeart,
+  Inbox,
+  ShieldCheck,
+  ChevronRight,
 } from 'lucide-react';
 import { useI18n } from './hooks/useI18n.ts';
 import { useAuth } from './context/AuthContext.tsx';
@@ -54,6 +58,8 @@ import LevelTutorial from './components/LevelTutorial.tsx';
 import CreateGroupModal from './components/CreateGroupModal.tsx';
 import GameDetailDrawer from './components/GameDetailDrawer.tsx';
 import RatingModal from './components/RatingModal.tsx';
+import FeedbackForm from './components/FeedbackForm.tsx';
+import FeedbackAdminView from './components/FeedbackAdminView.tsx';
 import { OnboardingWizard } from './OnboardingWizard.tsx';
 import { supabase } from './lib/supabase.ts';
 import { trackedFetch, registerRetry } from './lib/connectivityStore.ts';
@@ -88,6 +94,9 @@ export default function App() {
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [isLevelTutorialOpen, setIsLevelTutorialOpen] = useState(false);
   const [gameToEdit, setGameToEdit] = useState<Game | null>(null);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isFeedbackAdminOpen, setIsFeedbackAdminOpen] = useState(false);
+  const [isAppAdmin, setIsAppAdmin] = useState(false);
   const { t, lang, setLang } = useI18n('hu');
 
   // Registration/Auth state
@@ -220,6 +229,17 @@ export default function App() {
     if (!currentUser?.id) return;
     return registerRetry(() => fetchData({ silent: true }));
   }, [currentUser?.id, fetchData]);
+
+  // Admin rights live server-side (app_admins); the client only learns whether to show the admin entry.
+  useEffect(() => {
+    if (!currentUser?.id || !token) { setIsAppAdmin(false); return; }
+    let cancelled = false;
+    safeFetch('/api/admin/status', { headers: authHeaders() })
+      .then(d => { if (!cancelled) setIsAppAdmin(Boolean(d?.isAdmin)); })
+      .catch(() => { if (!cancelled) setIsAppAdmin(false); });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id, token]);
 
   useEffect(() => {
     if (currentUser?.id && token) void syncExistingSubscription(token);
@@ -1822,8 +1842,45 @@ export default function App() {
                       />
                     </div>
 
+                    <nav className="pt-6 border-t border-[#141414]/5 space-y-2" aria-labelledby="help-legal-heading">
+                      <h3 id="help-legal-heading" className="text-xs font-black uppercase tracking-widest opacity-40 mb-3">{t('legal.section')}</h3>
+                      <button
+                        type="button"
+                        onClick={() => setIsFeedbackOpen(true)}
+                        className="w-full flex items-center gap-3 p-4 bg-[#141414]/5 rounded-2xl text-left hover:bg-[#141414]/10 transition-colors"
+                      >
+                        <MessageSquareHeart className="w-5 h-5 shrink-0" aria-hidden="true" />
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-sm font-bold">{t('feedback.entry')}</span>
+                          <span className="block text-xs opacity-50">{t('feedback.entrySub')}</span>
+                        </span>
+                        <ChevronRight className="w-4 h-4 opacity-30" aria-hidden="true" />
+                      </button>
+                      {isAppAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => setIsFeedbackAdminOpen(true)}
+                          className="w-full flex items-center gap-3 p-4 bg-[#E2FF3B]/40 rounded-2xl text-left hover:bg-[#E2FF3B]/60 transition-colors"
+                        >
+                          <Inbox className="w-5 h-5 shrink-0" aria-hidden="true" />
+                          <span className="flex-1 text-sm font-bold">{t('feedback.admin.entry')}</span>
+                          <ChevronRight className="w-4 h-4 opacity-30" aria-hidden="true" />
+                        </button>
+                      )}
+                      <a
+                        href={`/privacy?lang=${lang}`}
+                        target="_blank"
+                        rel="noopener"
+                        className="w-full flex items-center gap-3 p-4 bg-[#141414]/5 rounded-2xl hover:bg-[#141414]/10 transition-colors"
+                      >
+                        <ShieldCheck className="w-5 h-5 shrink-0" aria-hidden="true" />
+                        <span className="flex-1 text-sm font-bold">{t('legal.privacyPolicy')}</span>
+                        <ChevronRight className="w-4 h-4 opacity-30" aria-hidden="true" />
+                      </a>
+                    </nav>
+
                     <div className="pt-6 border-t border-[#141414]/5">
-                      <button 
+                      <button
                         onClick={handleLogout}
                         className="w-full flex items-center justify-center gap-2 py-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold hover:bg-red-100 transition-colors"
                       >
@@ -1841,6 +1898,14 @@ export default function App() {
                 />
               )}
             </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {isFeedbackOpen && (
+            <FeedbackForm token={token} t={t} onClose={() => setIsFeedbackOpen(false)} />
+          )}
+          {isFeedbackAdminOpen && isAppAdmin && (
+            <FeedbackAdminView token={token} t={t} lang={lang} onClose={() => setIsFeedbackAdminOpen(false)} />
           )}
         </AnimatePresence>
         {/* Rating Modal */}
