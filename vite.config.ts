@@ -2,13 +2,27 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
+import {VitePWA} from 'vite-plugin-pwa';
 import apiHandler from './api/[...path]';
 
 export default defineConfig(() => {
   return {
     plugins: [
-      react(), 
+      react(),
       tailwindcss(),
+      VitePWA({
+        // injectManifest (not generateSW) so the worker can carry custom push handlers.
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.ts',
+        // 'prompt', not 'autoUpdate': an automatic reload would wipe half-filled forms.
+        registerType: 'prompt',
+        injectRegister: false,
+        manifest: false,
+        injectManifest: {
+          globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        },
+      }),
       {
         name: 'netlify-functions-emulator',
         configureServer(server) {

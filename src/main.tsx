@@ -4,6 +4,7 @@ import App from './App.tsx';
 import PrivacyPolicy from './components/PrivacyPolicy.tsx';
 import ResetPasswordPage from './components/ResetPasswordPage.tsx';
 import ConnectivityBanner from './components/ConnectivityBanner.tsx';
+import UpdateAvailableToast from './components/UpdateAvailableToast.tsx';
 import './index.css';
 import { AuthProvider } from './context/AuthContext.tsx';
 import { initSupabaseClient } from './lib/supabase.ts';
@@ -52,6 +53,7 @@ initSupabaseClient()
         ) : (
           <AuthProvider>
             <ConnectivityBanner />
+            <UpdateAvailableToast />
             <App />
           </AuthProvider>
         )}
