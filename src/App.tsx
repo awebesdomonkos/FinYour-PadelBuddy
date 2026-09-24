@@ -1616,11 +1616,12 @@ export default function App() {
                   />
 
                   <div className="flex flex-col items-center py-4 text-center relative">
-                    <button 
+                    <button
                       onClick={() => setIsEditingProfile(true)}
+                      aria-label={t('a11y.editProfile')}
                       className="absolute top-0 right-0 p-3 bg-white shadow-sm border border-[#141414]/5 rounded-2xl hover:scale-105 transition-transform"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-4 h-4" aria-hidden="true" />
                     </button>
                     <div className="w-24 h-24 bg-[#141414] text-[#E2FF3B] rounded-full flex items-center justify-center mb-4 border-4 border-white shadow-xl overflow-hidden">
                       {currentUser?.avatarUrl ? (

@@ -215,7 +215,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">{t('groups.name')}</label>
+              <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">{t('auth.nameLabel')}</label>
               <input
                 type="text"
                 value={formData.name}
