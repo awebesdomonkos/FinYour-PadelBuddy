@@ -76,7 +76,7 @@ export const translations: Record<Language, any> = {
         Silver: "Középhaladó. Stabil játékstílus, tudatos falhasználat.",
         Gold: "Haladó. Magas technikai és taktikai tudás."
       },
-      avatar: "Profilkép", levelTutorialTitle: "Képességszintek", levelTutorialSub: "Padel szintmagyarázat",
+      avatar: "Profilkép", deletePhoto: "Kép törlése", levelTutorialTitle: "Képességszintek", levelTutorialSub: "Padel szintmagyarázat",
       experienceLevels: {
         "Less than 6 months": "Kevesebb mint 6 hónap", "6-12 months": "6-12 hónap",
         "1-2 years": "1-2 év", "2+ years": "Több mint 2 év"
@@ -122,7 +122,7 @@ export const translations: Record<Language, any> = {
       noPlayersFound: "Nincs találat",
       deleteConfirmTitle: "Játék törlése", deleteConfirmMessage: "Biztosan törölni szeretnéd ezt a játékot? Ez a művelet nem vonható vissza.",
       confirmDelete: "Biztosan törölni akarod ezt a meccset?",
-      noGamesYet: "Még nincs meccs. Legyél te az első!", myCreated: "Általam szervezett", myJoined: "Csatlakozott meccsek"
+      removeFromHistory: "Eltávolítás az előzményekből", noGamesYet: "Még nincs meccs. Legyél te az első!", myCreated: "Általam szervezett", myJoined: "Csatlakozott meccsek"
     },
     groups: {
       title: "Csoportok", createGroup: "Csoport létrehozása", name: "Csoport neve",
@@ -139,7 +139,49 @@ export const translations: Record<Language, any> = {
       nearbyGames: "Közeli meccsek", reminders: "Emlékeztetők", groupUpdates: "Csoport frissítések",
       lastMinute: "Last minute hívások", newFriendRequest: "Új barátkérés",
       friendRequestAccepted: "Barátkérés elfogadva", groupInvite: "Csoportmeghívás",
-      gameInvite: "Játékmeghívás", newGroupGame: "Új játék a csoportban"
+      gameInvite: "Játékmeghívás", newGroupGame: "Új játék a csoportban",
+      unreadCount: "{n} olvasatlan", allRead: "Minden olvasott", markAllRead: "Összes megjelölése olvasottként"
+    },
+    onboarding: {
+      skip: "Kihagyás", logout: "Kijelentkezés", next: "Tovább →", finish: "🎾  Belépés a pályára!",
+      levelTitle: "Mi a szinted?", levelSub: "Őszintén válaszolj — így találhatsz hasonló szintű partnereket",
+      levelDesc: { Bronze: "Kezdő – ismerkedem az alapokkal", Silver: "Középhaladó – stabil játékstílus", Gold: "Haladó – magas technikai szint" },
+      experienceQ: "Mennyi tapasztalatod van?",
+      experience: { "Less than 6 months": "< 6 hónap", "6-12 months": "6–12 hónap", "1-2 years": "1–2 év", "2+ years": "2+ év" },
+      cityTitle: "Melyik városban játszol?", citySub: "Így tudunk közeli meccseket és játékosokat megmutatni",
+      cityPlaceholder: "pl. Budapest", cityLabel: "Város", popularCities: "Legnépszerűbb városok",
+      timeTitle: "Mikor érsz rá?", timeSub: "Több időpontot is választhatsz — így jobban összepárosítunk",
+      styleLabel: "Játékstílusod", optional: "(opcionális)",
+      styleDesc: { Casual: "Szórakozásból játszom", Competitive: "Mindig nyerni akarok", Technical: "A pontosság a fontos", Power: "Kemény ütések, erős játék" },
+      progress: "{step}. lépés / {total}"
+    },
+    chat: {
+      members: "Tagok", requests: "Kérelmek", noPending: "Nincs függő kérelem", wantsToJoin: "Csatlakozni szeretne",
+      freeSlot: "Szabad hely", host: "Szervező", fallbackTitle: "Meccs",
+      quick: ["Ott vagyok! 👋", "Kések 10 percet ⏰", "Még aktuális? 🎾", "Jó meccset! 🏆"],
+      send: "Üzenet küldése", approve: "Elfogadás", reject: "Elutasítás", messageLabel: "Üzenet"
+    },
+    time: { now: "Most", minutesAgo: "{n} perce", hoursAgo: "{n} órája", daysAgo: "{n} napja" },
+    result: { title: "Eredmény rögzítése", set: "{n}. szett", team1: "1. csapat", team2: "2. csapat", addSet: "+ Szett hozzáadása", save: "Eredmény mentése" },
+    completeness: {
+      complete: "Teljes profil — Szuper!", percent: "Profilod {n}% teljes", almost: "Szinte teljes! ✨", good: "Jó úton jársz! 👍",
+      start: "Töltsd ki a profilod! 🎾", missing: "Hiányzik még:",
+      items: { avatar: "Profilkép", bio: "Bemutatkozó", city: "Városod", playstyle: "Játékstílus", playtime: "Preferált időpontok", exp: "Tapasztalat", interests: "Érdeklődési körök", friends: "Első barátod", lfg: "LFG státusz" }
+    },
+    errors: { title: "Hiba történt", body: "Kérjük, frissítsd az oldalt.", reload: "Újratöltés" },
+    confirmDialogs: {
+      deleteGameTitle: "Meccs törlése", deleteGame: "Biztosan törlöd ezt a meccset? Ez a művelet nem vonható vissza.",
+      deleteGroupTitle: "Csoport törlése", deleteGroup: "Biztosan törlöd a csoportot? Ez a művelet nem vonható vissza.",
+      clearHistoryTitle: "Előzmények törlése", clearHistory: "Biztosan törlöd az összes meccselőzményt? Ez nem vonható vissza.",
+      leaveGameTitle: "Kilépés a meccsből", leaveGame: "Biztosan kilépsz ebből a meccsből?",
+      removeFriendTitle: "Barát eltávolítása"
+    },
+    a11y: {
+      back: "Vissza", close: "Bezárás", notifications: "Értesítések", favorite: "Kedvencek közé", removeFavorite: "Eltávolítás a kedvencek közül",
+      removeClub: "Klub eltávolítása", addClub: "Klub hozzáadása", addInterest: "Érdeklődési kör hozzáadása", removeFriend: "Barát eltávolítása",
+      deleteGroup: "Csoport törlése", leaveGroup: "Kilépés a csoportból", deleteGame: "Meccs törlése", editProfile: "Profil szerkesztése",
+      decreaseScore: "Csökkentés", increaseScore: "Növelés", share: "Megosztás", openChat: "Chat megnyitása", logout: "Kijelentkezés",
+      gdprRequired: "Az adatvédelmi nyilatkozat elfogadása kötelező."
     },
     push: {
       label: "Push-értesítések ezen az eszközön",
@@ -226,7 +268,7 @@ export const translations: Record<Language, any> = {
         Silver: "Intermediate. Stable play style, conscious wall use.",
         Gold: "Advanced. High technical and tactical knowledge."
       },
-      avatar: "Profile Picture", levelTutorialTitle: "Skill Levels", levelTutorialSub: "Padel level guide",
+      avatar: "Profile Picture", deletePhoto: "Remove photo", levelTutorialTitle: "Skill Levels", levelTutorialSub: "Padel level guide",
       experienceLevels: {
         "Less than 6 months": "Less than 6 months", "6-12 months": "6-12 months",
         "1-2 years": "1-2 years", "2+ years": "2+ years"
@@ -272,7 +314,7 @@ export const translations: Record<Language, any> = {
       noPlayersFound: "No players found",
       deleteConfirmTitle: "Delete Game", deleteConfirmMessage: "Are you sure you want to delete this game? This action cannot be undone.",
       confirmDelete: "Are you sure you want to delete this match?",
-      noGamesYet: "No games yet. Be the first to create one!", myCreated: "Created by me", myJoined: "Joined matches"
+      removeFromHistory: "Remove from history", noGamesYet: "No games yet. Be the first to create one!", myCreated: "Created by me", myJoined: "Joined matches"
     },
     groups: {
       title: "Groups", createGroup: "Create Group", name: "Group Name",
@@ -289,7 +331,49 @@ export const translations: Record<Language, any> = {
       nearbyGames: "Nearby Games", reminders: "Reminders", groupUpdates: "Group Updates",
       lastMinute: "Last Minute Calls", newFriendRequest: "New friend request",
       friendRequestAccepted: "Friend request accepted", groupInvite: "Group invitation",
-      gameInvite: "Game invitation", newGroupGame: "New game in group"
+      gameInvite: "Game invitation", newGroupGame: "New game in group",
+      unreadCount: "{n} unread", allRead: "All read", markAllRead: "Mark all as read"
+    },
+    onboarding: {
+      skip: "Skip", logout: "Sign out", next: "Next →", finish: "🎾  Hit the court!",
+      levelTitle: "What's your level?", levelSub: "Answer honestly — that's how you'll find partners at your level",
+      levelDesc: { Bronze: "Beginner – learning the basics", Silver: "Intermediate – steady play style", Gold: "Advanced – strong technique" },
+      experienceQ: "How much experience do you have?",
+      experience: { "Less than 6 months": "< 6 months", "6-12 months": "6–12 months", "1-2 years": "1–2 years", "2+ years": "2+ years" },
+      cityTitle: "Which city do you play in?", citySub: "So we can show you nearby games and players",
+      cityPlaceholder: "e.g. Budapest", cityLabel: "City", popularCities: "Popular cities",
+      timeTitle: "When are you free?", timeSub: "Pick as many as you like — it helps us match you better",
+      styleLabel: "Your play style", optional: "(optional)",
+      styleDesc: { Casual: "I play for fun", Competitive: "I always want to win", Technical: "Precision matters most", Power: "Hard hits, strong game" },
+      progress: "Step {step} of {total}"
+    },
+    chat: {
+      members: "Members", requests: "Requests", noPending: "No pending requests", wantsToJoin: "Wants to join",
+      freeSlot: "Open spot", host: "Host", fallbackTitle: "Match",
+      quick: ["I'm here! 👋", "Running 10 min late ⏰", "Still on? 🎾", "Good game! 🏆"],
+      send: "Send message", approve: "Approve", reject: "Reject", messageLabel: "Message"
+    },
+    time: { now: "Now", minutesAgo: "{n} min ago", hoursAgo: "{n} h ago", daysAgo: "{n} d ago" },
+    result: { title: "Record Result", set: "Set {n}", team1: "Team 1", team2: "Team 2", addSet: "+ Add Set", save: "Save Result" },
+    completeness: {
+      complete: "Complete profile — Great!", percent: "Profile {n}% complete", almost: "Almost there! ✨", good: "Good progress! 👍",
+      start: "Complete your profile! 🎾", missing: "Still missing:",
+      items: { avatar: "Profile picture", bio: "Bio", city: "Your city", playstyle: "Play style", playtime: "Preferred times", exp: "Experience", interests: "Interests", friends: "Your first friend", lfg: "LFG status" }
+    },
+    errors: { title: "Something went wrong", body: "Please reload the page.", reload: "Reload" },
+    confirmDialogs: {
+      deleteGameTitle: "Delete match", deleteGame: "Are you sure you want to delete this match? This can't be undone.",
+      deleteGroupTitle: "Delete group", deleteGroup: "Are you sure you want to delete this group? This can't be undone.",
+      clearHistoryTitle: "Clear history", clearHistory: "Delete your entire match history? This can't be undone.",
+      leaveGameTitle: "Leave match", leaveGame: "Are you sure you want to leave this match?",
+      removeFriendTitle: "Remove friend"
+    },
+    a11y: {
+      back: "Back", close: "Close", notifications: "Notifications", favorite: "Add to favourites", removeFavorite: "Remove from favourites",
+      removeClub: "Remove club", addClub: "Add club", addInterest: "Add interest", removeFriend: "Remove friend",
+      deleteGroup: "Delete group", leaveGroup: "Leave group", deleteGame: "Delete match", editProfile: "Edit profile",
+      decreaseScore: "Decrease", increaseScore: "Increase", share: "Share", openChat: "Open chat", logout: "Sign out",
+      gdprRequired: "You must accept the privacy policy."
     },
     push: {
       label: "Push notifications on this device",

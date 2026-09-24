@@ -2,17 +2,23 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { X, Award } from 'lucide-react';
 import { SkillLevel } from '../types.ts';
+import { useDialogA11y } from '../hooks/useDialogA11y.ts';
 
 export default function LevelTutorial({ onClose, t }: { onClose: () => void, t: (key: string) => string }) {
+  const { dialogProps } = useDialogA11y(onClose);
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#141414]/90 backdrop-blur-sm">
+    <div onClick={onClose} className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#141414]/90 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl relative"
+        {...dialogProps}
+        aria-label={t('profile.levelTutorialTitle')}
+        onClick={e => e.stopPropagation()}
+        className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-[32px] shadow-2xl relative outline-none"
       >
         <button
           onClick={onClose}
+          aria-label={t('a11y.close')}
           className="absolute top-6 right-6 p-2 bg-[#141414]/5 rounded-xl hover:bg-[#141414]/10 transition-colors z-20"
         >
           <X className="w-5 h-5" />

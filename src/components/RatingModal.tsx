@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { X, User as UserIcon } from 'lucide-react';
 import { Game, User } from '../types.ts';
+import { useDialogA11y } from '../hooks/useDialogA11y.ts';
 
 export default function RatingModal({
   game,
@@ -29,6 +30,8 @@ export default function RatingModal({
     Object.fromEntries(teammates.map(p => [p.id, { reliable: true, goodPlayer: true }]))
   );
 
+  const { dialogProps } = useDialogA11y(onClose);
+
   const toggle = (userId: string, field: 'reliable' | 'goodPlayer') => {
     setRatings(prev => ({
       ...prev,
@@ -49,6 +52,7 @@ export default function RatingModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
+        aria-hidden="true"
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
       />
       <motion.div
@@ -56,17 +60,19 @@ export default function RatingModal({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden"
+        {...dialogProps}
+        aria-labelledby="rating-title"
+        className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl outline-none"
       >
         {/* Header */}
         <div className="bg-[#141414] px-6 py-5 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-black uppercase tracking-tight text-lg">⭐ {lang === 'hu' ? 'Értékeld a csapatot!' : 'Rate your team!'}</h3>
+              <h3 id="rating-title" className="font-black uppercase tracking-tight text-lg">⭐ {lang === 'hu' ? 'Értékeld a csapatot!' : 'Rate your team!'}</h3>
               <p className="text-white/40 text-[11px] font-bold uppercase mt-0.5">{game.location}</p>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
-              <X className="w-5 h-5" />
+            <button onClick={onClose} aria-label={t('a11y.close')} className="p-2.5 hover:bg-white/10 rounded-xl transition-colors">
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -75,7 +81,7 @@ export default function RatingModal({
         <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
           {teammates.length === 0 ? (
             <div className="py-8 text-center opacity-40">
-              <p className="text-sm font-bold">{lang === 'hu' ? 'Nincs értékelhető játékos' : 'Nincs értékelhető játékos'}</p>
+              <p className="text-sm font-bold">{lang === 'hu' ? 'Nincs értékelhető játékos' : 'No players to rate'}</p>
             </div>
           ) : (
             teammates.map(player => {
@@ -108,7 +114,7 @@ export default function RatingModal({
                     >
                       <span className="text-lg">👍</span>
                       <span className="text-[11px] font-black uppercase tracking-wide">
-                        {lang === 'hu' ? 'Megbízható' : 'Megbízható'}
+                        {lang === 'hu' ? 'Megbízható' : 'Reliable'}
                       </span>
                     </button>
                     <button
@@ -121,7 +127,7 @@ export default function RatingModal({
                     >
                       <span className="text-lg">🎾</span>
                       <span className="text-[11px] font-black uppercase tracking-wide">
-                        {lang === 'hu' ? 'Jó játékos' : 'Jó játékos'}
+                        {lang === 'hu' ? 'Jó játékos' : 'Good player'}
                       </span>
                     </button>
                   </div>

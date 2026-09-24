@@ -80,8 +80,8 @@ export default function CreateGameForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
-    if (!formData.location.trim()) { setSubmitError(lang === 'hu' ? 'Add meg a helyszínt!' : 'Helyszín megadása kötelező!'); return; }
-    if (!formData.datetime) { setSubmitError(lang === 'hu' ? 'Add meg az időpontot!' : 'Dátum és időpont megadása kötelező!'); return; }
+    if (!formData.location.trim()) { setSubmitError(lang === 'hu' ? 'Add meg a helyszínt!' : 'Location is required!'); return; }
+    if (!formData.datetime) { setSubmitError(lang === 'hu' ? 'Add meg az időpontot!' : 'Date and time are required!'); return; }
     const gameDate = new Date(formData.datetime);
     if (formData.datetime && gameDate < new Date() && !gameToEdit) { setSubmitError(lang === 'hu' ? 'Az időpont a múltban van! Adj meg jövőbeli időpontot.' : 'Date must be in the future!'); return; }
     setIsSubmitting(true);
@@ -97,10 +97,10 @@ export default function CreateGameForm({
         onSuccess();
       } else {
         const data = await res.json().catch(() => ({}));
-        setSubmitError(data?.message || (lang === 'hu' ? 'Hiba történt, próbáld újra!' : 'Valami hiba történt, próbáld újra!'));
+        setSubmitError(data?.message || (lang === 'hu' ? 'Hiba történt, próbáld újra!' : 'Something went wrong, please try again!'));
       }
     } catch (err) {
-      setSubmitError(lang === 'hu' ? 'Hálózati hiba. Ellenőrizd az internetkapcsolatot.' : 'Hálózati hiba. Ellenőrizd az internetkapcsolatot.');
+      setSubmitError(lang === 'hu' ? 'Hálózati hiba. Ellenőrizd az internetkapcsolatot.' : 'Network error. Check your internet connection.');
     } finally {
       setIsSubmitting(false);
     }
@@ -142,9 +142,9 @@ export default function CreateGameForm({
               className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none appearance-none"
             >
               <option value="none">{lang === 'hu' ? 'Egyszeri alkalom' : 'Egyszeri meccs'}</option>
-              <option value="weekly">{lang === 'hu' ? 'Minden héten' : 'Minden héten'}</option>
-              <option value="biweekly">{lang === 'hu' ? '2 hetente' : '2 hetente'}</option>
-              <option value="monthly">{lang === 'hu' ? 'Havonta' : 'Havonta'}</option>
+              <option value="weekly">{lang === 'hu' ? 'Minden héten' : 'Every week'}</option>
+              <option value="biweekly">{lang === 'hu' ? '2 hetente' : 'Every 2 weeks'}</option>
+              <option value="monthly">{lang === 'hu' ? 'Havonta' : 'Monthly'}</option>
             </select>
           </div>
         </div>
@@ -189,9 +189,10 @@ export default function CreateGameForm({
             <button
               type="button"
               onClick={onShowTutorial}
+              aria-label={t('profile.levelTutorialTitle')}
               className="p-1 hover:bg-[#141414]/5 rounded-lg transition-colors"
             >
-              <Award className="w-3.5 h-3.5 opacity-40" />
+              <Award className="w-3.5 h-3.5 opacity-40" aria-hidden="true" />
             </button>
           </div>
           <div className="relative">
@@ -366,7 +367,7 @@ export default function CreateGameForm({
         className="w-full bg-[#141414] text-[#E2FF3B] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-black/10 disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {isSubmitting
-          ? <><div className="w-4 h-4 border-2 border-[#E2FF3B]/30 border-t-[#E2FF3B] rounded-full animate-spin" />{lang === 'hu' ? 'Mentés...' : 'Mentés...'}</>
+          ? <><div className="w-4 h-4 border-2 border-[#E2FF3B]/30 border-t-[#E2FF3B] rounded-full animate-spin" />{lang === 'hu' ? 'Mentés...' : 'Saving...'}</>
           : (gameToEdit ? t('common.save') : t('games.createGame'))
         }
       </button>

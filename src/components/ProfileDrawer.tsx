@@ -7,6 +7,14 @@ import {
 import { User, Game, Group } from '../types.ts';
 import { useI18n } from '../hooks/useI18n.ts';
 import MatchHistory from './MatchHistory.tsx';
+import { useDialogA11y } from '../hooks/useDialogA11y.ts';
+
+// Users enter either a full profile URL or just a username.
+function facebookUrl(value: string) {
+  const v = value.trim();
+  if (/^https?:\/\/([a-z0-9-]+\.)*facebook\.com\//i.test(v)) return v;
+  return `https://facebook.com/${encodeURIComponent(v.replace(/^@/, ""))}`;
+}
 
 export default function ProfileDrawer({
   user,
@@ -31,13 +39,17 @@ export default function ProfileDrawer({
   const userGames = (games || []).filter(g => (g.joinedPlayers || []).includes(user.id));
   const isFriend = currentUser.friendIds?.includes(user.id);
   const isBlocked = currentUser.blockedUserIds?.includes(user.id);
+  const { dialogProps } = useDialogA11y(onClose);
+  const isFavorite = currentUser.favoritePlayerIds?.includes(user.id);
 
   return (
     <div className="fixed inset-0 z-[110] flex justify-end">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose} className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose} aria-hidden="true" className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
       <motion.div
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-        className="relative w-full max-w-sm bg-[#F5F5F0] h-full shadow-2xl flex flex-col overflow-hidden"
+        {...dialogProps}
+        aria-labelledby="profile-drawer-title"
+        className="relative w-full max-w-sm bg-[#F5F5F0] h-full shadow-2xl flex flex-col overflow-hidden outline-none"
       >
         <div className="relative h-64">
           {user.avatarUrl ? (
@@ -53,7 +65,7 @@ export default function ProfileDrawer({
                 <span className="px-2 py-0.5 bg-[#E2FF3B] text-[#141414] rounded-lg text-[10px] font-black uppercase tracking-widest mb-2 inline-block shadow-sm">
                   {t(`profile.levels.${user.skillLevel}`)}
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-black uppercase leading-none italic">{user.name}</h2>
+                <h2 id="profile-drawer-title" className="text-2xl sm:text-3xl font-black uppercase leading-none italic">{user.name}</h2>
                 {user.username && <p className="text-[10px] font-black opacity-30 lowercase mt-0.5">@{user.username}</p>}
                 <p className="text-xs font-bold opacity-40 uppercase tracking-widest flex items-center gap-1 mt-2">
                   <MapPin className="w-3 h-3" /> {user.location?.city || ''}
@@ -62,9 +74,11 @@ export default function ProfileDrawer({
               <div className="flex gap-2">
                 <button
                   onClick={() => onFavorite(user.id)}
-                  className="w-10 h-10 bg-white shadow-sm rounded-xl flex items-center justify-center border border-[#141414]/5 hover:scale-110 active:scale-95 transition-all"
+                  aria-label={isFavorite ? t('a11y.removeFavorite') : t('a11y.favorite')}
+                  aria-pressed={!!isFavorite}
+                  className="w-11 h-11 bg-white shadow-sm rounded-xl flex items-center justify-center border border-[#141414]/5 hover:scale-110 active:scale-95 transition-all"
                 >
-                  <Heart className={`w-5 h-5 ${currentUser.favoritePlayerIds?.includes(user.id) ? 'fill-red-500 text-red-500' : 'text-[#141414]/20'}`} />
+                  <Heart aria-hidden="true" className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-[#141414]/40'}`} />
                 </button>
                 {!isFriend && !isBlocked && (
                   <button
@@ -82,7 +96,7 @@ export default function ProfileDrawer({
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="absolute top-[calc(1rem+env(safe-area-inset-top,0px))] right-4 w-10 h-10 bg-black/20 backdrop-blur-md text-white rounded-full flex items-center justify-center"><X className="w-5 h-5"/></button>
+          <button onClick={onClose} aria-label={t('a11y.close')} className="absolute top-[calc(1rem+env(safe-area-inset-top,0px))] right-4 w-11 h-11 bg-black/40 backdrop-blur-md text-white rounded-full flex items-center justify-center"><X className="w-5 h-5" aria-hidden="true" /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-12">
@@ -169,13 +183,13 @@ export default function ProfileDrawer({
                 {(!user.privacySettings || user.privacySettings.showSocialLinks) ? (
                   <>
                     {user.socialLinks?.instagram && (
-                      <a href={`https://instagram.com/${user.socialLinks.instagram}`} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-gradient-to-tr from-orange-400 to-pink-500 flex items-center justify-center text-white shadow-md">
-                        <Instagram className="w-4 h-4" />
+                      <a href={`https://instagram.com/${encodeURIComponent(user.socialLinks.instagram)}`} target="_blank" rel="noreferrer" aria-label="Instagram" className="w-8 h-8 rounded-lg bg-gradient-to-tr from-orange-400 to-pink-500 flex items-center justify-center text-white shadow-md">
+                        <Instagram className="w-4 h-4" aria-hidden="true" />
                       </a>
                     )}
                     {user.socialLinks?.facebook && (
-                      <a href="#" className="w-8 h-8 rounded-lg bg-[#1877F2] flex items-center justify-center text-white shadow-md">
-                        <Facebook className="w-4 h-4" />
+                      <a href={facebookUrl(user.socialLinks.facebook)} target="_blank" rel="noreferrer" aria-label="Facebook" className="w-8 h-8 rounded-lg bg-[#1877F2] flex items-center justify-center text-white shadow-md">
+                        <Facebook className="w-4 h-4" aria-hidden="true" />
                       </a>
                     )}
                     {!user.socialLinks?.instagram && !user.socialLinks?.facebook && (
@@ -211,11 +225,11 @@ export default function ProfileDrawer({
               <History className="w-4 h-4 opacity-20" />
             </div>
             {(!user.privacySettings || user.privacySettings.showMatchHistory) ? (
-              <MatchHistory games={userGames} />
+              <MatchHistory games={userGames} lang={lang} />
             ) : (
               <div className="p-8 text-center bg-[#141414]/5 rounded-[32px] border border-dashed border-[#141414]/10">
                 <EyeOff className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-30">{lang === 'hu' ? 'Ez az előzmény privát' : 'Ez az előzmény privát'}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-30">{lang === 'hu' ? 'Ez az előzmény privát' : 'This history is private'}</p>
               </div>
             )}
           </div>

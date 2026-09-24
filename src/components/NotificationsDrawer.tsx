@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { Notification as PadelNotification } from '../types.ts';
+import { currentLang, fmt, localeFor } from '../hooks/useI18n.ts';
+import { useDialogA11y } from '../hooks/useDialogA11y.ts';
 
 export default function NotificationsDrawer({
   notifications,
@@ -19,6 +21,7 @@ export default function NotificationsDrawer({
   t: (key: string) => string
 }) {
   const unreadCount = notifications.filter(n => !n.read).length;
+  const { dialogProps } = useDialogA11y(onClose);
 
   const getIcon = (type: string) => {
     if (type === 'new_request') return '👋';
@@ -38,11 +41,11 @@ export default function NotificationsDrawer({
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    if (diffMins < 1) return 'Most';
-    if (diffMins < 60) return `${diffMins} perce`;
-    if (diffHours < 24) return `${diffHours} órája`;
-    if (diffDays < 7) return `${diffDays} napja`;
-    return d.toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' });
+    if (diffMins < 1) return t('time.now');
+    if (diffMins < 60) return fmt(t('time.minutesAgo'), { n: diffMins });
+    if (diffHours < 24) return fmt(t('time.hoursAgo'), { n: diffHours });
+    if (diffDays < 7) return fmt(t('time.daysAgo'), { n: diffDays });
+    return d.toLocaleDateString(localeFor(currentLang()), { month: 'short', day: 'numeric' });
   };
 
   const handleFriendAccept = (e: React.MouseEvent, n: PadelNotification) => {
@@ -77,18 +80,20 @@ export default function NotificationsDrawer({
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="relative w-full max-w-sm bg-[#F8F8F5] h-full shadow-2xl flex flex-col"
+        {...dialogProps}
+        aria-labelledby="notifications-title"
+        className="relative w-full max-w-sm bg-[#F8F8F5] h-full shadow-2xl flex flex-col outline-none"
       >
         {/* Header */}
         <div className="p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-4 bg-[#141414] text-white">
           <div className="flex justify-between items-center mb-1">
-            <h2 className="text-xl font-black uppercase tracking-tight">{t('notifications.title')}</h2>
-            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-              <X className="w-5 h-5" />
+            <h2 id="notifications-title" className="text-xl font-black uppercase tracking-tight">{t('notifications.title')}</h2>
+            <button onClick={onClose} aria-label={t('a11y.close')} className="p-2.5 hover:bg-white/10 rounded-full transition-colors">
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
           <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest">
-            {unreadCount > 0 ? `${unreadCount} olvasatlan` : 'Minden olvasott'}
+            {unreadCount > 0 ? fmt(t('notifications.unreadCount'), { n: unreadCount }) : t('notifications.allRead')}
           </p>
         </div>
 
@@ -108,6 +113,9 @@ export default function NotificationsDrawer({
               return (
                 <div
                   key={n.id}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onRead(n.id); } }}
                   onClick={() => onRead(n.id)}
                   className={`rounded-2xl border overflow-hidden transition-all cursor-pointer hover:shadow-md ${
                     n.read
@@ -176,7 +184,7 @@ export default function NotificationsDrawer({
               onClick={() => notifications.filter(n => !n.read).forEach(n => onRead(n.id))}
               className="w-full py-3 text-[11px] font-black uppercase tracking-widest text-[#141414]/40 hover:text-[#141414] transition-colors"
             >
-              Összes megjelölése olvasottként
+              {t('notifications.markAllRead')}
             </button>
           </div>
         )}

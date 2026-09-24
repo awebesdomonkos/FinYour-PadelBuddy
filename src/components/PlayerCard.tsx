@@ -31,7 +31,11 @@ export default function PlayerCard({
   return (
     <div
       onClick={() => onOpenProfile(player)}
-      className="bg-white rounded-3xl p-4 flex items-center gap-3 border border-[#141414]/5 shadow-sm hover:border-[#E2FF3B] hover:shadow-md transition-all cursor-pointer group"
+      role="button"
+      tabIndex={0}
+      aria-label={player.name}
+      onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onOpenProfile(player); } }}
+      className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#141414] bg-white rounded-3xl p-4 flex items-center gap-3 border border-[#141414]/5 shadow-sm hover:border-[#E2FF3B] hover:shadow-md transition-all cursor-pointer group"
     >
       {/* Avatar */}
       <div className="relative shrink-0">
@@ -69,7 +73,7 @@ export default function PlayerCard({
           )}
           {isLfg && (
             <span className="text-[9px] bg-[#E2FF3B]/30 text-[#141414] px-1.5 py-0.5 rounded-lg font-black uppercase tracking-widest whitespace-nowrap">
-              {player.lfgStatus === LFGStatus.Now ? '🔥 Most' : '📅 Ma'}
+              {player.lfgStatus === LFGStatus.Now ? `🔥 ${t('time.now')}` : `📅 ${t('games.filters.today')}`}
             </span>
           )}
         </div>
@@ -79,13 +83,15 @@ export default function PlayerCard({
       <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+          aria-label={`${isFavorite ? t('a11y.removeFavorite') : t('a11y.favorite')}: ${player.name}`}
+          aria-pressed={!!isFavorite}
           className={`p-2.5 rounded-xl transition-colors ${isFavorite ? 'text-red-500 bg-red-50' : 'bg-[#141414]/5 text-[#141414]/30 hover:text-red-500 hover:bg-red-50'}`}
         >
-          <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+          <Heart aria-hidden="true" className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
         </button>
-        <button className="p-2.5 rounded-xl bg-[#141414]/5 hover:bg-[#E2FF3B] transition-colors">
+        <span aria-hidden="true" className="p-2.5 rounded-xl bg-[#141414]/5 group-hover:bg-[#E2FF3B] transition-colors">
           <ChevronRight className="w-4 h-4 opacity-40" />
-        </button>
+        </span>
       </div>
     </div>
   );
