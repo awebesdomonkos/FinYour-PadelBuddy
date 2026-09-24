@@ -21,8 +21,12 @@ import {
   X,
   LogOut,
   Trash2,
+  MessageSquareHeart,
+  Inbox,
+  ShieldCheck,
+  ChevronRight,
 } from 'lucide-react';
-import { useI18n } from './hooks/useI18n.ts';
+import { useI18n, fmt, localeFor } from './hooks/useI18n.ts';
 import { useAuth } from './context/AuthContext.tsx';
 import {
   User,
@@ -54,8 +58,14 @@ import LevelTutorial from './components/LevelTutorial.tsx';
 import CreateGroupModal from './components/CreateGroupModal.tsx';
 import GameDetailDrawer from './components/GameDetailDrawer.tsx';
 import RatingModal from './components/RatingModal.tsx';
+import FeedbackForm from './components/FeedbackForm.tsx';
+import DialogPanel from './components/DialogPanel.tsx';
+import FeedbackAdminView from './components/FeedbackAdminView.tsx';
 import { OnboardingWizard } from './OnboardingWizard.tsx';
+import { useConfirm } from './hooks/useConfirm.tsx';
 import { supabase } from './lib/supabase.ts';
+import { trackedFetch, registerRetry } from './lib/connectivityStore.ts';
+import { syncExistingSubscription } from './lib/push.ts';
 
 export default function App() {
   const { currentUser, token, login, register, logout, updateUser, authError, setAuthError, loading: authLoading, emailConfirmationPending, clearEmailConfirmationPending } = useAuth();
@@ -86,6 +96,10 @@ export default function App() {
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [isLevelTutorialOpen, setIsLevelTutorialOpen] = useState(false);
   const [gameToEdit, setGameToEdit] = useState<Game | null>(null);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isFeedbackAdminOpen, setIsFeedbackAdminOpen] = useState(false);
+  const [isAppAdmin, setIsAppAdmin] = useState(false);
+  const [confirm, confirmDialog] = useConfirm();
   const { t, lang, setLang } = useI18n('hu');
 
   // Registration/Auth state
@@ -98,14 +112,16 @@ export default function App() {
   const [selectedGroupDetail, setSelectedGroupDetail] = useState<Group | null>(null);
   const [reminderGame, setReminderGame] = useState<Game | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (msg: string, duration = 2500) => {
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), duration);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToastMsg(null), duration);
   };
 
   const safeFetch = async (url: string, options: RequestInit = {}) => {
-    const response = await fetch(url, options);
+    const response = await trackedFetch(url, options);
     const text = await response.text();
     let data;
     try {
@@ -175,8 +191,8 @@ export default function App() {
     } catch (err) { console.error("Failed to fetch notifications", err); }
   }, [authHeaders]);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
+  const fetchData = useCallback(async (opts: { silent?: boolean } = {}) => {
+    if (!opts.silent) setIsLoading(true);
     try {
       const headers = authHeaders();
       const [gamesData, playersData, groupsData, clubsData, notifsData] = await Promise.all([
@@ -207,6 +223,49 @@ export default function App() {
       setLang('hu');
     }
   }, [currentUser?.languagePreference, setLang]);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    return registerRetry(() => fetchData({ silent: true }));
+  }, [currentUser?.id, fetchData]);
+
+  // Admin rights live server-side (app_admins); the client only learns whether to show the admin entry.
+  useEffect(() => {
+    if (!currentUser?.id || !token) { setIsAppAdmin(false); return; }
+    let cancelled = false;
+    safeFetch('/api/admin/status', { headers: authHeaders() })
+      .then(d => { if (!cancelled) setIsAppAdmin(Boolean(d?.isAdmin)); })
+      .catch(() => { if (!cancelled) setIsAppAdmin(false); });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id, token]);
+
+  useEffect(() => {
+    if (currentUser?.id && token) void syncExistingSubscription(token);
+  }, [currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Push notification clicked while the app is already open: route in place instead of reloading.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.type !== 'NOTIFICATION_CLICK') return;
+      const target = new URL(event.data.url, window.location.origin);
+      if (target.searchParams.get('game')) {
+        // The ?game= deep-link effect opens the game once the refreshed list arrives.
+        window.history.replaceState({}, '', target.pathname + target.search);
+        fetchGames();
+      } else {
+        fetchNotifications();
+        setIsNotificationsOpen(true);
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage);
+  }, [fetchGames, fetchNotifications]);
 
   // Keep selectedGame in sync with games array; close modals if game was deleted
   useEffect(() => {
@@ -401,9 +460,11 @@ export default function App() {
     }
   };
 
-  const handleDeleteGame = async (gameId: string) => {
-    const confirmed = window.confirm(lang === 'hu' ? 'Biztosan törlöd ezt a meccset?' : 'Are you sure you want to delete this game?');
-    if (!confirmed) return;
+  const handleDeleteGame = async (gameId: string, opts: { skipConfirm?: boolean } = {}) => {
+    if (!opts.skipConfirm) {
+      const confirmed = await confirm({ title: t('confirmDialogs.deleteGameTitle'), message: t('confirmDialogs.deleteGame'), confirmLabel: t('common.delete'), cancelLabel: t('common.cancel') });
+      if (!confirmed) return;
+    }
     try {
       await safeFetch(`/api/games/${gameId}`, {
         method: 'DELETE',
@@ -648,7 +709,7 @@ export default function App() {
   const handleShareGame = async (game: Game) => {
     const gameDateTime = game.datetime || (game.date && game.time ? `${game.date}T${game.time}` : null);
     const dateStr = gameDateTime
-      ? new Date(gameDateTime).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      ? new Date(gameDateTime).toLocaleDateString(localeFor(lang), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
       : '';
     const joined = (game.joinedPlayers || []).length;
     const total = Number(game.requiredPlayers || 4);
@@ -755,6 +816,7 @@ export default function App() {
       setActiveTab('groups');
     } catch (err) {
       console.error("Failed to create group", err);
+      throw err; // CreateGroupModal stays open and shows the error
     }
   };
 
@@ -792,11 +854,7 @@ export default function App() {
   // Clear all past games from history
   const handleClearHistory = async () => {
     if (!currentUser) return;
-    const confirmed = window.confirm(
-      lang === 'hu'
-        ? 'Biztosan törlöd az összes meccselőzményt? Ez nem vonható vissza.'
-        : 'Are you sure you want to clear all match history? This cannot be undone.'
-    );
+    const confirmed = await confirm({ title: t('confirmDialogs.clearHistoryTitle'), message: t('confirmDialogs.clearHistory'), confirmLabel: t('common.delete'), cancelLabel: t('common.cancel') });
     if (!confirmed) return;
     const pastGameIds = (games || [])
       .filter(g => {
@@ -851,8 +909,8 @@ export default function App() {
     }
   };
 
-  const handleUpdateUser = async (updatedData: Partial<User>) => {
-    if (!currentUser) return;
+  const handleUpdateUser = async (updatedData: Partial<User>): Promise<boolean> => {
+    if (!currentUser) return false;
     try {
       const data = await safeFetch(`/api/users/${currentUser.id}`, {
         method: 'PUT',
@@ -866,9 +924,11 @@ export default function App() {
       if (savedUser?.id) updateUser(savedUser); else updateUser(updatedData);
       setIsEditingProfile(false);
       showToast('✅ ' + (lang === 'hu' ? 'Profil sikeresen mentve!' : 'Profile saved!'));
+      return true;
     } catch (err: any) {
       console.error("Failed to update user", err);
       showToast('❌ ' + (lang === 'hu' ? 'Hiba: ' : 'Error: ') + (err?.message || (lang === 'hu' ? 'Mentés sikertelen' : 'Save failed')));
+      return false;
     }
   };
 
@@ -997,25 +1057,30 @@ export default function App() {
               onClick={() => handleUpdateLanguage(lang === 'hu' ? 'en' : 'hu')}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#141414]/5 hover:bg-[#E2FF3B] transition-colors text-xs font-black uppercase tracking-widest"
               title={lang === 'hu' ? 'Switch to English' : 'Váltás magyarra'}
+              aria-label={lang === 'hu' ? 'Switch to English' : 'Váltás magyarra'}
+              lang={lang === 'hu' ? 'en' : 'hu'}
             >
-              <span className="text-base leading-none">{lang === 'hu' ? '🇭🇺' : '🇬🇧'}</span>
+              <span className="text-base leading-none" aria-hidden="true">{lang === 'hu' ? '🇭🇺' : '🇬🇧'}</span>
               <span className="hidden sm:block">{lang === 'hu' ? 'HU' : 'EN'}</span>
             </button>
             <button
               onClick={() => setIsNotificationsOpen(true)}
-              className="w-10 h-10 rounded-full bg-[#141414]/5 flex items-center justify-center relative hover:bg-[#141414]/10 transition-colors"
+              aria-label={`${t('a11y.notifications')}${notifications.some(n => !n.read) ? ` (${fmt(t('notifications.unreadCount'), { n: notifications.filter(n => !n.read).length })})` : ''}`}
+              className="w-11 h-11 rounded-full bg-[#141414]/5 flex items-center justify-center relative hover:bg-[#141414]/10 transition-colors"
             >
-              <AlertCircle className="w-5 h-5 opacity-60" />
+              <AlertCircle className="w-5 h-5 opacity-60" aria-hidden="true" />
               {notifications.some(n => !n.read) && (
                 <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
               )}
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('profile')}
+              aria-label={t('nav.profile')}
+              aria-current={activeTab === 'profile' ? 'page' : undefined}
               className={`flex items-center gap-2 p-1 pr-3 rounded-full border transition-all ${activeTab === 'profile' ? 'bg-[#E2FF3B] border-[#141414]/10' : 'bg-[#141414]/5 border-transparent hover:border-[#141414]/10'}`}
             >
               <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden">
-                {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-4 h-4" />}
+                {currentUser?.avatarUrl ? <img src={currentUser.avatarUrl} alt="" className="w-full h-full object-cover" /> : <UserIcon className="w-4 h-4" aria-hidden="true" />}
               </div>
               <span className="text-xs font-bold hidden sm:block">{currentUser?.name}</span>
             </button>
@@ -1551,11 +1616,12 @@ export default function App() {
                   />
 
                   <div className="flex flex-col items-center py-4 text-center relative">
-                    <button 
+                    <button
                       onClick={() => setIsEditingProfile(true)}
+                      aria-label={t('a11y.editProfile')}
                       className="absolute top-0 right-0 p-3 bg-white shadow-sm border border-[#141414]/5 rounded-2xl hover:scale-105 transition-transform"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-4 h-4" aria-hidden="true" />
                     </button>
                     <div className="w-24 h-24 bg-[#141414] text-[#E2FF3B] rounded-full flex items-center justify-center mb-4 border-4 border-white shadow-xl overflow-hidden">
                       {currentUser?.avatarUrl ? (
@@ -1686,7 +1752,7 @@ export default function App() {
                                   </button>
                                   {isAdmin ? (
                                     <button
-                                      onClick={() => { if (window.confirm(lang === 'hu' ? 'Biztosan törlöd a csoportot?' : 'Delete this group?')) handleDeleteGroup(group.id); }}
+                                      onClick={async () => { if (await confirm({ title: t('confirmDialogs.deleteGroupTitle'), message: t('confirmDialogs.deleteGroup'), confirmLabel: t('common.delete'), cancelLabel: t('common.cancel') })) handleDeleteGroup(group.id); }}
                                       className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors"
                                       title={lang === 'hu' ? 'Csoport törlése' : 'Delete group'}
                                     >
@@ -1773,6 +1839,7 @@ export default function App() {
                         </button>
                       </div>
                       <MatchHistory
+                        lang={lang}
                         games={(games || [])
                           .filter(g => !(currentUser?.hiddenFromHistory || []).includes(g.id))
                           .filter(g => (g.joinedPlayers || []).includes(currentUser?.id || ''))}
@@ -1780,14 +1847,51 @@ export default function App() {
                         onGameClick={(game) => { setSelectedGame(game); setIsDetailOpen(true); }}
                         onDeleteGame={(gameId) => {
                           const game = games.find(g => g.id === gameId);
-                          if (game?.creatorId === currentUser?.id) handleDeleteGame(gameId);
+                          if (game?.creatorId === currentUser?.id) handleDeleteGame(gameId, { skipConfirm: true });
                           else handleHideFromHistory(gameId);
                         }}
                       />
                     </div>
 
+                    <nav className="pt-6 border-t border-[#141414]/5 space-y-2" aria-labelledby="help-legal-heading">
+                      <h3 id="help-legal-heading" className="text-xs font-black uppercase tracking-widest opacity-40 mb-3">{t('legal.section')}</h3>
+                      <button
+                        type="button"
+                        onClick={() => setIsFeedbackOpen(true)}
+                        className="w-full flex items-center gap-3 p-4 bg-[#141414]/5 rounded-2xl text-left hover:bg-[#141414]/10 transition-colors"
+                      >
+                        <MessageSquareHeart className="w-5 h-5 shrink-0" aria-hidden="true" />
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-sm font-bold">{t('feedback.entry')}</span>
+                          <span className="block text-xs opacity-50">{t('feedback.entrySub')}</span>
+                        </span>
+                        <ChevronRight className="w-4 h-4 opacity-30" aria-hidden="true" />
+                      </button>
+                      {isAppAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => setIsFeedbackAdminOpen(true)}
+                          className="w-full flex items-center gap-3 p-4 bg-[#E2FF3B]/40 rounded-2xl text-left hover:bg-[#E2FF3B]/60 transition-colors"
+                        >
+                          <Inbox className="w-5 h-5 shrink-0" aria-hidden="true" />
+                          <span className="flex-1 text-sm font-bold">{t('feedback.admin.entry')}</span>
+                          <ChevronRight className="w-4 h-4 opacity-30" aria-hidden="true" />
+                        </button>
+                      )}
+                      <a
+                        href={`/privacy?lang=${lang}`}
+                        target="_blank"
+                        rel="noopener"
+                        className="w-full flex items-center gap-3 p-4 bg-[#141414]/5 rounded-2xl hover:bg-[#141414]/10 transition-colors"
+                      >
+                        <ShieldCheck className="w-5 h-5 shrink-0" aria-hidden="true" />
+                        <span className="flex-1 text-sm font-bold">{t('legal.privacyPolicy')}</span>
+                        <ChevronRight className="w-4 h-4 opacity-30" aria-hidden="true" />
+                      </a>
+                    </nav>
+
                     <div className="pt-6 border-t border-[#141414]/5">
-                      <button 
+                      <button
                         onClick={handleLogout}
                         className="w-full flex items-center justify-center gap-2 py-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold hover:bg-red-100 transition-colors"
                       >
@@ -1805,6 +1909,15 @@ export default function App() {
                 />
               )}
             </motion.div>
+          )}
+        </AnimatePresence>
+        {confirmDialog}
+        <AnimatePresence>
+          {isFeedbackOpen && (
+            <FeedbackForm token={token} t={t} onClose={() => setIsFeedbackOpen(false)} />
+          )}
+          {isFeedbackAdminOpen && isAppAdmin && (
+            <FeedbackAdminView token={token} t={t} lang={lang} onClose={() => setIsFeedbackAdminOpen(false)} />
           )}
         </AnimatePresence>
         {/* Rating Modal */}
@@ -1881,6 +1994,9 @@ export default function App() {
       {/* Overlays */}
       <AnimatePresence>
         {isChatOpen && selectedGame && (
+          <motion.div key="chat-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsChatOpen(false)} aria-hidden="true" className="fixed inset-0 z-[59] bg-black/30 backdrop-blur-sm" />
+        )}
+        {isChatOpen && selectedGame && (
           <ChatDrawer 
             game={selectedGame} 
             currentUser={currentUser}
@@ -1913,15 +2029,15 @@ export default function App() {
         {/* Group Detail Drawer */}
         {selectedGroupDetail && (
           <div className="fixed inset-0 z-[60] flex justify-end">
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSelectedGroupDetail(null)} />
-            <div className="relative w-full max-w-sm bg-[#F8F8F5] h-full shadow-2xl flex flex-col overflow-y-auto">
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" onClick={() => setSelectedGroupDetail(null)} />
+            <DialogPanel onClose={() => setSelectedGroupDetail(null)} labelledBy="group-detail-title" className="relative w-full max-w-sm bg-[#F8F8F5] h-full shadow-2xl flex flex-col overflow-y-auto">
               <div className="bg-[#141414] text-white p-5 pt-[calc(1.25rem+env(safe-area-inset-top,0px))]">
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setSelectedGroupDetail(null)} className="p-2 hover:bg-white/10 rounded-xl">
-                    <ArrowLeft className="w-5 h-5" />
+                  <button onClick={() => setSelectedGroupDetail(null)} aria-label={t('a11y.back')} className="p-2.5 hover:bg-white/10 rounded-xl">
+                    <ArrowLeft className="w-5 h-5" aria-hidden="true" />
                   </button>
                   <div className="flex-1">
-                    <h3 className="font-black text-lg uppercase">{selectedGroupDetail.name}</h3>
+                    <h3 id="group-detail-title" className="font-black text-lg uppercase">{selectedGroupDetail.name}</h3>
                     <p className="text-white/40 text-[10px] font-bold uppercase">{selectedGroupDetail.city}</p>
                   </div>
                 </div>
@@ -1950,7 +2066,7 @@ export default function App() {
                             {member?.avatarUrl ? <img src={member.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-4 h-4 opacity-40" />}
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-bold">{member?.name || 'Ismeretlen'}</p>
+                            <p className="text-sm font-bold">{member?.name || t('common.unknown')}</p>
                             <p className="text-[10px] opacity-40 font-bold uppercase">{member ? t(`profile.levels.${member.skillLevel}`) : ''}</p>
                           </div>
                           {isAdmin && <span className="px-2 py-0.5 bg-[#E2FF3B] text-[#141414] text-[9px] font-black rounded-lg uppercase">Admin</span>}
@@ -1969,13 +2085,13 @@ export default function App() {
                             {friend.avatarUrl ? <img src={friend.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon className="w-4 h-4 opacity-40" />}
                           </div>
                           <p className="flex-1 text-sm font-bold">{friend.name}</p>
-                          <button onClick={async () => { try { await safeFetch(`/api/groups/${selectedGroupDetail.id}/invite`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ invitedUserId: friend.id }) }); showToast('✅ ' + (lang === 'hu' ? 'Meghívó elküldve!' : 'Elküldve!')); } catch { showToast('❌'); } }} className="px-3 py-1.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-[10px] font-black uppercase hover:bg-[#252525] transition-colors">
-                            {lang === 'hu' ? 'Meghív' : 'Meghív'}
+                          <button onClick={async () => { try { await safeFetch(`/api/groups/${selectedGroupDetail.id}/invite`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ invitedUserId: friend.id }) }); showToast('✅ ' + (lang === 'hu' ? 'Meghívó elküldve!' : 'Sent!')); } catch { showToast('❌'); } }} className="px-3 py-1.5 bg-[#141414] text-[#E2FF3B] rounded-xl text-[10px] font-black uppercase hover:bg-[#252525] transition-colors">
+                            {lang === 'hu' ? 'Meghív' : 'Invite'}
                           </button>
                         </div>
                       ))}
                       {(players || []).filter(p => (currentUser?.friendIds || []).includes(p.id) && !(selectedGroupDetail.memberIds || []).includes(p.id)).length === 0 && (
-                        <p className="text-xs opacity-40 italic text-center py-3">{lang === 'hu' ? 'Nincs meghívható barát' : 'Nincs meghívható barát'}</p>
+                        <p className="text-xs opacity-40 italic text-center py-3">{lang === 'hu' ? 'Nincs meghívható barát' : 'No friends to invite'}</p>
                       )}
                     </div>
                   </div>
@@ -1985,7 +2101,7 @@ export default function App() {
                 {(selectedGroupDetail.memberIds || []).includes(currentUser?.id || '') ? (
                   <div className="flex gap-2">
                     <button onClick={() => { setSelectedGroup(selectedGroupDetail); setIsGroupChatOpen(true); setSelectedGroupDetail(null); }} className="flex-1 py-3 bg-[#141414] text-[#E2FF3B] rounded-2xl font-black uppercase text-sm flex items-center justify-center gap-2 hover:bg-[#252525] transition-colors">
-                      <MessageSquare className="w-4 h-4" /> Chat
+                      <MessageSquare className="w-4 h-4" aria-hidden="true" /> {t('games.chatShort')}
                     </button>
                     {!(selectedGroupDetail.adminIds || []).includes(currentUser?.id || '') && (
                       <button onClick={() => { handleLeaveGroup(selectedGroupDetail.id); setSelectedGroupDetail(null); }} className="px-4 py-3 bg-red-50 text-red-500 rounded-2xl font-black uppercase text-sm flex items-center gap-2 hover:bg-red-100 transition-colors">
@@ -1999,7 +2115,7 @@ export default function App() {
                   </button>
                 )}
               </div>
-            </div>
+            </DialogPanel>
           </div>
         )}
 
@@ -2012,7 +2128,7 @@ export default function App() {
             onRead={async (id) => {
               setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
               try {
-                await fetch(`/api/notifications/${id}/read`, {
+                await trackedFetch(`/api/notifications/${id}/read`, {
                   method: 'POST',
                   headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -2056,6 +2172,7 @@ export default function App() {
             game={selectedGame}
             onSave={(res) => handleRecordResult(selectedGame.id, res)}
             onClose={() => setIsResultModalOpen(false)}
+            t={t}
           />
         )}
         {isCreateGroupModalOpen && (
@@ -2070,6 +2187,13 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      <div role="status" aria-live="polite" className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] w-max max-w-[calc(100vw-2rem)] pointer-events-none">
+        {toastMsg && (
+          <div className="bg-[#141414] text-white text-sm font-bold px-6 py-3 rounded-2xl shadow-xl text-center">
+            {toastMsg}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

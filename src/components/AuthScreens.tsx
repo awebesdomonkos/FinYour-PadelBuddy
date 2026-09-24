@@ -99,12 +99,14 @@ export function RegistrationForm({
 }) {
   const [showPass, setShowPass] = useState(false);
   const [gdprAccepted, setGdprAccepted] = useState(false);
+  const [gdprError, setGdprError] = useState(false);
   const lang = formData.lang || 'hu';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!gdprAccepted) {
-      alert(lang === 'hu' ? 'Az adatvédelmi nyilatkozat elfogadása kötelező.' : 'You must accept the privacy policy.');
+      setGdprError(true);
+      document.getElementById('gdpr-consent')?.focus();
       return;
     }
     onSubmit(e);
@@ -117,9 +119,10 @@ export function RegistrationForm({
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={onCancel}
+          aria-label={t('a11y.back')}
           className="self-start mb-12 p-3 bg-white rounded-2xl shadow-sm border border-black/5 hover:bg-gray-50 transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-[#141414]" />
+          <ArrowLeft className="w-5 h-5 text-[#141414]" aria-hidden="true" />
         </motion.button>
 
         <motion.div
@@ -217,30 +220,42 @@ export function RegistrationForm({
                 className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-6 pr-14 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none font-bold text-[#141414]"
               />
               <button type="button" onClick={() => setShowPass(v => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 opacity-40 hover:opacity-70">
+                aria-label={lang === 'hu' ? (showPass ? 'Jelszó elrejtése' : 'Jelszó megjelenítése') : (showPass ? 'Hide password' : 'Show password')}
+                aria-pressed={showPass}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 opacity-50 hover:opacity-80">
                 {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
           {/* GDPR checkbox */}
-          <label className="flex items-start gap-3 cursor-pointer group">
-            <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${gdprAccepted ? 'bg-[#141414] border-[#141414]' : 'border-[#141414]/20 group-hover:border-[#141414]/50'}`}
-              onClick={() => setGdprAccepted(v => !v)}>
-              {gdprAccepted && <svg className="w-3 h-3 text-[#E2FF3B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-            </div>
-            <span className="text-xs text-[#141414]/60 leading-relaxed" onClick={() => setGdprAccepted(v => !v)}>
-              {lang === 'hu'
-                ? <>Elolvastam és elfogadom az <a href="/privacy" target="_blank" className="underline font-bold text-[#141414]" onClick={e => e.stopPropagation()}>Adatvédelmi nyilatkozatot</a>. Az adatkezelés célja a szolgáltatás nyújtása.</>
-                : <>I have read and accept the <a href="/privacy" target="_blank" className="underline font-bold text-[#141414]" onClick={e => e.stopPropagation()}>Privacy Policy</a>. Data is processed to provide the service.</>
-              }
-            </span>
-          </label>
+          <div className="space-y-2">
+            <label htmlFor="gdpr-consent" className="flex items-start gap-3 cursor-pointer group">
+              <input
+                id="gdpr-consent"
+                type="checkbox"
+                checked={gdprAccepted}
+                onChange={e => { setGdprAccepted(e.target.checked); if (e.target.checked) setGdprError(false); }}
+                aria-invalid={gdprError}
+                aria-describedby={gdprError ? 'gdpr-error' : undefined}
+                className="peer sr-only"
+              />
+              <span aria-hidden="true" className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#141414] ${gdprAccepted ? 'bg-[#141414] border-[#141414]' : gdprError ? 'border-red-500' : 'border-[#141414]/30 group-hover:border-[#141414]/60'}`}>
+                {gdprAccepted && <svg className="w-3 h-3 text-[#E2FF3B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+              </span>
+              <span className="text-xs text-[#141414]/70 leading-relaxed">
+                {lang === 'hu'
+                  ? <>Elolvastam és elfogadom az <a href="/privacy?lang=hu" target="_blank" rel="noopener" className="underline font-bold text-[#141414]">Adatvédelmi nyilatkozatot</a>. Az adatkezelés célja a szolgáltatás nyújtása.</>
+                  : <>I have read and accept the <a href="/privacy?lang=en" target="_blank" rel="noopener" className="underline font-bold text-[#141414]">Privacy Policy</a>. Data is processed to provide the service.</>
+                }
+              </span>
+            </label>
+            {gdprError && <p id="gdpr-error" role="alert" className="text-xs font-bold text-red-600 pl-8">{t('a11y.gdprRequired')}</p>}
+          </div>
 
           <button
             type="submit"
-            disabled={!gdprAccepted}
-            className="w-full bg-[#141414] text-[#E2FF3B] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10 disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed"
+            className="w-full bg-[#141414] text-[#E2FF3B] py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10"
           >
             {t('auth.register')}
           </button>
@@ -295,9 +310,10 @@ export function LoginForm({
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={onCancel}
+          aria-label={t('a11y.back')}
           className="self-start mb-12 p-3 bg-white rounded-2xl shadow-sm border border-black/5 hover:bg-gray-50 transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-[#141414]" />
+          <ArrowLeft className="w-5 h-5 text-[#141414]" aria-hidden="true" />
         </motion.button>
 
         <motion.div
@@ -360,7 +376,9 @@ export function LoginForm({
                 className="w-full bg-[#141414]/5 border-none rounded-2xl py-4 pl-6 pr-14 text-sm focus:ring-2 focus:ring-[#E2FF3B] outline-none font-bold text-[#141414]"
               />
               <button type="button" onClick={() => setShowPass(v => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 opacity-40 hover:opacity-70">
+                aria-label={lang === 'hu' ? (showPass ? 'Jelszó elrejtése' : 'Jelszó megjelenítése') : (showPass ? 'Hide password' : 'Show password')}
+                aria-pressed={showPass}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 opacity-50 hover:opacity-80">
                 {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>

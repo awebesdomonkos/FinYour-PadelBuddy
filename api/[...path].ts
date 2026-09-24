@@ -1,3 +1,5 @@
+import webpush from 'web-push';
+
 type VercelRequest = { method?: string; url?: string; headers: Record<string, any>; body?: any; query?: Record<string, string> };
 type VercelResponse = { status: (code: number) => VercelResponse; setHeader: (k: string, v: string) => VercelResponse; json: (data: any) => void; end: (data?: any) => void };
 
@@ -16,16 +18,27 @@ function isSafeId(id: string): boolean { return SAFE_ID_RE.test(id); }
 // H-2: Email validation
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Pre-generated dummy hash for timing-safe login (H-3)
-const DUMMY_HASH = "$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012345";
-
 const jsonResponse = (res: VercelResponse, statusCode: number, body: any) => {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   return res.status(statusCode).json(body);
 };
+
+// Supabase unreachable or erroring (e.g. project paused) — surfaced to the client as 503.
+class UpstreamError extends Error {}
+
+async function upstreamFetch(url: string, init: RequestInit): Promise<Response> {
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch (err) {
+    throw new UpstreamError(`Upstream unreachable: ${url.split('?')[0]} (${(err as Error)?.message})`);
+  }
+  if (res.status >= 500) throw new UpstreamError(`Upstream ${res.status}: ${url.split('?')[0]}`);
+  return res;
+}
 
 async function db(table: string, query: string = '', options: { method?: string; body?: any } = {}) {
   const { method = 'GET', body } = options;
@@ -36,13 +49,83 @@ async function db(table: string, query: string = '', options: { method?: string;
     'Content-Type': 'application/json',
     'Prefer': 'return=representation',
   };
-  const res = await fetch(url, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+  const res = await upstreamFetch(url, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`DB ${method} /${table}: ${res.status} ${err}`);
   }
   const text = await res.text();
   return text ? JSON.parse(text) : [];
+}
+
+// ---------------------------------------------------------------- Web push
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:info@awebes.hu';
+const pushEnabled = Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY);
+
+// The server POSTs to the subscription endpoint, so only real browser push services are accepted (SSRF guard).
+const PUSH_HOST_RE = /^(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|[a-z0-9-]+\.notify\.windows\.com|web\.push\.apple\.com)$/i;
+const PUSH_KEY_RE = /^[A-Za-z0-9_-]{1,200}={0,2}$/;
+
+function isValidPushEndpoint(endpoint: unknown): endpoint is string {
+  if (typeof endpoint !== 'string' || endpoint.length > 1000) return false;
+  try {
+    const u = new URL(endpoint);
+    return u.protocol === 'https:' && PUSH_HOST_RE.test(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
+type PushPayload = { title: string; body: string; url: string; tag: string };
+
+async function sendPushToUser(userId: string, payload: PushPayload) {
+  if (!pushEnabled) return;
+  const subs = await db('push_subscriptions', `user_id=eq.${userId}&select=id,endpoint,p256dh,auth`).catch(() => []);
+  await Promise.allSettled(subs.map(async (s: any) => {
+    try {
+      await webpush.sendNotification(
+        { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+        JSON.stringify(payload),
+        { TTL: 60 * 60 * 24, timeout: 5000, vapidDetails: { subject: VAPID_SUBJECT, publicKey: VAPID_PUBLIC_KEY, privateKey: VAPID_PRIVATE_KEY } },
+      );
+    } catch (err: any) {
+      // 404/410: the browser dropped the subscription (app uninstalled, permission revoked)
+      if (err?.statusCode === 404 || err?.statusCode === 410) {
+        await db('push_subscriptions', `id=eq.${s.id}`, { method: 'DELETE' }).catch(() => {});
+      } else {
+        console.error('Push send failed', err?.statusCode, err?.body || err?.message);
+      }
+    }
+  }));
+}
+
+type NotificationData = { type: string; title: string; message: string; gameId?: string; fromUserId?: string; requestId?: string };
+
+// Every in-app notification goes through here, so each one is also delivered as a push.
+async function notifyUser(userId: string, data: NotificationData) {
+  await db('notifications', '', { method: 'POST', body: {
+    id: crypto.randomUUID(), user_id: userId,
+    data: { ...data, read: false },
+    created_at: new Date().toISOString(),
+  }});
+  await sendPushToUser(userId, {
+    title: data.title,
+    body: data.message,
+    url: data.gameId ? `/?game=${encodeURIComponent(data.gameId)}` : '/',
+    tag: `${data.type}:${data.gameId || data.requestId || data.fromUserId || ''}`,
+  });
+}
+
+// ---------------------------------------------------------------- Feedback
+const FEEDBACK_CATEGORIES = ['bug', 'suggestion', 'other'];
+const FEEDBACK_STATUSES = ['new', 'reviewed', 'resolved'];
+const FEEDBACK_HOURLY_LIMIT = 5;
+
+async function isAppAdmin(userId: string): Promise<boolean> {
+  const rows = await db('app_admins', `user_id=eq.${userId}&select=user_id`);
+  return rows.length > 0;
 }
 
 function rowToUser(row: any): any {
@@ -57,6 +140,26 @@ function safeUser(row: any): any {
   // M-1: Strip all sensitive fields
   const { password, password_hash, phone, ...safe } = u;
   return safe;
+}
+
+// Other players' rows never include contact details.
+function publicUser(row: any): any {
+  const u = safeUser(row);
+  if (!u) return null;
+  const { email, ...pub } = u;
+  return pub;
+}
+
+// Server-maintained profile fields: ratings/attendance are computed from game results, and the
+// friend/block/favourite lists have dedicated endpoints. A profile PUT must not overwrite them.
+const PROTECTED_USER_FIELDS = [
+  'reliabilityScore', 'goodPlayerScore', 'totalRatings', 'reliabilityStatus',
+  'attendedGamesCount', 'completedGamesCount', 'friendIds', 'blockedUserIds', 'favoritePlayerIds',
+];
+function withoutProtected(data: Record<string, any>) {
+  const out = { ...data };
+  for (const k of PROTECTED_USER_FIELDS) delete out[k];
+  return out;
 }
 
 function rowToObj(row: any): any {
@@ -96,25 +199,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // C-4: /debug endpoint removed entirely
 
-    // verifyAuth — validates Supabase access token, then loads user row
+    // verifyAuth — validates Supabase access token, then loads user row.
+    // An invalid token yields null (→ 401); an unreachable Supabase throws UpstreamError (→ 503),
+    // so clients can tell "logged out" apart from "backend down".
     const verifyAuth = async (tokenStr?: string) => {
       if (!tokenStr) return null;
-      try {
-        // Ask Supabase Auth to validate the token and return the user
-        const resp = await fetch(`${SB_URL}/auth/v1/user`, {
-          headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${tokenStr}` },
-        });
-        if (!resp.ok) return null;
-        const authUser = await resp.json();
-        const userId = authUser?.id;
-        if (!userId) return null;
-        const rows = await db('users', `id=eq.${userId}&select=*`);
-        if (rows && rows.length > 0) return rows[0];
-        // User authenticated but no profile row yet — return minimal row
-        return { id: userId, email: authUser.email || '', name: authUser.user_metadata?.name || '', data: {} };
-      } catch {
-        return null;
-      }
+      const resp = await upstreamFetch(`${SB_URL}/auth/v1/user`, {
+        headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${tokenStr}` },
+      });
+      if (!resp.ok) return null;
+      const authUser = await resp.json().catch(() => null);
+      const userId = authUser?.id;
+      if (!userId) return null;
+      const rows = await db('users', `id=eq.${userId}&select=*`);
+      if (rows && rows.length > 0) return rows[0];
+      // User authenticated but no profile row yet — return minimal row
+      return { id: userId, email: authUser.email || '', name: authUser.user_metadata?.name || '', data: {} };
     };
 
     const authHeader = (req.headers.authorization || req.headers.Authorization || '') as string;
@@ -139,7 +239,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!isSafe || !anonKey) {
         return jsonResponse(res, 503, { error: 'SUPABASE_ANON_KEY not configured. Add it to Vercel env vars.' });
       }
-      return jsonResponse(res, 200, { supabaseUrl: SB_URL, supabaseAnonKey: anonKey });
+      return jsonResponse(res, 200, { supabaseUrl: SB_URL, supabaseAnonKey: anonKey, vapidPublicKey: pushEnabled ? VAPID_PUBLIC_KEY : '' });
     }
 
     // ME
@@ -154,21 +254,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (path === "/users" && method === "GET") {
         if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
         const rows = await db('users', 'select=*');
-        return jsonResponse(res, 200, { success: true, data: rows.map(safeUser) });
+        return jsonResponse(res, 200, { success: true, data: rows.map((r: any) => (r.id === authUser.id ? safeUser(r) : publicUser(r))) });
       }
       // M-5: Require auth for individual user lookup
       if (itemId && method === "GET" && !subAction) {
         if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
         const rows = await db('users', `id=eq.${itemId}&select=*`);
         if (!rows[0]) return jsonResponse(res, 404, { success: false, message: "User not found" });
-        return jsonResponse(res, 200, { success: true, data: safeUser(rows[0]), user: safeUser(rows[0]) });
+        const u = itemId === authUser.id ? safeUser(rows[0]) : publicUser(rows[0]);
+        return jsonResponse(res, 200, { success: true, data: u, user: u });
       }
       if (itemId && method === "PUT") {
         if (!authUser || authUser.id !== itemId) return jsonResponse(res, 403, { success: false, message: "Forbidden" });
         const payload = JSON.parse(body);
         const rows = await db('users', `id=eq.${itemId}&select=*`);
         const currentData = rows[0]?.data || {};
-        const { email, password, password_hash, id, name, ...payloadRest } = payload;
+        const { email, password, password_hash, id, name, ...rawRest } = payload;
+        const payloadRest = withoutProtected(rawRest);
         const nameUpdate = name ? { name } : {};
         if (!rows[0]) {
           // Profile row doesn't exist yet (email-confirm registration flow) — create it
@@ -227,12 +329,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const reqId = crypto.randomUUID();
         const created = await db('friend_requests', '', { method: 'POST', body: { id: reqId, from_user_id: authUser.id, to_user_id: toUserId, status: 'pending', created_at: new Date().toISOString() } });
         const req = Array.isArray(created) ? created[0] : created;
-        const notifId = crypto.randomUUID();
-        await db('notifications', '', { method: 'POST', body: {
-          id: notifId, user_id: toUserId,
-          data: { type: 'new_request', title: 'Új barátkérés', message: `${authUser.name} barátnak jelölt`, fromUserId: authUser.id, requestId: reqId, read: false },
-          created_at: new Date().toISOString()
-        }}).catch(() => {});
+        await notifyUser(toUserId, { type: 'new_request', title: 'Új barátkérés', message: `${authUser.name} barátnak jelölt`, fromUserId: authUser.id, requestId: reqId }).catch(() => {});
         return jsonResponse(res, 201, { success: true, data: { id: req.id, fromUserId: req.from_user_id, toUserId: req.to_user_id, status: req.status, createdAt: req.created_at } });
       }
       if (itemId === "remove" && method === "POST") {
@@ -278,12 +375,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               db('users', `id=eq.${req.to_user_id}`, { method: 'PATCH', body: { data: { ...d2, friendIds: f2 } } })
             ]);
           }
-          const notifId = crypto.randomUUID();
-          await db('notifications', '', { method: 'POST', body: {
-            id: notifId, user_id: req.from_user_id,
-            data: { type: 'request_status', title: 'Barátkérés elfogadva', message: `${authUser.name} elfogadta a barátkérésedet`, fromUserId: authUser.id, read: false },
-            created_at: new Date().toISOString()
-          }}).catch(() => {});
+          await notifyUser(req.from_user_id, { type: 'request_status', title: 'Barátkérés elfogadva', message: `${authUser.name} elfogadta a barátkérésedet`, fromUserId: authUser.id }).catch(() => {});
         }
         const updated = await db('users', `id=eq.${authUser.id}&select=*`);
         return jsonResponse(res, 200, { success: true, data: safeUser(updated[0]), user: safeUser(updated[0]) });
@@ -330,12 +422,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             })
             .slice(0, 20)
             .map(async (u: any) => {
-              const nid = crypto.randomUUID();
-              return db('notifications', '', { method: 'POST', body: {
-                id: nid, user_id: u.id,
-                data: { type: 'game_near', title: 'Új meccs a közeledben!', message: `${authUser.name} új ${gameData.recommendedLevel} szintű meccset hirdetett: ${gameData.location}`, gameId: id, fromUserId: authUser.id, read: false },
-                created_at: new Date().toISOString()
-              }}).catch(() => {});
+              return notifyUser(u.id, { type: 'game_near', title: 'Új meccs a közeledben!', message: `${authUser.name} új ${gameData.recommendedLevel} szintű meccset hirdetett: ${gameData.location}`, gameId: id, fromUserId: authUser.id }).catch(() => {});
             });
           await Promise.all(notifPromises).catch(() => {});
         }
@@ -344,12 +431,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (invitedUserIds.length > 0) {
           await Promise.all(invitedUserIds.map(async (uid: string) => {
             if (!isSafeId(uid)) return;
-            const notifId = crypto.randomUUID();
-            await db('notifications', '', { method: 'POST', body: {
-              id: notifId, user_id: uid,
-              data: { type: 'gameInvite', title: 'Játékmeghívás', message: `${authUser.name} meghívott egy meccsre: ${payload.location}`, gameId: id, fromUserId: authUser.id, read: false },
-              created_at: new Date().toISOString()
-            }}).catch(() => {});
+            await notifyUser(uid, { type: 'gameInvite', title: 'Játékmeghívás', message: `${authUser.name} meghívott egy meccsre: ${payload.location}`, gameId: id, fromUserId: authUser.id }).catch(() => {});
           }));
         }
         return jsonResponse(res, 201, { success: true, data: rowToObj(Array.isArray(created) ? created[0] : created) });
@@ -379,24 +461,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               if (!gameData.joinedPlayers.includes(authUser.id)) {
                 gameData.joinedPlayers.push(authUser.id);
                 if (gameData.creatorId !== authUser.id) {
-                  const nid = crypto.randomUUID();
-                  await db('notifications', '', { method: 'POST', body: {
-                    id: nid, user_id: gameData.creatorId,
-                    data: { type: 'new_request', title: 'Új résztvevő', message: `${authUser.name} csatlakozott a meccsedhez: ${gameData.location}`, gameId: itemId, fromUserId: authUser.id, read: false },
-                    created_at: new Date().toISOString()
-                  }}).catch(() => {});
+                  await notifyUser(gameData.creatorId, { type: 'new_request', title: 'Új résztvevő', message: `${authUser.name} csatlakozott a meccsedhez: ${gameData.location}`, gameId: itemId, fromUserId: authUser.id }).catch(() => {});
                 }
               }
             } else {
               if (!gameData.requests) gameData.requests = [];
               if (!gameData.requests.find((r: any) => r.userId === authUser.id)) {
                 gameData.requests.push({ userId: authUser.id, userName: authUser.name, status: 'pending', timestamp: new Date().toISOString() });
-                const notifId = crypto.randomUUID();
-                await db('notifications', '', { method: 'POST', body: {
-                  id: notifId, user_id: gameData.creatorId,
-                  data: { type: 'new_request', title: 'Csatlakozási kérelem', message: `${authUser.name} csatlakozni szeretne a meccsedhez`, gameId: itemId, fromUserId: authUser.id, read: false },
-                  created_at: new Date().toISOString()
-                }}).catch(() => {});
+                await notifyUser(gameData.creatorId, { type: 'new_request', title: 'Csatlakozási kérelem', message: `${authUser.name} csatlakozni szeretne a meccsedhez`, gameId: itemId, fromUserId: authUser.id }).catch(() => {});
               }
             }
           } else if (subAction === "approve") {
@@ -410,19 +482,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               gameData.requests[rIdx].status = approve ? 'approved' : 'rejected';
               if (approve && !gameData.joinedPlayers.includes(userId)) {
                 gameData.joinedPlayers.push(userId);
-                const notifId = crypto.randomUUID();
-                await db('notifications', '', { method: 'POST', body: {
-                  id: notifId, user_id: userId,
-                  data: { type: 'request_status', title: 'Kérelem elfogadva', message: `Csatlakozhatsz a meccshez: ${gameData.location}`, gameId: itemId, read: false },
-                  created_at: new Date().toISOString()
-                }}).catch(() => {});
+                await notifyUser(userId, { type: 'request_status', title: 'Kérelem elfogadva', message: `Csatlakozhatsz a meccshez: ${gameData.location}`, gameId: itemId }).catch(() => {});
               } else if (!approve) {
-                const notifId = crypto.randomUUID();
-                await db('notifications', '', { method: 'POST', body: {
-                  id: notifId, user_id: userId,
-                  data: { type: 'request_status', title: 'Kérelem elutasítva', message: `A meccsre való csatlakozási kérelmed elutasításra került: ${gameData.location}`, gameId: itemId, read: false },
-                  created_at: new Date().toISOString()
-                }}).catch(() => {});
+                await notifyUser(userId, { type: 'request_status', title: 'Kérelem elutasítva', message: `A meccsre való csatlakozási kérelmed elutasításra került: ${gameData.location}`, gameId: itemId }).catch(() => {});
               }
             }
           } else if (subAction === "rate") {
@@ -445,23 +507,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               else if (totalRatings >= 3 && posRatio >= 0.7) reliabilityStatus = 'Regularly Appears';
               else if (totalRatings >= 1 && posRatio < 0.4) reliabilityStatus = 'Unreliable';
               await db('users', `id=eq.${r.userId}`, { method: 'PATCH', body: { data: { ...uData, reliabilityScore, goodPlayerScore, totalRatings, reliabilityStatus } } });
-              const nid = crypto.randomUUID();
               const badges = [r.reliable ? '👍' : '', r.goodPlayer ? '🎾' : ''].filter(Boolean).join(' ');
-              await db('notifications', '', { method: 'POST', body: {
-                id: nid, user_id: r.userId,
-                data: { type: 'request_status', title: 'Új értékelés érkezett!', message: `${authUser.name} értékelt téged: ${badges}`, read: false },
-                created_at: new Date().toISOString()
-              }}).catch(() => {});
+              await notifyUser(r.userId, { type: 'request_status', title: 'Új értékelés érkezett!', message: `${authUser.name} értékelt téged: ${badges}` }).catch(() => {});
             }));
           } else if (subAction === "leave") {
             gameData.joinedPlayers = (gameData.joinedPlayers || []).filter((id: string) => id !== authUser.id);
             if (gameData.creatorId !== authUser.id) {
-              const nid = crypto.randomUUID();
-              await db('notifications', '', { method: 'POST', body: {
-                id: nid, user_id: gameData.creatorId,
-                data: { type: 'request_status', title: 'Játékos kilépett', message: `${authUser.name} kilépett a meccsedből: ${gameData.location}`, gameId: itemId, read: false },
-                created_at: new Date().toISOString()
-              }}).catch(() => {});
+              await notifyUser(gameData.creatorId, { type: 'request_status', title: 'Játékos kilépett', message: `${authUser.name} kilépett a meccsedből: ${gameData.location}`, gameId: itemId }).catch(() => {});
             }
           } else if (subAction === "join") {
             if (!gameData.joinedPlayers.includes(authUser.id)) gameData.joinedPlayers.push(authUser.id);
@@ -579,6 +631,79 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return jsonResponse(res, 200, { success: true });
     }
 
+    // PUSH SUBSCRIPTIONS
+    if (action === "push" && itemId === "subscribe") {
+      if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
+      if (!pushEnabled) return jsonResponse(res, 503, { success: false, message: "Push notifications are not configured" });
+      const payload = JSON.parse(body);
+      const endpoint = payload?.endpoint;
+      if (!isValidPushEndpoint(endpoint)) return jsonResponse(res, 400, { success: false, message: "Invalid push endpoint" });
+      const endpointFilter = `endpoint=eq.${encodeURIComponent(endpoint)}`;
+      if (method === "DELETE") {
+        await db('push_subscriptions', `${endpointFilter}&user_id=eq.${authUser.id}`, { method: 'DELETE' });
+        return jsonResponse(res, 200, { success: true });
+      }
+      if (method === "POST") {
+        const p256dh = payload?.keys?.p256dh, auth = payload?.keys?.auth;
+        if (typeof p256dh !== 'string' || typeof auth !== 'string' || !PUSH_KEY_RE.test(p256dh) || !PUSH_KEY_RE.test(auth))
+          return jsonResponse(res, 400, { success: false, message: "Invalid subscription keys" });
+        const existing = await db('push_subscriptions', `${endpointFilter}&select=id`);
+        if (existing[0]) {
+          // Same browser, possibly a different account now (shared device): the endpoint follows the logged-in user.
+          await db('push_subscriptions', `id=eq.${existing[0].id}`, { method: 'PATCH', body: { user_id: authUser.id, p256dh, auth } });
+        } else {
+          await db('push_subscriptions', '', { method: 'POST', body: { user_id: authUser.id, endpoint, p256dh, auth } });
+        }
+        return jsonResponse(res, 201, { success: true });
+      }
+    }
+
+    // ADMIN STATUS — admins live in app_admins, which only the service_role key can read
+    if (path === "/admin/status" && method === "GET") {
+      if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
+      return jsonResponse(res, 200, { success: true, data: { isAdmin: await isAppAdmin(authUser.id) } });
+    }
+
+    // FEEDBACK
+    if (action === "feedback") {
+      if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
+      if (method === "POST" && !itemId) {
+        const payload = JSON.parse(body);
+        const category = payload?.category;
+        const message = typeof payload?.message === 'string' ? payload.message.trim() : '';
+        if (!FEEDBACK_CATEGORIES.includes(category)) return jsonResponse(res, 400, { success: false, message: "Invalid category" });
+        if (!message || message.length > 2000) return jsonResponse(res, 400, { success: false, message: "Message must be 1–2000 characters" });
+        const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const recent = await db('feedback', `user_id=eq.${authUser.id}&created_at=gte.${encodeURIComponent(since)}&select=id`);
+        if (recent.length >= FEEDBACK_HOURLY_LIMIT) return jsonResponse(res, 429, { success: false, message: "Too many feedback messages, please try again later" });
+        const page = typeof payload?.page === 'string' ? payload.page.slice(0, 200) : null;
+        const userAgent = String(req.headers['user-agent'] || '').slice(0, 300) || null;
+        const created = await db('feedback', '', { method: 'POST', body: { user_id: authUser.id, category, message, page, user_agent: userAgent } });
+        const row = Array.isArray(created) ? created[0] : created;
+        return jsonResponse(res, 201, { success: true, data: { id: row?.id } });
+      }
+      if (!(await isAppAdmin(authUser.id))) return jsonResponse(res, 403, { success: false, message: "Forbidden" });
+      if (method === "GET" && !itemId) {
+        const rows = await db('feedback', 'select=*&order=created_at.desc&limit=200');
+        const userIds = [...new Set(rows.map((r: any) => r.user_id).filter(Boolean))] as string[];
+        const users = userIds.length ? await db('users', `id=in.(${userIds.join(',')})&select=id,name,email`) : [];
+        const byId = new Map(users.map((u: any) => [u.id, u]));
+        return jsonResponse(res, 200, { success: true, data: rows.map((r: any) => ({
+          id: r.id, category: r.category, message: r.message, page: r.page, userAgent: r.user_agent,
+          status: r.status, createdAt: r.created_at, userId: r.user_id,
+          userName: (byId.get(r.user_id) as any)?.name || null, userEmail: (byId.get(r.user_id) as any)?.email || null,
+        })) });
+      }
+      if (itemId && method === "PATCH") {
+        if (!UUID_RE.test(itemId)) return jsonResponse(res, 400, { success: false, message: "Invalid ID format" });
+        const { status } = JSON.parse(body);
+        if (!FEEDBACK_STATUSES.includes(status)) return jsonResponse(res, 400, { success: false, message: "Invalid status" });
+        const updated = await db('feedback', `id=eq.${itemId}`, { method: 'PATCH', body: { status } });
+        if (!updated[0]) return jsonResponse(res, 404, { success: false, message: "Feedback not found" });
+        return jsonResponse(res, 200, { success: true, data: { id: itemId, status } });
+      }
+    }
+
     // CLUBS
     if (action === "clubs" && method === "GET") {
       return jsonResponse(res, 200, { success: true, data: [
@@ -592,6 +717,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     console.error('API Error:', error);
     // C-5: Never expose error details to client
+    if (error instanceof UpstreamError) {
+      return jsonResponse(res, 503, { success: false, message: 'Service temporarily unavailable' });
+    }
     return jsonResponse(res, 500, { success: false, message: 'Internal server error' });
   }
 }

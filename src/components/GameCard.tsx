@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Game, User } from '../types.ts';
+import { useConfirm } from '../hooks/useConfirm.tsx';
 
 export default function GameCard({
   game,
@@ -60,13 +61,19 @@ export default function GameCard({
   const joinedPlayers = game.joinedPlayers || [];
   const slotsLeft = Number(game.requiredPlayers || 4) - joinedPlayers.length;
   const isFull = slotsLeft <= 0;
+  const [confirm, confirmDialog] = useConfirm();
   const creatorName = game.creatorName || (currentUser?.id === game.creatorId ? currentUser?.name : undefined);
 
   return (
     <div
       onClick={onShowDetails}
-      className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all relative cursor-pointer ${isPast ? 'opacity-60' : 'border-[#141414]/5 hover:border-[#E2FF3B]'}`}
+      role={onShowDetails ? "button" : undefined}
+      tabIndex={onShowDetails ? 0 : undefined}
+      aria-label={onShowDetails ? [game.location, creatorName].filter(Boolean).join(" · ") : undefined}
+      onKeyDown={e => { if (onShowDetails && e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onShowDetails(); } }}
+      className={`focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#141414] bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all relative cursor-pointer ${isPast ? 'opacity-60' : 'border-[#141414]/5 hover:border-[#E2FF3B]'}`}
     >
+      {confirmDialog}
       {/* Top badges */}
       {isLastMinute && !isFull && !isPast && (
         <div className="absolute top-0 left-0 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-tl-2xl rounded-br-xl z-20 animate-pulse">
@@ -228,15 +235,13 @@ export default function GameCard({
             {/* Future game: leave button for non-owner joined players */}
             {!isPast && isJoined && !isOwner && (
               <button
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
-                  const lang = (currentUser as any)?.languagePreference || 'hu';
-                  const msg = lang === 'hu' ? 'Biztosan ki akarsz lépni ebből a meccsből?' : 'Are you sure you want to leave this game?';
-                  if (window.confirm(msg)) onLeave();
+                  if (await confirm({ title: t('confirmDialogs.leaveGameTitle'), message: t('confirmDialogs.leaveGame'), confirmLabel: t('common.leave'), cancelLabel: t('common.cancel'), icon: 'leave' })) onLeave();
                 }}
                 className="px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap bg-red-50 text-red-500 hover:bg-red-100 active:scale-95 border border-red-100"
               >
-                {(currentUser as any)?.languagePreference === 'en' ? 'Leave' : 'Kilépés'}
+                {t('common.leave')}
               </button>
             )}
 

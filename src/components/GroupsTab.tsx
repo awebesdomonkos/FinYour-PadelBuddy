@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, MapPin, User as UserIcon, ChevronRight, MessageSquare, LogOut, Trash2, Shield } from 'lucide-react';
 import { Group, User } from '../types.ts';
 import { useI18n } from '../hooks/useI18n.ts';
+import { useConfirm } from '../hooks/useConfirm.tsx';
 
 export default function GroupsTab({
   groups,
@@ -27,9 +28,11 @@ export default function GroupsTab({
   onSelectGroup: (group: Group) => void
 }) {
   const { t, lang } = useI18n(currentUser?.languagePreference || 'hu');
+  const [confirm, confirmDialog] = useConfirm();
   const [makeAdminGroupId, setMakeAdminGroupId] = useState<string | null>(null);
   return (
     <div className="space-y-6">
+      {confirmDialog}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-black uppercase tracking-tight">{t('groups.title')}</h2>
@@ -37,9 +40,10 @@ export default function GroupsTab({
         </div>
         <button
           onClick={onCreateClick}
+          aria-label={t('groups.createGroup')}
           className="w-12 h-12 bg-[#141414] text-[#E2FF3B] rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg shadow-black/10"
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-6 h-6" aria-hidden="true" />
         </button>
       </div>
 
@@ -122,7 +126,7 @@ export default function GroupsTab({
                           {/* Admin: törlés gomb */}
                           {isAdmin && (
                             <button
-                              onClick={() => { if (window.confirm(lang === 'hu' ? 'Biztosan törlöd a csoportot?' : 'Delete this group?')) onDeleteGroup(group.id); }}
+                              onClick={async () => { if (await confirm({ title: t('confirmDialogs.deleteGroupTitle'), message: t('confirmDialogs.deleteGroup'), confirmLabel: t('common.delete'), cancelLabel: t('common.cancel') })) onDeleteGroup(group.id); }}
                               className="px-3 py-2.5 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all"
                               title={lang === 'hu' ? 'Csoport törlése' : 'Delete group'}
                             >

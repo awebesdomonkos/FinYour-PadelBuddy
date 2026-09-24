@@ -3,6 +3,8 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import PrivacyPolicy from './components/PrivacyPolicy.tsx';
 import ResetPasswordPage from './components/ResetPasswordPage.tsx';
+import ConnectivityBanner from './components/ConnectivityBanner.tsx';
+import UpdateAvailableToast from './components/UpdateAvailableToast.tsx';
 import './index.css';
 import { AuthProvider } from './context/AuthContext.tsx';
 import { initSupabaseClient } from './lib/supabase.ts';
@@ -34,6 +36,9 @@ class RootErrorBoundary extends React.Component<{children: React.ReactNode}, {ha
 }
 
 const pathname = window.location.pathname;
+// /privacy is opened in a new tab without app state, so the language comes from ?lang= (or the browser).
+const privacyLang = new URLSearchParams(window.location.search).get('lang')
+  || (navigator.language?.toLowerCase().startsWith('hu') ? 'hu' : 'en');
 
 // Init Supabase client (fetches config from /api/config if VITE_ vars not set)
 // then mount the React tree
@@ -42,13 +47,16 @@ initSupabaseClient()
     createRoot(document.getElementById('root')!).render(
       <RootErrorBoundary>
         {pathname === '/privacy' ? (
-          <PrivacyPolicy onBack={() => window.history.back()} />
+          <PrivacyPolicy lang={privacyLang} onBack={() => (window.history.length > 1 ? window.history.back() : window.location.assign('/'))} />
         ) : pathname === '/reset-password' ? (
           <AuthProvider>
+            <ConnectivityBanner />
             <ResetPasswordPage />
           </AuthProvider>
         ) : (
           <AuthProvider>
+            <ConnectivityBanner />
+            <UpdateAvailableToast />
             <App />
           </AuthProvider>
         )}
@@ -57,12 +65,18 @@ initSupabaseClient()
   })
   .catch((err) => {
     console.error('Failed to initialize Supabase:', err);
+    const offline = !navigator.onLine;
+    if (offline) window.addEventListener('online', () => location.reload(), { once: true });
+    const title = offline ? 'Nincs internetkapcsolat' : 'A szerver nem érhető el';
+    const body = offline
+      ? 'Amint újra online leszel, az alkalmazás automatikusan betöltődik.'
+      : 'Nem sikerült csatlakozni a szerverhez. Kérjük, próbáld újra pár perc múlva.';
     document.getElementById('root')!.innerHTML = `
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif;background:#F8F8F5;">
         <div style="text-align:center;padding:2rem;">
           <div style="font-size:3rem;margin-bottom:1rem">⚠️</div>
-          <h2 style="font-weight:900;text-transform:uppercase;margin-bottom:.5rem">Konfigurációs hiba</h2>
-          <p style="opacity:.5;margin-bottom:1.5rem">Nem sikerült betölteni a szerver konfigurációt. Kérjük próbáld újra.</p>
+          <h2 style="font-weight:900;text-transform:uppercase;margin-bottom:.5rem">${title}</h2>
+          <p style="opacity:.5;margin-bottom:1.5rem">${body}</p>
           <button onclick="location.reload()" style="background:#141414;color:#E2FF3B;border:none;padding:1rem 2rem;border-radius:1rem;font-weight:900;cursor:pointer;text-transform:uppercase;letter-spacing:.1em">
             Újratöltés
           </button>

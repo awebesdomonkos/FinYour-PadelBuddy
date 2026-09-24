@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Calendar, User as UserIcon, Plus, TrendingUp, MessageSquare, Trash2 } from 'lucide-react';
 import { Game, User } from '../types.ts';
+import { useDialogA11y } from '../hooks/useDialogA11y.ts';
 
 export default function GameDetailDrawer({
   game,
@@ -33,6 +34,7 @@ export default function GameDetailDrawer({
   const joinedUsers = joinedPlayers.map(id => (players || []).find(p => p.id === id)).filter(Boolean) as User[];
   const creatorUser = (players || []).find(p => p.id === game.creatorId);
   const myRequest = game.requests?.find(r => r.userId === currentUser?.id);
+  const { dialogProps } = useDialogA11y(onClose);
 
   return (
     <div className="fixed inset-0 z-[110] flex justify-end">
@@ -41,22 +43,26 @@ export default function GameDetailDrawer({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
+        aria-hidden="true"
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
       />
       <motion.div
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
-        className="relative w-full max-w-md bg-[#F5F5F0] h-full shadow-2xl flex flex-col overflow-hidden"
+        {...dialogProps}
+        aria-labelledby="game-detail-title"
+        className="relative w-full max-w-md bg-[#F5F5F0] h-full shadow-2xl flex flex-col overflow-hidden outline-none"
       >
         <div className="p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] flex justify-between items-center bg-white border-b border-[#141414]/5">
-          <button onClick={onClose} className="p-2 -ml-2 hover:bg-[#141414]/5 rounded-full"><ArrowLeft className="w-5 h-5"/></button>
-          <h3 className="text-xl font-black uppercase tracking-tight italic">{t('games.title')}</h3>
+          <button onClick={onClose} aria-label={t('a11y.back')} className="p-2.5 -ml-2 hover:bg-[#141414]/5 rounded-full"><ArrowLeft className="w-5 h-5" aria-hidden="true" /></button>
+          <h3 id="game-detail-title" className="text-xl font-black uppercase tracking-tight italic">{t('games.title')}</h3>
           {onDelete ? (
             <button
               onClick={onDelete}
               className="p-2 -mr-2 hover:bg-red-50 text-red-500 rounded-full transition-colors"
-              title={isOwner ? t('games.deleteGame') : 'Remove from history'}
+              title={isOwner ? t('games.deleteGame') : t('games.removeFromHistory')}
+              aria-label={isOwner ? t('games.deleteGame') : t('games.removeFromHistory')}
             >
               <Trash2 className="w-5 h-5" />
             </button>

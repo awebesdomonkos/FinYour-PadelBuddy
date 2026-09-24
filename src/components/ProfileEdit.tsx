@@ -8,8 +8,9 @@ import { User, SkillLevel, LFGStatus, PlayTime, PadelExperience, Language } from
 import { useI18n } from '../hooks/useI18n.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { supabase } from '../lib/supabase.ts';
+import PushToggle from './PushToggle.tsx';
 
-export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: { user: User, onSave: (data: Partial<User>) => void, onCancel: () => void, onShowTutorial?: () => void }) {
+export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: { user: User, onSave: (data: Partial<User>) => Promise<boolean | void> | boolean | void, onCancel: () => void, onShowTutorial?: () => void }) {
   const { t, lang } = useI18n(user?.languagePreference || 'hu');
   const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
@@ -40,6 +41,8 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
   const [customInterest, setCustomInterest] = useState('');
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const PREDEFINED_INTERESTS = ['Competitive', 'Social Padel', 'Morning Matches', 'Evening Matches', 'Mixed Matches', 'Tournaments', 'Coaching'];
 
@@ -124,8 +127,11 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
     }));
   };
 
-  const handleSave = () => {
-    onSave({
+  const handleSave = async () => {
+    if (isSaving || avatarUploading) return;
+    setIsSaving(true);
+    setSaveError(null);
+    const ok = await Promise.resolve(onSave({
       name: formData.name,
       skillLevel: formData.skillLevel,
       location: { ...user.location, city: formData.city },
@@ -142,15 +148,18 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
       languages: formData.languages,
       socialLinks: formData.socialLinks,
       privacySettings: formData.privacySettings
-    });
+    })).catch(() => false);
+    setIsSaving(false);
+    // The parent closes the editor on success; on failure keep the form (and the user's edits) open.
+    if (ok === false) setSaveError(t('common.saveError'));
   };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-black uppercase italic tracking-tighter">{t('profile.editTitle')}</h2>
-        <button onClick={onCancel} className="p-2 hover:bg-[#141414]/5 rounded-xl transition-colors">
-          <X className="w-5 h-5" />
+        <button onClick={onCancel} aria-label={t('a11y.close')} className="p-2.5 hover:bg-[#141414]/5 rounded-xl transition-colors">
+          <X className="w-5 h-5" aria-hidden="true" />
         </button>
       </div>
 
@@ -199,14 +208,14 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                 onClick={() => setFormData({ ...formData, avatarUrl: '' })}
                 className="text-[10px] font-bold text-red-500 uppercase tracking-widest hover:underline"
               >
-                {t('common.delete')} kép
+                {t('profile.deletePhoto')}
               </button>
             )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">{t('groups.name')}</label>
+              <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">{t('auth.nameLabel')}</label>
               <input
                 type="text"
                 value={formData.name}
@@ -287,10 +296,11 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
               <button
                 type="button"
                 onClick={onShowTutorial}
+                aria-label={t('profile.levelTutorialTitle')}
                 className="p-1 hover:bg-[#141414]/5 rounded-lg transition-colors"
                 title="Level Info"
               >
-                <Award className="w-3.5 h-3.5 opacity-40" />
+                <Award className="w-3.5 h-3.5 opacity-40" aria-hidden="true" />
               </button>
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -516,11 +526,14 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
               placeholder={t('profile.addInterest')}
               value={customInterest}
               onChange={e => setCustomInterest(e.target.value)}
-              onKeyPress={e => e.key === 'Enter' && addCustomInterest()}
+              aria-label={t('profile.addInterest')}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomInterest(); } }}
               className="flex-1 bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-xs focus:ring-1 focus:ring-[#E2FF3B] outline-none"
             />
             <button
+              type="button"
               onClick={addCustomInterest}
+              aria-label={t('a11y.addInterest')}
               className="p-3 bg-[#141414] text-[#E2FF3B] rounded-xl"
             >
               <Plus className="w-4 h-4" />
@@ -553,7 +566,7 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
             {formData.favoriteClubs.map((club: string) => (
               <div key={club} className="flex items-center justify-between bg-[#141414]/5 rounded-xl py-3 px-4">
                 <span className="text-sm font-medium">{club}</span>
-                <X className="w-4 h-4 opacity-30 cursor-pointer hover:text-red-500" onClick={() => removeClub(club)} />
+                <button type="button" onClick={() => removeClub(club)} aria-label={`${t('a11y.removeClub')}: ${club}`} className="p-2 -m-2 rounded-lg text-[#141414]/40 hover:text-red-500"><X className="w-4 h-4" aria-hidden="true" /></button>
               </div>
             ))}
 
@@ -563,14 +576,17 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
                 placeholder={t('profile.addClub')}
                 value={newClub}
                 onChange={e => setNewClub(e.target.value)}
-                onKeyPress={e => e.key === 'Enter' && addClub()}
+                aria-label={t('profile.addClub')}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addClub(); } }}
                 className="flex-1 bg-[#141414]/5 border-none rounded-xl py-3 px-4 text-xs focus:ring-1 focus:ring-[#E2FF3B] outline-none"
               />
               <button
+                type="button"
                 onClick={addClub}
+                aria-label={t('a11y.addClub')}
                 className="p-3 bg-[#141414] text-[#E2FF3B] rounded-xl"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -582,6 +598,8 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
             <AlertCircle className="w-4 h-4 opacity-40" />
             <h3 className="text-xs font-bold uppercase tracking-widest opacity-40">{t('profile.notifications')}</h3>
           </div>
+
+          <PushToggle t={t} />
 
           <div className="space-y-3">
             {[
@@ -615,11 +633,15 @@ export default function ProfileEdit({ user, onSave, onCancel, onShowTutorial }: 
           </button>
           <button
             onClick={handleSave}
-            className="flex-2 py-4 bg-[#141414] text-[#E2FF3B] rounded-2xl font-black uppercase tracking-widest text-sm hover:shadow-xl transition-all"
+            disabled={isSaving || avatarUploading}
+            className="flex-[2] py-4 bg-[#141414] text-[#E2FF3B] rounded-2xl font-black uppercase tracking-widest text-sm hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {t('common.save')}
+            {isSaving
+              ? <><Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />{t('common.saving')}</>
+              : t('common.save')}
           </button>
         </div>
+        {saveError && <p role="alert" className="text-xs font-bold text-red-600 text-center">{saveError}</p>}
       </div>
     </div>
   );

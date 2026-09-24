@@ -11,8 +11,28 @@ export const translations: Record<Language, any> = {
       joinMatch: "Jelentkezés", typeMessage: "Írj üzenetet...", noMessages: "Még nincsenek üzenetek.",
       signOut: "Kijelentkezés", scanning: "Pályák keresése...", noMatchesFound: "Nincs találat a szűrők alapján.",
       enter: "Belépés a körbe", all: "Mind", active: "Aktív", datetime: "Dátum és idő",
-      gotIt: "Értem", accept: "Elfogadás", decline: "Elutasítás", unknown: "Ismeretlen"
+      gotIt: "Értem", accept: "Elfogadás", decline: "Elutasítás", unknown: "Ismeretlen",
+      close: "Bezárás", confirm: "Megerősítés", saving: "Mentés...", saveError: "Nem sikerült menteni. Próbáld újra.",
+      networkError: "Hálózati hiba. Ellenőrizd az internetkapcsolatot.", genericError: "Hiba történt, próbáld újra!"
     },
+    feedback: {
+      entry: "Visszajelzés küldése", entrySub: "Hibát találtál vagy ötleted van? Írd meg!",
+      title: "Visszajelzés", subtitle: "Minden üzenetet elolvasunk.",
+      categoryLabel: "Téma", categories: { bug: "Hiba", suggestion: "Ötlet", other: "Egyéb" },
+      messageLabel: "Üzenet", messagePlaceholder: "Mi történt, vagy min változtatnál?",
+      privacyNote: "Az üzenettel együtt elmentjük a fiókodat, az aktuális oldalt és a böngésződ típusát, hogy utána tudjunk járni a hibának.",
+      submit: "Küldés", sending: "Küldés...",
+      thanksTitle: "Köszönjük!", thanksBody: "Megkaptuk a visszajelzésedet.",
+      errorEmpty: "Írj pár szót, mielőtt elküldöd.", errorRateLimit: "Túl sok üzenetet küldtél az elmúlt órában. Próbáld később.",
+      errorGeneric: "Nem sikerült elküldeni. Próbáld újra.", errorNetwork: "Hálózati hiba. Ellenőrizd az internetkapcsolatot.",
+      statuses: { new: "Új", reviewed: "Átnézve", resolved: "Megoldva" },
+      admin: {
+        entry: "Beérkezett visszajelzések", title: "Visszajelzések", refresh: "Frissítés", filterLabel: "Szűrés státusz szerint",
+        statusLabel: "Státusz", empty: "Nincs ilyen visszajelzés.", deletedUser: "Törölt felhasználó",
+        loadError: "Nem sikerült betölteni a visszajelzéseket.", saveError: "Nem sikerült menteni a státuszt."
+      }
+    },
+    legal: { privacyPolicy: "Adatvédelmi nyilatkozat", section: "Súgó és jogi információk" },
     nav: { games: "Játékok", players: "Játékosok", groups: "Csoportok", profile: "Profil", myGames: "Saját meccsek" },
     players: { subTitle: "Találj partnereket a közeledben." },
     auth: {
@@ -56,7 +76,7 @@ export const translations: Record<Language, any> = {
         Silver: "Középhaladó. Stabil játékstílus, tudatos falhasználat.",
         Gold: "Haladó. Magas technikai és taktikai tudás."
       },
-      avatar: "Profilkép", levelTutorialTitle: "Képességszintek", levelTutorialSub: "Padel szintmagyarázat",
+      avatar: "Profilkép", deletePhoto: "Kép törlése", levelTutorialTitle: "Képességszintek", levelTutorialSub: "Padel szintmagyarázat",
       experienceLevels: {
         "Less than 6 months": "Kevesebb mint 6 hónap", "6-12 months": "6-12 hónap",
         "1-2 years": "1-2 év", "2+ years": "Több mint 2 év"
@@ -102,7 +122,7 @@ export const translations: Record<Language, any> = {
       noPlayersFound: "Nincs találat",
       deleteConfirmTitle: "Játék törlése", deleteConfirmMessage: "Biztosan törölni szeretnéd ezt a játékot? Ez a művelet nem vonható vissza.",
       confirmDelete: "Biztosan törölni akarod ezt a meccset?",
-      noGamesYet: "Még nincs meccs. Legyél te az első!", myCreated: "Általam szervezett", myJoined: "Csatlakozott meccsek"
+      removeFromHistory: "Eltávolítás az előzményekből", noGamesYet: "Még nincs meccs. Legyél te az első!", myCreated: "Általam szervezett", myJoined: "Csatlakozott meccsek"
     },
     groups: {
       title: "Csoportok", createGroup: "Csoport létrehozása", name: "Csoport neve",
@@ -119,7 +139,58 @@ export const translations: Record<Language, any> = {
       nearbyGames: "Közeli meccsek", reminders: "Emlékeztetők", groupUpdates: "Csoport frissítések",
       lastMinute: "Last minute hívások", newFriendRequest: "Új barátkérés",
       friendRequestAccepted: "Barátkérés elfogadva", groupInvite: "Csoportmeghívás",
-      gameInvite: "Játékmeghívás", newGroupGame: "Új játék a csoportban"
+      gameInvite: "Játékmeghívás", newGroupGame: "Új játék a csoportban",
+      unreadCount: "{n} olvasatlan", allRead: "Minden olvasott", markAllRead: "Összes megjelölése olvasottként"
+    },
+    onboarding: {
+      skip: "Kihagyás", logout: "Kijelentkezés", next: "Tovább →", finish: "🎾  Belépés a pályára!",
+      levelTitle: "Mi a szinted?", levelSub: "Őszintén válaszolj — így találhatsz hasonló szintű partnereket",
+      levelDesc: { Bronze: "Kezdő – ismerkedem az alapokkal", Silver: "Középhaladó – stabil játékstílus", Gold: "Haladó – magas technikai szint" },
+      experienceQ: "Mennyi tapasztalatod van?",
+      experience: { "Less than 6 months": "< 6 hónap", "6-12 months": "6–12 hónap", "1-2 years": "1–2 év", "2+ years": "2+ év" },
+      cityTitle: "Melyik városban játszol?", citySub: "Így tudunk közeli meccseket és játékosokat megmutatni",
+      cityPlaceholder: "pl. Budapest", cityLabel: "Város", popularCities: "Legnépszerűbb városok",
+      timeTitle: "Mikor érsz rá?", timeSub: "Több időpontot is választhatsz — így jobban összepárosítunk",
+      styleLabel: "Játékstílusod", optional: "(opcionális)",
+      styleDesc: { Casual: "Szórakozásból játszom", Competitive: "Mindig nyerni akarok", Technical: "A pontosság a fontos", Power: "Kemény ütések, erős játék" },
+      progress: "{step}. lépés / {total}"
+    },
+    chat: {
+      members: "Tagok", requests: "Kérelmek", noPending: "Nincs függő kérelem", wantsToJoin: "Csatlakozni szeretne",
+      freeSlot: "Szabad hely", host: "Szervező", fallbackTitle: "Meccs",
+      quick: ["Ott vagyok! 👋", "Kések 10 percet ⏰", "Még aktuális? 🎾", "Jó meccset! 🏆"],
+      send: "Üzenet küldése", approve: "Elfogadás", reject: "Elutasítás", messageLabel: "Üzenet"
+    },
+    time: { now: "Most", minutesAgo: "{n} perce", hoursAgo: "{n} órája", daysAgo: "{n} napja" },
+    result: { title: "Eredmény rögzítése", set: "{n}. szett", team1: "1. csapat", team2: "2. csapat", addSet: "+ Szett hozzáadása", save: "Eredmény mentése" },
+    completeness: {
+      complete: "Teljes profil — Szuper!", percent: "Profilod {n}% teljes", almost: "Szinte teljes! ✨", good: "Jó úton jársz! 👍",
+      start: "Töltsd ki a profilod! 🎾", missing: "Hiányzik még:",
+      items: { avatar: "Profilkép", bio: "Bemutatkozó", city: "Városod", playstyle: "Játékstílus", playtime: "Preferált időpontok", exp: "Tapasztalat", interests: "Érdeklődési körök", friends: "Első barátod", lfg: "LFG státusz" }
+    },
+    errors: { title: "Hiba történt", body: "Kérjük, frissítsd az oldalt.", reload: "Újratöltés" },
+    confirmDialogs: {
+      deleteGameTitle: "Meccs törlése", deleteGame: "Biztosan törlöd ezt a meccset? Ez a művelet nem vonható vissza.",
+      deleteGroupTitle: "Csoport törlése", deleteGroup: "Biztosan törlöd a csoportot? Ez a művelet nem vonható vissza.",
+      clearHistoryTitle: "Előzmények törlése", clearHistory: "Biztosan törlöd az összes meccselőzményt? Ez nem vonható vissza.",
+      leaveGameTitle: "Kilépés a meccsből", leaveGame: "Biztosan kilépsz ebből a meccsből?",
+      removeFriendTitle: "Barát eltávolítása"
+    },
+    a11y: {
+      back: "Vissza", close: "Bezárás", notifications: "Értesítések", favorite: "Kedvencek közé", removeFavorite: "Eltávolítás a kedvencek közül",
+      removeClub: "Klub eltávolítása", addClub: "Klub hozzáadása", addInterest: "Érdeklődési kör hozzáadása", removeFriend: "Barát eltávolítása",
+      deleteGroup: "Csoport törlése", leaveGroup: "Kilépés a csoportból", deleteGame: "Meccs törlése", editProfile: "Profil szerkesztése",
+      decreaseScore: "Csökkentés", increaseScore: "Növelés", share: "Megosztás", openChat: "Chat megnyitása", logout: "Kijelentkezés",
+      gdprRequired: "Az adatvédelmi nyilatkozat elfogadása kötelező."
+    },
+    push: {
+      label: "Push-értesítések ezen az eszközön",
+      hint: "Szólunk meghívóknál, csatlakozási kérelmeknél és értékeléseknél — akkor is, ha az app zárva van.",
+      denied: "A böngésző letiltotta az értesítéseket. Az oldal beállításaiban tudod újra engedélyezni.",
+      iosInstall: "iPhone-on és iPaden a push-értesítésekhez add hozzá az appot a Főképernyőhöz (Megosztás → Főképernyőhöz adás), majd onnan nyisd meg.",
+      error: "Nem sikerült bekapcsolni az értesítéseket. Próbáld újra.",
+      enabled: "Push-értesítések bekapcsolva",
+      disabled: "Push-értesítések kikapcsolva"
     }
   },
   en: {
@@ -132,8 +203,28 @@ export const translations: Record<Language, any> = {
       joinMatch: "Join Match", typeMessage: "Type a message...", noMessages: "No messages yet.",
       signOut: "Sign Out", scanning: "Scanning courts...", noMatchesFound: "No results found.",
       enter: "Enter", all: "All", active: "Active", datetime: "Date & Time",
-      gotIt: "Got it", accept: "Accept", decline: "Decline", unknown: "Unknown"
+      gotIt: "Got it", accept: "Accept", decline: "Decline", unknown: "Unknown",
+      close: "Close", confirm: "Confirm", saving: "Saving...", saveError: "Couldn't save. Please try again.",
+      networkError: "Network error. Check your internet connection.", genericError: "Something went wrong, please try again!"
     },
+    feedback: {
+      entry: "Send feedback", entrySub: "Found a bug or have an idea? Tell us!",
+      title: "Feedback", subtitle: "We read every message.",
+      categoryLabel: "Topic", categories: { bug: "Bug", suggestion: "Idea", other: "Other" },
+      messageLabel: "Message", messagePlaceholder: "What happened, or what would you change?",
+      privacyNote: "Along with your message we store your account, the current page and your browser type so we can look into the issue.",
+      submit: "Send", sending: "Sending...",
+      thanksTitle: "Thank you!", thanksBody: "We've received your feedback.",
+      errorEmpty: "Write a few words before sending.", errorRateLimit: "You've sent too many messages in the last hour. Please try later.",
+      errorGeneric: "Couldn't send it. Please try again.", errorNetwork: "Network error. Check your internet connection.",
+      statuses: { new: "New", reviewed: "Reviewed", resolved: "Resolved" },
+      admin: {
+        entry: "Incoming feedback", title: "Feedback", refresh: "Refresh", filterLabel: "Filter by status",
+        statusLabel: "Status", empty: "No feedback here.", deletedUser: "Deleted user",
+        loadError: "Couldn't load feedback.", saveError: "Couldn't save the status."
+      }
+    },
+    legal: { privacyPolicy: "Privacy Policy", section: "Help & legal" },
     nav: { games: "Games", players: "Players", groups: "Groups", profile: "Profile", myGames: "My Games" },
     players: { subTitle: "Find partners near you." },
     auth: {
@@ -177,7 +268,7 @@ export const translations: Record<Language, any> = {
         Silver: "Intermediate. Stable play style, conscious wall use.",
         Gold: "Advanced. High technical and tactical knowledge."
       },
-      avatar: "Profile Picture", levelTutorialTitle: "Skill Levels", levelTutorialSub: "Padel level guide",
+      avatar: "Profile Picture", deletePhoto: "Remove photo", levelTutorialTitle: "Skill Levels", levelTutorialSub: "Padel level guide",
       experienceLevels: {
         "Less than 6 months": "Less than 6 months", "6-12 months": "6-12 months",
         "1-2 years": "1-2 years", "2+ years": "2+ years"
@@ -223,7 +314,7 @@ export const translations: Record<Language, any> = {
       noPlayersFound: "No players found",
       deleteConfirmTitle: "Delete Game", deleteConfirmMessage: "Are you sure you want to delete this game? This action cannot be undone.",
       confirmDelete: "Are you sure you want to delete this match?",
-      noGamesYet: "No games yet. Be the first to create one!", myCreated: "Created by me", myJoined: "Joined matches"
+      removeFromHistory: "Remove from history", noGamesYet: "No games yet. Be the first to create one!", myCreated: "Created by me", myJoined: "Joined matches"
     },
     groups: {
       title: "Groups", createGroup: "Create Group", name: "Group Name",
@@ -240,7 +331,58 @@ export const translations: Record<Language, any> = {
       nearbyGames: "Nearby Games", reminders: "Reminders", groupUpdates: "Group Updates",
       lastMinute: "Last Minute Calls", newFriendRequest: "New friend request",
       friendRequestAccepted: "Friend request accepted", groupInvite: "Group invitation",
-      gameInvite: "Game invitation", newGroupGame: "New game in group"
+      gameInvite: "Game invitation", newGroupGame: "New game in group",
+      unreadCount: "{n} unread", allRead: "All read", markAllRead: "Mark all as read"
+    },
+    onboarding: {
+      skip: "Skip", logout: "Sign out", next: "Next →", finish: "🎾  Hit the court!",
+      levelTitle: "What's your level?", levelSub: "Answer honestly — that's how you'll find partners at your level",
+      levelDesc: { Bronze: "Beginner – learning the basics", Silver: "Intermediate – steady play style", Gold: "Advanced – strong technique" },
+      experienceQ: "How much experience do you have?",
+      experience: { "Less than 6 months": "< 6 months", "6-12 months": "6–12 months", "1-2 years": "1–2 years", "2+ years": "2+ years" },
+      cityTitle: "Which city do you play in?", citySub: "So we can show you nearby games and players",
+      cityPlaceholder: "e.g. Budapest", cityLabel: "City", popularCities: "Popular cities",
+      timeTitle: "When are you free?", timeSub: "Pick as many as you like — it helps us match you better",
+      styleLabel: "Your play style", optional: "(optional)",
+      styleDesc: { Casual: "I play for fun", Competitive: "I always want to win", Technical: "Precision matters most", Power: "Hard hits, strong game" },
+      progress: "Step {step} of {total}"
+    },
+    chat: {
+      members: "Members", requests: "Requests", noPending: "No pending requests", wantsToJoin: "Wants to join",
+      freeSlot: "Open spot", host: "Host", fallbackTitle: "Match",
+      quick: ["I'm here! 👋", "Running 10 min late ⏰", "Still on? 🎾", "Good game! 🏆"],
+      send: "Send message", approve: "Approve", reject: "Reject", messageLabel: "Message"
+    },
+    time: { now: "Now", minutesAgo: "{n} min ago", hoursAgo: "{n} h ago", daysAgo: "{n} d ago" },
+    result: { title: "Record Result", set: "Set {n}", team1: "Team 1", team2: "Team 2", addSet: "+ Add Set", save: "Save Result" },
+    completeness: {
+      complete: "Complete profile — Great!", percent: "Profile {n}% complete", almost: "Almost there! ✨", good: "Good progress! 👍",
+      start: "Complete your profile! 🎾", missing: "Still missing:",
+      items: { avatar: "Profile picture", bio: "Bio", city: "Your city", playstyle: "Play style", playtime: "Preferred times", exp: "Experience", interests: "Interests", friends: "Your first friend", lfg: "LFG status" }
+    },
+    errors: { title: "Something went wrong", body: "Please reload the page.", reload: "Reload" },
+    confirmDialogs: {
+      deleteGameTitle: "Delete match", deleteGame: "Are you sure you want to delete this match? This can't be undone.",
+      deleteGroupTitle: "Delete group", deleteGroup: "Are you sure you want to delete this group? This can't be undone.",
+      clearHistoryTitle: "Clear history", clearHistory: "Delete your entire match history? This can't be undone.",
+      leaveGameTitle: "Leave match", leaveGame: "Are you sure you want to leave this match?",
+      removeFriendTitle: "Remove friend"
+    },
+    a11y: {
+      back: "Back", close: "Close", notifications: "Notifications", favorite: "Add to favourites", removeFavorite: "Remove from favourites",
+      removeClub: "Remove club", addClub: "Add club", addInterest: "Add interest", removeFriend: "Remove friend",
+      deleteGroup: "Delete group", leaveGroup: "Leave group", deleteGame: "Delete match", editProfile: "Edit profile",
+      decreaseScore: "Decrease", increaseScore: "Increase", share: "Share", openChat: "Open chat", logout: "Sign out",
+      gdprRequired: "You must accept the privacy policy."
+    },
+    push: {
+      label: "Push notifications on this device",
+      hint: "We'll let you know about invites, join requests and ratings — even when the app is closed.",
+      denied: "Notifications are blocked by your browser. You can re-enable them in the site settings.",
+      iosInstall: "On iPhone and iPad, add the app to your Home Screen (Share → Add to Home Screen) and open it from there to enable push notifications.",
+      error: "Couldn't turn on notifications. Please try again.",
+      enabled: "Push notifications turned on",
+      disabled: "Push notifications turned off"
     }
   }
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, MapPin, Check } from 'lucide-react';
 import { User, SkillLevel, PlayTime } from './types';
+import { fmt } from './hooks/useI18n';
 
 const HU_CITIES = [
   'Budapest','Debrecen','Miskolc','Pécs','Győr','Nyíregyháza','Kecskemét',
@@ -22,7 +23,7 @@ interface Props {
   toastMsg: string | null;
 }
 
-export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLogout, toastMsg }: Props) {
+export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLogout, t, toastMsg }: Props) {
   const [form, setForm] = React.useState({
     skillLevel: user.skillLevel || SkillLevel.Bronze,
     experience: user.experience || ('' as any),
@@ -34,22 +35,22 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
   const TOTAL = 3;
 
   const levelData = [
-    { level: SkillLevel.Bronze, emoji: '🟤', label: 'Bronz', desc: 'Kezdő – ismerkedem az alapokkal' },
-    { level: SkillLevel.Silver, emoji: '⚪', label: 'Ezüst', desc: 'Középhaladó – stabil játékstílus' },
-    { level: SkillLevel.Gold,   emoji: '🟡', label: 'Arany', desc: 'Haladó – magas technikai szint' },
+    { level: SkillLevel.Bronze, emoji: '🟤', label: t('profile.levels.Bronze'), desc: t('onboarding.levelDesc.Bronze') },
+    { level: SkillLevel.Silver, emoji: '⚪', label: t('profile.levels.Silver'), desc: t('onboarding.levelDesc.Silver') },
+    { level: SkillLevel.Gold,   emoji: '🟡', label: t('profile.levels.Gold'), desc: t('onboarding.levelDesc.Gold') },
   ];
 
   const playTimeData = [
-    { val: PlayTime.Morning, emoji: '🌅', label: 'Reggel',  sub: '6:00 – 11:00'  },
-    { val: PlayTime.Day,     emoji: '☀️',  label: 'Délután', sub: '11:00 – 17:00' },
-    { val: PlayTime.Evening, emoji: '🌙', label: 'Este',    sub: '17:00 – 22:00' },
+    { val: PlayTime.Morning, emoji: '🌅', label: t('profile.playTimesList.Morning'), sub: '6:00 – 11:00'  },
+    { val: PlayTime.Day,     emoji: '☀️',  label: t('profile.playTimesList.Day'), sub: '11:00 – 17:00' },
+    { val: PlayTime.Evening, emoji: '🌙', label: t('profile.playTimesList.Evening'), sub: '17:00 – 22:00' },
   ];
 
   const playStyles = [
-    { val: 'Casual',      emoji: '😊', label: 'Alkalmi',    desc: 'Szórakozásból játszom' },
-    { val: 'Competitive', emoji: '🔥', label: 'Versenyző',  desc: 'Mindig nyerni akarok' },
-    { val: 'Technical',   emoji: '🎯', label: 'Technikai',  desc: 'A pontosság a fontos' },
-    { val: 'Power',       emoji: '💪', label: 'Erőjátékos', desc: 'Kemény ütések, erős játék' },
+    { val: 'Casual',      emoji: '😊', label: t('profile.playStyles.Casual'), desc: t('onboarding.styleDesc.Casual') },
+    { val: 'Competitive', emoji: '🔥', label: t('profile.playStyles.Competitive'), desc: t('onboarding.styleDesc.Competitive') },
+    { val: 'Technical',   emoji: '🎯', label: t('profile.playStyles.Technical'), desc: t('onboarding.styleDesc.Technical') },
+    { val: 'Power',       emoji: '💪', label: t('profile.playStyles.Power'), desc: t('onboarding.styleDesc.Power') },
   ];
 
   const togglePlayTime = (pt: PlayTime) => {
@@ -80,21 +81,18 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
     });
   };
 
-  const expLabels: Record<string, string> = {
-    'Less than 6 months': '< 6 hónap',
-    '6-12 months': '6–12 hónap',
-    '1-2 years': '1–2 év',
-    '2+ years': '2+ év',
-  };
+  const expLabels: Record<string, string> = Object.fromEntries(
+    ['Less than 6 months', '6-12 months', '1-2 years', '2+ years'].map(k => [k, t(`onboarding.experience.${k}`)])
+  );
 
   return (
     <div className="min-h-screen bg-[#141414] flex flex-col">
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] pb-4">
-        <button onClick={onLogout} className="text-white/30 hover:text-white/60 transition-colors p-2">
-          <LogOut className="w-4 h-4" />
+        <button onClick={onLogout} aria-label={t('onboarding.logout')} className="text-white/60 hover:text-white transition-colors p-3 -m-1">
+          <LogOut className="w-4 h-4" aria-hidden="true" />
         </button>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center" role="progressbar" aria-valuemin={1} aria-valuemax={TOTAL} aria-valuenow={step} aria-label={fmt(t('onboarding.progress'), { step, total: TOTAL })}>
           {Array.from({ length: TOTAL }).map((_, i) => (
             <div
               key={i}
@@ -106,9 +104,9 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
         </div>
         <button
           onClick={onSkip}
-          className="text-white/30 hover:text-white/60 text-[11px] font-black uppercase tracking-widest transition-colors"
+          className="text-white/60 hover:text-white text-[11px] font-black uppercase tracking-widest transition-colors p-3 -m-1"
         >
-          Kihagyás
+          {t('onboarding.skip')}
         </button>
       </div>
 
@@ -134,16 +132,17 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
             {step === 1 && (
               <div>
                 <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter leading-none mb-2 mt-4">
-                  Mi a<br />szinted?
+                  {t('onboarding.levelTitle')}
                 </h1>
                 <p className="text-white/40 text-sm mb-8">
-                  Őszintén válaszolj — így találhatsz hasonló szintű partnereket
+                  {t('onboarding.levelSub')}
                 </p>
 
                 <div className="space-y-3 mb-8">
                   {levelData.map(l => (
                     <button
                       key={l.level}
+                      aria-pressed={form.skillLevel === l.level}
                       onClick={() => setForm(f => ({ ...f, skillLevel: l.level }))}
                       className={`w-full p-5 rounded-2xl border-2 text-left transition-all ${
                         form.skillLevel === l.level
@@ -171,12 +170,13 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
 
                 <div>
                   <p className="text-white/30 text-[10px] font-black uppercase tracking-widest mb-3">
-                    Mennyi tapasztalatod van?
+                    {t('onboarding.experienceQ')}
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(expLabels).map(([val, label]) => (
                       <button
                         key={val}
+                        aria-pressed={form.experience === val}
                         onClick={() => setForm(f => ({ ...f, experience: val as any }))}
                         className={`py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
                           form.experience === val
@@ -196,10 +196,10 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
             {step === 2 && (
               <div>
                 <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter leading-none mb-2 mt-4">
-                  Melyik<br />városban<br />játszol?
+                  {t('onboarding.cityTitle')}
                 </h1>
                 <p className="text-white/40 text-sm mb-8">
-                  Így tudunk közeli meccseket és játékosokat megmutatni
+                  {t('onboarding.citySub')}
                 </p>
 
                 <div className="relative mb-6">
@@ -209,7 +209,8 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
                     list="ob-cities"
                     value={form.city}
                     onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
-                    placeholder="pl. Budapest"
+                    placeholder={t('onboarding.cityPlaceholder')}
+                    aria-label={t('onboarding.cityLabel')}
                     autoFocus
                     className="w-full bg-white/10 border-2 border-white/10 focus:border-[#E2FF3B] rounded-2xl py-5 pl-12 pr-4 text-white text-lg font-bold placeholder:text-white/20 outline-none transition-colors"
                   />
@@ -220,12 +221,13 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
 
                 <div>
                   <p className="text-white/30 text-[10px] font-black uppercase tracking-widest mb-3">
-                    Legnépszerűbb városok
+                    {t('onboarding.popularCities')}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {['Budapest','Debrecen','Győr','Pécs','Miskolc','Szeged','Sopron','Veszprém'].map(c => (
                       <button
                         key={c}
+                        aria-pressed={form.city === c}
                         onClick={() => setForm(f => ({ ...f, city: c }))}
                         className={`px-4 py-2 rounded-xl text-sm font-black uppercase tracking-wider transition-all ${
                           form.city === c
@@ -245,10 +247,10 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
             {step === 3 && (
               <div>
                 <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter leading-none mb-2 mt-4">
-                  Mikor<br />érsz rá?
+                  {t('onboarding.timeTitle')}
                 </h1>
                 <p className="text-white/40 text-sm mb-8">
-                  Több időpontot is választhatsz — így jobban összepárosítunk
+                  {t('onboarding.timeSub')}
                 </p>
 
                 <div className="space-y-3 mb-8">
@@ -257,6 +259,7 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
                     return (
                       <button
                         key={pt.val}
+                        aria-pressed={sel}
                         onClick={() => togglePlayTime(pt.val)}
                         className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center gap-4 ${
                           sel
@@ -281,12 +284,13 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
 
                 <div>
                   <p className="text-white/30 text-[10px] font-black uppercase tracking-widest mb-3">
-                    Játékstílusod <span className="text-white/15">(opcionális)</span>
+                    {t('onboarding.styleLabel')} <span className="text-white/40">{t('onboarding.optional')}</span>
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     {playStyles.map(ps => (
                       <button
                         key={ps.val}
+                        aria-pressed={form.playStyle === ps.val}
                         onClick={() => setForm(f => ({
                           ...f,
                           playStyle: f.playStyle === ps.val ? '' as any : ps.val as any,
@@ -324,7 +328,7 @@ export function OnboardingWizard({ user, step, setStep, onComplete, onSkip, onLo
               : 'bg-white/10 text-white/20 cursor-not-allowed'
           }`}
         >
-          {step === TOTAL ? '🎾  Belépés a pályára!' : 'Tovább →'}
+          {step === TOTAL ? t('onboarding.finish') : t('onboarding.next')}
         </button>
       </div>
 

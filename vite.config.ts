@@ -1,15 +1,30 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import {defineConfig} from 'vite';
+import {VitePWA} from 'vite-plugin-pwa';
 import apiHandler from './api/[...path]';
 
-export default defineConfig(({mode}) => {
-  const env = loadEnv(mode, '.', '');
+export default defineConfig(() => {
   return {
     plugins: [
-      react(), 
+      react(),
       tailwindcss(),
+      VitePWA({
+        // injectManifest (not generateSW) so the worker can carry custom push handlers.
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.ts',
+        // 'prompt', not 'autoUpdate': an automatic reload would wipe half-filled forms.
+        registerType: 'prompt',
+        injectRegister: false,
+        manifest: false,
+        injectManifest: {
+          globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        },
+        // PWA_DEV=1 npm run dev → service worker in dev, for testing push locally.
+        devOptions: { enabled: process.env.PWA_DEV === '1', type: 'module' },
+      }),
       {
         name: 'netlify-functions-emulator',
         configureServer(server) {
@@ -62,9 +77,6 @@ export default defineConfig(({mode}) => {
         }
       }
     ],
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
