@@ -177,12 +177,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userId = data.user!.id;
     const { name, username, phone, ...rest } = userData;
     const { password: _pw, ...profileRest } = rest;
-    await supabase.from('users').upsert({
-      id: userId,
-      email: userData.email.toLowerCase().trim(),
-      name,
-      data: { username, phone, ...profileRest },
-    });
+    // The profile row is created by the API (service role): clients have no write access to users,
+    // so they can't set server-maintained fields such as ratings. Email comes from the auth user.
+    const { email: _email, ...profileData } = profileRest;
+    await fetch(`/api/users/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` },
+      body: JSON.stringify({ name, username, phone, ...profileData }),
+    }).catch(err => console.error('Profile creation failed', err));
 
     setToken(data.session.access_token);
     await hydrateUser(data.session);

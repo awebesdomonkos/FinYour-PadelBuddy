@@ -142,6 +142,26 @@ function safeUser(row: any): any {
   return safe;
 }
 
+// Other players' rows never include contact details.
+function publicUser(row: any): any {
+  const u = safeUser(row);
+  if (!u) return null;
+  const { email, ...pub } = u;
+  return pub;
+}
+
+// Server-maintained profile fields: ratings/attendance are computed from game results, and the
+// friend/block/favourite lists have dedicated endpoints. A profile PUT must not overwrite them.
+const PROTECTED_USER_FIELDS = [
+  'reliabilityScore', 'goodPlayerScore', 'totalRatings', 'reliabilityStatus',
+  'attendedGamesCount', 'completedGamesCount', 'friendIds', 'blockedUserIds', 'favoritePlayerIds',
+];
+function withoutProtected(data: Record<string, any>) {
+  const out = { ...data };
+  for (const k of PROTECTED_USER_FIELDS) delete out[k];
+  return out;
+}
+
 function rowToObj(row: any): any {
   if (!row) return null;
   const { data, created_at, ...cols } = row;
@@ -234,21 +254,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (path === "/users" && method === "GET") {
         if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
         const rows = await db('users', 'select=*');
-        return jsonResponse(res, 200, { success: true, data: rows.map(safeUser) });
+        return jsonResponse(res, 200, { success: true, data: rows.map((r: any) => (r.id === authUser.id ? safeUser(r) : publicUser(r))) });
       }
       // M-5: Require auth for individual user lookup
       if (itemId && method === "GET" && !subAction) {
         if (!authUser) return jsonResponse(res, 401, { success: false, message: "Unauthorized" });
         const rows = await db('users', `id=eq.${itemId}&select=*`);
         if (!rows[0]) return jsonResponse(res, 404, { success: false, message: "User not found" });
-        return jsonResponse(res, 200, { success: true, data: safeUser(rows[0]), user: safeUser(rows[0]) });
+        const u = itemId === authUser.id ? safeUser(rows[0]) : publicUser(rows[0]);
+        return jsonResponse(res, 200, { success: true, data: u, user: u });
       }
       if (itemId && method === "PUT") {
         if (!authUser || authUser.id !== itemId) return jsonResponse(res, 403, { success: false, message: "Forbidden" });
         const payload = JSON.parse(body);
         const rows = await db('users', `id=eq.${itemId}&select=*`);
         const currentData = rows[0]?.data || {};
-        const { email, password, password_hash, id, name, ...payloadRest } = payload;
+        const { email, password, password_hash, id, name, ...rawRest } = payload;
+        const payloadRest = withoutProtected(rawRest);
         const nameUpdate = name ? { name } : {};
         if (!rows[0]) {
           // Profile row doesn't exist yet (email-confirm registration flow) — create it
